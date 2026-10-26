@@ -86,6 +86,14 @@ export class TerminalSession {
     return session;
   }
 
+  // Git Bash expects POSIX paths even when Node.js runs on Windows.
+  // Use the OS temporary directory, translating drive paths for MSYS Bash.
+  private shellPath(filePath: string): string {
+    if (process.platform !== "win32") return filePath;
+    const normalized = filePath.replace(/\\/g, "/");
+    return normalized.replace(/^([A-Za-z]):\//, (_, drive: string) => `/${drive.toLowerCase()}/`);
+  }
+
   /**
    * Set up shell-specific prompt customization
    * Returns args to pass to shell and env modifications
@@ -114,7 +122,7 @@ export class TerminalSession {
       //
       // In login mode, source ~/.bash_profile (or ~/.bash_login or ~/.profile)
       // like a real login shell would. In non-login mode, source ~/.bashrc.
-      const homeDir = os.homedir();
+      const homeDir = this.shellPath(os.homedir());
       const bannerCmd = startupBanner ? `printf '%s\\n' '${escapeBannerForShell(startupBanner)}'` : "";
       this.titleFile = path.join(os.tmpdir(), `terminal-mcp-title-${process.pid}`);
       fs.writeFileSync(this.titleFile, "terminal-mcp");
@@ -140,7 +148,7 @@ fi`;
       const bashrcContent = `
 ${sourceUserConfig}
 # Title file for dynamic title updates from MCP clients
-_TERMINAL_MCP_TITLE_FILE="${this.titleFile}"
+_TERMINAL_MCP_TITLE_FILE="${this.shellPath(this.titleFile)}"
 # Set initial terminal title
 printf '\\033]0;[terminal-mcp]\\a'
 # Prepend a marker to PS1 every prompt and refresh the title.
@@ -164,7 +172,7 @@ ${bannerCmd}
       this.rcFile = path.join(os.tmpdir(), `terminal-mcp-bashrc-${process.pid}`);
       fs.writeFileSync(this.rcFile, bashrcContent);
       env.TERMINAL_MCP_RCFILE = this.rcFile;
-      return { args: ["--rcfile", this.rcFile], env };
+      return { args: ["--rcfile", this.shellPath(this.rcFile)], env };
     }
 
     if (shellName === "zsh") {
@@ -228,7 +236,7 @@ ${bannerCmd}
         fs.writeFileSync(path.join(this.zdotdir, ".zlogin"), zloginContent);
       }
 
-      env.ZDOTDIR = this.zdotdir;
+      env.ZDOTDIR = this.shellPath(this.zdotdir);
       // Pass -l to zsh in login mode so it reads .zprofile and .zlogin
       return { args: login ? ["-l"] : [], env };
     }
@@ -273,7 +281,7 @@ ${bannerCmd}
     });
 
     // Determine shell type and set up custom prompt
-    const shellName = path.basename(shell);
+    const shellName = path.win32.basename(shell).replace(/\.exe$/i, "").toLowerCase();
     const { args, env } = this.setupShellPrompt(shellName, options.env, options.startupBanner, options.login);
 
     // Determine spawn command - may be wrapped by sandbox
