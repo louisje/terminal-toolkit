@@ -3841,9 +3841,9 @@ var require_conf = __commonJS({
 var require_defaults = __commonJS({
   "node_modules/@pnpm/npm-conf/lib/defaults.js"(exports2) {
     "use strict";
-    var os13 = __require("os");
+    var os14 = __require("os");
     var path28 = __require("path");
-    var temp = os13.tmpdir();
+    var temp = os14.tmpdir();
     var uidOrPid = process.getuid ? process.getuid() : process.pid;
     var hasUnicode = () => true;
     var isWindows2 = process.platform === "win32";
@@ -3854,7 +3854,7 @@ var require_defaults = __commonJS({
     var umask = {
       fromString: () => process.umask()
     };
-    var home = os13.homedir();
+    var home = os14.homedir();
     if (home) {
       process.env.HOME = home;
     } else {
@@ -17652,7 +17652,7 @@ var require_signal_exit = __commonJS({
 var require_kill = __commonJS({
   "node_modules/run-jxa/node_modules/execa/lib/kill.js"(exports2, module2) {
     "use strict";
-    var os13 = __require("os");
+    var os14 = __require("os");
     var onExit2 = require_signal_exit();
     var DEFAULT_FORCE_KILL_TIMEOUT2 = 1e3 * 5;
     var spawnedKill = (kill, signal = "SIGTERM", options2 = {}) => {
@@ -17676,7 +17676,7 @@ var require_kill = __commonJS({
       return isSigterm(signal) && forceKillAfterTimeout !== false && killResult;
     };
     var isSigterm = (signal) => {
-      return signal === os13.constants.signals.SIGTERM || typeof signal === "string" && signal.toUpperCase() === "SIGTERM";
+      return signal === os14.constants.signals.SIGTERM || typeof signal === "string" && signal.toUpperCase() === "SIGTERM";
     };
     var getForceKillAfterTimeout = ({ forceKillAfterTimeout = true }) => {
       if (forceKillAfterTimeout === true) {
@@ -18374,14 +18374,14 @@ var require_is_docker = __commonJS({
 var require_is_wsl = __commonJS({
   "node_modules/node-notifier/node_modules/is-wsl/index.js"(exports2, module2) {
     "use strict";
-    var os13 = __require("os");
+    var os14 = __require("os");
     var fs25 = __require("fs");
     var isDocker2 = require_is_docker();
     var isWsl2 = () => {
       if (process.platform !== "linux") {
         return false;
       }
-      if (os13.release().toLowerCase().includes("microsoft")) {
+      if (os14.release().toLowerCase().includes("microsoft")) {
         if (isDocker2()) {
           return false;
         }
@@ -18410,7 +18410,7 @@ var require_utils3 = __commonJS({
     var isWSL = require_is_wsl();
     var path28 = __require("path");
     var url = __require("url");
-    var os13 = __require("os");
+    var os14 = __require("os");
     var fs25 = __require("fs");
     var net2 = __require("net");
     var BUFFER_SIZE = 1024;
@@ -18796,19 +18796,19 @@ var require_utils3 = __commonJS({
       return options2;
     };
     module2.exports.isMac = function() {
-      return os13.type() === "Darwin";
+      return os14.type() === "Darwin";
     };
     module2.exports.isMountainLion = function() {
-      return os13.type() === "Darwin" && semver3.satisfies(garanteeSemverFormat(os13.release()), ">=12.0.0");
+      return os14.type() === "Darwin" && semver3.satisfies(garanteeSemverFormat(os14.release()), ">=12.0.0");
     };
     module2.exports.isWin8 = function() {
-      return os13.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os13.release()), ">=6.2.9200");
+      return os14.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os14.release()), ">=6.2.9200");
     };
     module2.exports.isWSL = function() {
       return isWSL;
     };
     module2.exports.isLessThanWin8 = function() {
-      return os13.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os13.release()), "<6.2.9200");
+      return os14.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os14.release()), "<6.2.9200");
     };
     function garanteeSemverFormat(version5) {
       if (version5.split(".").length === 2) {
@@ -18846,7 +18846,7 @@ var require_utils3 = __commonJS({
 // node_modules/node-notifier/notifiers/notifysend.js
 var require_notifysend = __commonJS({
   "node_modules/node-notifier/notifiers/notifysend.js"(exports2, module2) {
-    var os13 = __require("os");
+    var os14 = __require("os");
     var which = require_which();
     var utils = require_utils3();
     var EventEmitter2 = __require("events").EventEmitter;
@@ -18880,7 +18880,7 @@ var require_notifysend = __commonJS({
         callback(new Error("Message is required."));
         return this;
       }
-      if (os13.type() !== "Linux" && !os13.type().match(/BSD$/)) {
+      if (os14.type() !== "Linux" && !os14.type().match(/BSD$/)) {
         callback(new Error("Only supported on Linux and *BSD systems"));
         return this;
       }
@@ -19312,7 +19312,7 @@ var require_balloon = __commonJS({
     var utils = require_utils3();
     var Toaster = require_toaster();
     var Growl = require_growl();
-    var os13 = __require("os");
+    var os14 = __require("os");
     var EventEmitter2 = __require("events").EventEmitter;
     var util2 = __require("util");
     var hasGrowl;
@@ -19380,7 +19380,7 @@ var require_balloon = __commonJS({
     });
     var allowedArguments = ["t", "d", "p", "m", "i", "e", "q", "w", "xp"];
     function doNotification(options2, notifierOptions, callback) {
-      const is64Bit = os13.arch() === "x64";
+      const is64Bit = os14.arch() === "x64";
       options2 = options2 || {};
       options2 = utils.mapToNotifu(options2);
       options2.p = options2.p || "Node Notification:";
@@ -19762,7 +19762,7 @@ var require_toaster = __commonJS({
     var notifier2 = path28.resolve(__dirname, "../vendor/snoreToast/snoretoast");
     var utils = require_utils3();
     var Balloon = require_balloon();
-    var os13 = __require("os");
+    var os14 = __require("os");
     var { v4: uuid2 } = (init_esm_node(), __toCommonJS(esm_node_exports));
     var EventEmitter2 = __require("events").EventEmitter;
     var util2 = __require("util");
@@ -19801,7 +19801,7 @@ var require_toaster = __commonJS({
     function notifyRaw(options2, callback) {
       options2 = utils.clone(options2 || {});
       callback = callback || noop3;
-      const is64Bit = os13.arch() === "x64";
+      const is64Bit = os14.arch() === "x64";
       let resultBuffer;
       const server = {
         namedPipe: getPipeName()
@@ -19878,7 +19878,7 @@ var require_toaster = __commonJS({
 // node_modules/node-notifier/index.js
 var require_node_notifier = __commonJS({
   "node_modules/node-notifier/index.js"(exports2, module2) {
-    var os13 = __require("os");
+    var os14 = __require("os");
     var utils = require_utils3();
     var NotifySend = require_notifysend();
     var NotificationCenter = require_notificationcenter();
@@ -19886,7 +19886,7 @@ var require_node_notifier = __commonJS({
     var Growl = require_growl();
     var WindowsBalloon = require_balloon();
     var options2 = { withFallback: true };
-    var osType = utils.isWSL() ? "WSL" : os13.type();
+    var osType = utils.isWSL() ? "WSL" : os14.type();
     switch (osType) {
       case "Linux":
         module2.exports = new NotifySend(options2);
@@ -19910,7 +19910,7 @@ var require_node_notifier = __commonJS({
         module2.exports.Notification = WindowsToaster;
         break;
       default:
-        if (os13.type().match(/BSD$/)) {
+        if (os14.type().match(/BSD$/)) {
           module2.exports = new NotifySend(options2);
           module2.exports.Notification = NotifySend;
         } else {
@@ -28884,7 +28884,7 @@ var init_dist = __esm({
 
 // src/setup/clients.ts
 import * as fs23 from "fs";
-import * as os12 from "os";
+import * as os13 from "os";
 import * as path27 from "path";
 import { execSync as execSync2 } from "child_process";
 function existsOnPath(bin) {
@@ -28997,9 +28997,9 @@ var init_clients = __esm({
     codex = {
       name: "codex",
       label: "OpenAI Codex CLI",
-      configPath: () => path27.join(os12.homedir(), ".codex", "config.toml"),
+      configPath: () => path27.join(os13.homedir(), ".codex", "config.toml"),
       detect() {
-        return dirExists(path27.join(os12.homedir(), ".codex")) || existsOnPath("codex");
+        return dirExists(path27.join(os13.homedir(), ".codex")) || existsOnPath("codex");
       },
       install(dryRun) {
         const p = this.configPath();
@@ -29037,16 +29037,16 @@ var init_clients = __esm({
     copilot = makeMcpServersJsonAdapter({
       name: "copilot",
       label: "GitHub Copilot CLI",
-      configPath: () => path27.join(process.env.COPILOT_HOME || path27.join(os12.homedir(), ".copilot"), "mcp-config.json"),
-      detect: () => dirExists(path27.join(process.env.COPILOT_HOME || path27.join(os12.homedir(), ".copilot"))) || existsOnPath("copilot"),
+      configPath: () => path27.join(process.env.COPILOT_HOME || path27.join(os13.homedir(), ".copilot"), "mcp-config.json"),
+      detect: () => dirExists(path27.join(process.env.COPILOT_HOME || path27.join(os13.homedir(), ".copilot"))) || existsOnPath("copilot"),
       entry: { type: "local", command: SERVER_COMMAND, args: [...SERVER_ARGS], tools: ["*"] },
       restartHint: "no restart needed; copilot picks up changes immediately"
     });
     gemini = makeMcpServersJsonAdapter({
       name: "gemini",
       label: "Gemini CLI",
-      configPath: () => path27.join(os12.homedir(), ".gemini", "settings.json"),
-      detect: () => dirExists(path27.join(os12.homedir(), ".gemini")) || existsOnPath("gemini"),
+      configPath: () => path27.join(os13.homedir(), ".gemini", "settings.json"),
+      detect: () => dirExists(path27.join(os13.homedir(), ".gemini")) || existsOnPath("gemini"),
       entry: { command: SERVER_COMMAND, args: [...SERVER_ARGS], timeout: 15e3 },
       restartHint: "restart gemini to pick up the new server"
     });
@@ -29056,8 +29056,8 @@ var init_clients = __esm({
       // Claude Code reads user-scope MCP servers from ~/.claude.json (top-level
       // mcpServers key) — same file `claude mcp add --scope user` writes to.
       // ~/.claude/settings.json is for theme/hooks/permissions, not MCP servers.
-      configPath: () => path27.join(os12.homedir(), ".claude.json"),
-      detect: () => fileExists(path27.join(os12.homedir(), ".claude.json")) || dirExists(path27.join(os12.homedir(), ".claude")) || existsOnPath("claude"),
+      configPath: () => path27.join(os13.homedir(), ".claude.json"),
+      detect: () => fileExists(path27.join(os13.homedir(), ".claude.json")) || dirExists(path27.join(os13.homedir(), ".claude")) || existsOnPath("claude"),
       restartHint: "starts on next claude session"
     });
     claudeDesktop = makeMcpServersJsonAdapter({
@@ -29065,13 +29065,13 @@ var init_clients = __esm({
       label: "Claude Desktop",
       configPath: () => {
         if (process.platform === "darwin") {
-          return path27.join(os12.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
+          return path27.join(os13.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
         }
         if (process.platform === "win32") {
-          const appdata = process.env.APPDATA || path27.join(os12.homedir(), "AppData", "Roaming");
+          const appdata = process.env.APPDATA || path27.join(os13.homedir(), "AppData", "Roaming");
           return path27.join(appdata, "Claude", "claude_desktop_config.json");
         }
-        return path27.join(os12.homedir(), ".config", "Claude", "claude_desktop_config.json");
+        return path27.join(os13.homedir(), ".config", "Claude", "claude_desktop_config.json");
       },
       detect() {
         return dirExists(path27.dirname(this.configPath()));
@@ -29081,9 +29081,9 @@ var init_clients = __esm({
     opencode = {
       name: "opencode",
       label: "OpenCode",
-      configPath: () => path27.join(os12.homedir(), ".config", "opencode", "opencode.json"),
+      configPath: () => path27.join(os13.homedir(), ".config", "opencode", "opencode.json"),
       detect() {
-        return dirExists(path27.join(os12.homedir(), ".config", "opencode")) || existsOnPath("opencode");
+        return dirExists(path27.join(os13.homedir(), ".config", "opencode")) || existsOnPath("opencode");
       },
       install(dryRun) {
         const p = this.configPath();
@@ -55699,6 +55699,7 @@ function registerPrompts(server) {
 import { createHash } from "node:crypto";
 import { readFile as readFile3, readdir as readdir2, realpath, stat } from "node:fs/promises";
 import path21 from "node:path";
+import os11 from "node:os";
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 var import_yaml = __toESM(require_dist4(), 1);
 var SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath9(import.meta.url)), "../skills");
@@ -55724,11 +55725,35 @@ function decodeSkillUri(uri) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) invalid("Invalid skill name");
   return { name, relative: files.join("/") };
 }
+async function skillDirectories() {
+  const roots = [SKILLS_ROOT];
+  try {
+    const config3 = JSON.parse(await readFile3(path21.join(os11.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    if (Array.isArray(config3.skills)) for (const value of config3.skills) {
+      if (typeof value !== "string" || !value.trim()) continue;
+      const expanded = value === "~" ? os11.homedir() : value.startsWith("~/") ? path21.join(os11.homedir(), value.slice(2)) : value;
+      roots.push(path21.resolve(expanded));
+    }
+  } catch {
+  }
+  const dirs = /* @__PURE__ */ new Map();
+  for (const rootPath of roots) {
+    try {
+      const root2 = await realpath(rootPath);
+      for (const item of await readdir2(root2, { withFileTypes: true })) {
+        if (!item.isDirectory() || dirs.has(item.name) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
+        const dir = await realpath(path21.join(root2, item.name));
+        if (path21.dirname(dir) === root2) dirs.set(item.name, dir);
+      }
+    } catch {
+    }
+  }
+  return dirs;
+}
 async function secureFile(name, relative2) {
   if (!relative2) invalid("Expected a file URI");
-  const root2 = await realpath(SKILLS_ROOT);
-  const dir = await realpath(path21.join(root2, name)).catch(() => invalid("Skill not found"));
-  if (path21.dirname(dir) !== root2) invalid("Skill escapes root");
+  const dir = (await skillDirectories()).get(name);
+  if (!dir) invalid("Skill not found");
   const candidate = await realpath(path21.join(dir, relative2)).catch(() => invalid("Resource not found"));
   if (!candidate.startsWith(dir + path21.sep)) invalid("Resource escapes skill directory");
   if (!(await stat(candidate)).isFile()) invalid("Resource is not a file");
@@ -55772,12 +55797,10 @@ async function skillEntry(name) {
   return { uri: `skill://${name}/SKILL.md`, frontmatter, resources };
 }
 async function skills() {
-  const entries = await readdir2(SKILLS_ROOT, { withFileTypes: true });
   const result2 = [];
-  for (const entry of entries.sort((a2, b) => a2.name.localeCompare(b.name))) {
-    if (!entry.isDirectory()) continue;
+  for (const name of [...(await skillDirectories()).keys()].sort()) {
     try {
-      result2.push(await skillEntry(entry.name));
+      result2.push(await skillEntry(name));
     } catch {
     }
   }
@@ -56632,14 +56655,14 @@ function createClientTitleSetter(write) {
 
 // src/sandbox/config.ts
 import * as fs16 from "fs";
-import * as os11 from "os";
+import * as os12 from "os";
 import * as path22 from "path";
 function expandPath(p) {
   if (p.startsWith("~/")) {
-    return path22.join(os11.homedir(), p.slice(2));
+    return path22.join(os12.homedir(), p.slice(2));
   }
   if (p === "~") {
-    return os11.homedir();
+    return os12.homedir();
   }
   if (p === ".") {
     return process.cwd();

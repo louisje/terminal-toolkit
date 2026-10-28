@@ -32,9 +32,9 @@ test("Skills extension advertises capabilities and preserves tools", async () =>
     const list = await call(client,"skills/list");
     assert.equal(list.resultType,"complete");
     assert.equal(list.cacheScope,"public");
-    assert.equal(list.skills.length,1);
-    assert.equal(list.skills[0].uri,"skill://terminal-toolkit/SKILL.md");
-    const entry = list.skills[0];
+    assert.ok(list.skills.length >= 1);
+    assert.ok(list.skills.some(s => s.uri === "skill://terminal-toolkit/SKILL.md"));
+    const entry = list.skills.find(s => s.uri === "skill://terminal-toolkit/SKILL.md");
     assert.equal(entry.frontmatter.name,"terminal-toolkit");
     assert.equal(typeof entry.frontmatter.description,"string");
     assert.ok(entry.resources.length >= 1);
@@ -69,7 +69,7 @@ test("stdio headless and codemode both advertise and serve skills", async () => 
     try {
       await client.connect(transport);
       assert.ok(client.getServerCapabilities().extensions["io.modelcontextprotocol/skills"]);
-      assert.equal((await call(client,"skills/list")).skills[0].frontmatter.name,"terminal-toolkit");
+      assert.ok((await call(client,"skills/list")).skills.some(s => s.frontmatter.name === "terminal-toolkit"));
       const tools = await call(client,"tools/list");
       assert.equal(tools.tools.some((t)=>t.name==="codemode"),codemode);
     } finally {
@@ -116,7 +116,7 @@ test("socket/client MCP mode exposes the Skills extension independently of socke
   try {
     await client.connect(transport);
     assert.ok(client.getServerCapabilities().extensions["io.modelcontextprotocol/skills"]);
-    assert.equal((await call(client,"skills/list")).skills[0].uri,"skill://terminal-toolkit/SKILL.md");
+    assert.ok((await call(client,"skills/list")).skills.some(s => s.uri === "skill://terminal-toolkit/SKILL.md"));
     assert.equal((await call(client,"tools/list")).tools[0].name,"codemode");
   } finally {
     await client.close();

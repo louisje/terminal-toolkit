@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import YAML from "yaml";
@@ -30,11 +31,33 @@ function decodeSkillUri(uri: string): { name: string; relative: string } {
   return { name, relative: files.join("/") };
 }
 
+async function skillDirectories(): Promise<Map<string, string>> {
+  const roots = [SKILLS_ROOT];
+  try {
+    const config = JSON.parse(await readFile(path.join(os.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    if (Array.isArray(config.skills)) for (const value of config.skills) {
+      if (typeof value !== "string" || !value.trim()) continue;
+      const expanded = value === "~" ? os.homedir() : value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
+      roots.push(path.resolve(expanded));
+    }
+  } catch { /* Missing or invalid configuration preserves built-in skills. */ }
+  const dirs = new Map<string, string>();
+  for (const rootPath of roots) {
+    try {
+      const root = await realpath(rootPath);
+      for (const item of await readdir(root, { withFileTypes: true })) {
+        if (!item.isDirectory() || dirs.has(item.name) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
+        const dir = await realpath(path.join(root, item.name));
+        if (path.dirname(dir) === root) dirs.set(item.name, dir);
+      }
+    } catch { /* Missing roots are optional. */ }
+  }
+  return dirs;
+}
 async function secureFile(name: string, relative: string): Promise<string> {
   if (!relative) invalid("Expected a file URI");
-  const root = await realpath(SKILLS_ROOT);
-  const dir = await realpath(path.join(root, name)).catch(() => invalid("Skill not found"));
-  if (path.dirname(dir) !== root) invalid("Skill escapes root");
+  const dir = (await skillDirectories()).get(name);
+  if (!dir) invalid("Skill not found");
   const candidate = await realpath(path.join(dir, relative)).catch(() => invalid("Resource not found"));
   if (!candidate.startsWith(dir + path.sep)) invalid("Resource escapes skill directory");
   if (!(await stat(candidate)).isFile()) invalid("Resource is not a file");
@@ -75,11 +98,9 @@ async function skillEntry(name: string) {
 }
 
 async function skills() {
-  const entries = await readdir(SKILLS_ROOT, { withFileTypes: true });
   const result = [];
-  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory()) continue;
-    try { result.push(await skillEntry(entry.name)); } catch { /* Ignore invalid skill folders. */ }
+  for (const name of [...(await skillDirectories()).keys()].sort()) {
+    try { result.push(await skillEntry(name)); } catch { /* Ignore invalid skill folders. */ }
   }
   return result;
 }

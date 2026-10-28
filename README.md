@@ -13,7 +13,20 @@
 ## MCP Skills Extension (SEP-2640)
 
 Terminal Toolkit serves its existing `skills/` directory through the MCP protocol
-automatically; no separate skill upload or opt-in flag is required.
+automatically; no separate skill upload or opt-in flag is required. Additional
+Skill directories can be configured in `~/.config/terminal-toolkit/settings.json`:
+
+```json
+{
+  "skills": ["~/projects/my-skills", "/absolute/path/to/skills"]
+}
+```
+
+Each configured directory contains Skill subdirectories with a `SKILL.md`.
+Bundled skills take precedence over external skills of the same name; the first
+configured directory wins for other duplicates. Missing directories are ignored.
+The file is read on demand, so changes are reflected on the next request.
+
 
 - `skills/list` enumerates skills and includes the full YAML frontmatter plus a
   complete SHA-256 manifest (`uri`, `digest`, `size`).
