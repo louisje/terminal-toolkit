@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="Terminal MCP" width="600">
+  <img src="logo.png" alt="Terminal Toolkit" width="600">
 </p>
 
 <p align="center">
@@ -7,18 +7,18 @@
 </p>
 
 <p align="center">
-  Terminal MCP gives LLMs a shared view of your terminal session. Perfect for debugging CLIs and TUI applications in real-time, or letting AI drive terminal-based tools autonomously.
+  Terminal Toolkit gives LLMs a shared view of your terminal session. Perfect for debugging CLIs and TUI applications in real-time, or letting AI drive terminal-based tools autonomously.
 </p>
 
 ## MCP Skills Extension (SEP-2640)
 
-Terminal MCP serves its existing `skills/` directory through the MCP protocol
+Terminal Toolkit serves its existing `skills/` directory through the MCP protocol
 automatically; no separate skill upload or opt-in flag is required.
 
 - `skills/list` enumerates skills and includes the full YAML frontmatter plus a
   complete SHA-256 manifest (`uri`, `digest`, `size`).
 - `skills/get` accepts the **SKILL.md URI**, e.g.
-  `skill://terminal-mcp/SKILL.md`, and returns the same skill entry.
+  `skill://terminal-toolkit/SKILL.md`, and returns the same skill entry.
 - `resources/read` serves SKILL.md and supporting files under `skill://`
   URIs. `resources/list` also advertises the skill entry points.
 - The server declares `resources` and
@@ -41,14 +41,14 @@ For ChatGPT plugin submission, OpenAI supports importing a static snapshot throu
 imported Skill into the plugin draft. Changes to `skills/` require scanning
 again. This is not live runtime Skill activation, and requires a plugin/client
 that supports this import flow. OpenAI currently limits imports to five skills
-(100 files per skill, 5 MiB per skill); Terminal MCP currently ships one.
+(100 files per skill, 5 MiB per skill); Terminal Toolkit currently ships one.
 
 Specification: https://skills.extensions.modelcontextprotocol.io/specification/stable/skills
 
 ## ChatGPT / Codex Plugin (local stdio)
 
 This repository includes a portable Agent Plugins `plugin.json`, a local
-stdio `mcp.json`, and the shared `skills/terminal-mcp/SKILL.md`.
+stdio `mcp.json`, and the shared `skills/terminal-toolkit/SKILL.md`.
 
 The Plugin starts `node bootstrap.cjs --mcp --codemode --pi-operators`.
 The bootstrap validates and installs the required native `node-pty` dependency,
@@ -72,24 +72,24 @@ connection in ChatGPT; the Plugin manifest does not start the tunnel.
 ## Install
 
 ```bash
-npm install -g @ellery/terminal-mcp
+npm install -g @louisje/terminal-toolkit
 ```
 
 Or via install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-mcp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/louisje/terminal-toolkit/main/install.sh | bash
 ```
 
 ### Configure your AI tools
 
-Wire `terminal-mcp` into the MCP config of every AI tool installed on your machine in one shot:
+Wire `terminal-toolkit` into the MCP config of every AI tool installed on your machine in one shot:
 
 ```bash
-terminal-mcp setup                      # detect & install for all detected tools
-terminal-mcp setup --dry-run            # preview without writing
-terminal-mcp setup --client claude-code,gemini   # specific tools only
-terminal-mcp setup --uninstall          # remove the entry from each tool
+terminal-toolkit setup                      # detect & install for all detected tools
+terminal-toolkit setup --dry-run            # preview without writing
+terminal-toolkit setup --client claude-code,gemini   # specific tools only
+terminal-toolkit setup --uninstall          # remove the entry from each tool
 ```
 
 Supported clients (each gets the right schema for its config format):
@@ -103,15 +103,15 @@ Supported clients (each gets the right schema for its config format):
 | Claude Code | `~/.claude.json` | JSON |
 | Claude Desktop | `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) / `%APPDATA%\Claude\claude_desktop_config.json` (Windows) | JSON |
 
-A `.bak` of any pre-existing config is written next to the original on first install. The `terminal-mcp` entry is added without disturbing other servers or unrelated keys; running `setup` again is a no-op.
+A `.bak` of any pre-existing config is written next to the original on first install. The `terminal-toolkit` entry is added without disturbing other servers or unrelated keys; running `setup` again is a no-op.
 
 ### Upgrading
 
 ```bash
-npm install -g @ellery/terminal-mcp@latest
+npm install -g @louisje/terminal-toolkit@latest
 ```
 
-Interactive mode will print a banner on next launch when a newer release is available — `terminal-mcp` checks the npm registry once per day and caches the result. Headless and MCP-client modes never check or print anything (so MCP stdio stays clean). To opt out entirely, set `NO_UPDATE_NOTIFIER=1` or pass `--no-update-notifier`.
+Interactive mode will print a banner on next launch when a newer release is available — `terminal-toolkit` checks the npm registry once per day and caches the result. Headless and MCP-client modes never check or print anything (so MCP stdio stays clean). To opt out entirely, set `NO_UPDATE_NOTIFIER=1` or pass `--no-update-notifier`.
 
 ## Features
 
@@ -133,7 +133,7 @@ npm run build
 
 ## Usage
 
-Terminal MCP can run in two modes:
+Terminal Toolkit can run in two modes:
 
 1. **MCP Mode (Recommended)**: Direct MCP protocol communication via stdio. Use the `--mcp` flag for standard MCP server behavior.
    - Automatically detects and connects to existing interactive sessions if available
@@ -151,7 +151,7 @@ Add to your MCP client settings:
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp",
+      "command": "terminal-toolkit",
       "args": ["--mcp", "--title", "Augment"]
     }
   }
@@ -165,7 +165,7 @@ Or use directly from GitHub (no installation required):
   "mcpServers": {
     "terminal": {
       "command": "npx",
-      "args": ["--yes", "github:louisje/terminal-mcp", "--mcp"]
+      "args": ["--yes", "github:louisje/terminal-toolkit", "--mcp"]
     }
   }
 }
@@ -177,7 +177,7 @@ With custom options:
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp",
+      "command": "terminal-toolkit",
       "args": ["--mcp", "--cols", "100", "--rows", "30", "--shell", "/bin/zsh"]
     }
   }
@@ -187,7 +187,7 @@ With custom options:
 ### Command-Line Options
 
 ```
-terminal-mcp [OPTIONS]
+terminal-toolkit [OPTIONS]
 
 Options:
   --mcp                  Use MCP mode (connects to existing session or creates new PTY)
@@ -210,7 +210,7 @@ Recording Options:
   --record [mode]     Enable recording (default mode: always)
                       Modes: always, on-failure, off
   --record-dir <dir>  Recording output directory
-                      (default: ~/.local/state/terminal-mcp/recordings)
+                      (default: ~/.local/state/terminal-toolkit/recordings)
   --idle-time-limit <sec>   Max idle time between events (default: 2s)
   --max-duration <sec>      Max recording duration (default: 3600s)
   --inactivity-timeout <sec>  Stop after no output (default: 600s)
@@ -223,11 +223,11 @@ Multi-Session Options:
 
 ### Pi operators
 
-The default tool surface is unchanged: Terminal MCP exposes its existing 15 terminal tools. Add
+The default tool surface is unchanged: Terminal Toolkit exposes its existing 15 terminal tools. Add
 `--pi-operators` when you also want the Pi Coding Agent-style `read`, `write`, `edit`, and `shell`
 tools. These file tools operate relative to the process startup directory; `write` creates parent
 directories, and `edit` requires exact unique non-overlapping replacements from the original file.
-`shell` runs one independent, stateless subprocess using Terminal MCP's configured shell (`--shell`, then `TERMINAL_MCP_SHELL`, then the platform-native shell/default) in that same startup directory,
+`shell` runs one independent, stateless subprocess using Terminal Toolkit's configured shell (`--shell`, then `TERMINAL_MCP_SHELL`, then the platform-native shell/default) in that same startup directory,
 returns stdout/stderr when it finishes, and accepts an optional timeout in seconds. Prefer these
 operators for routine file operations and short one-shot non-interactive commands; use the PTY tools
 for long-running compilation, builds, and tests (even without interaction), as well as persistent shell state, interactive/TTY behavior, or live observability. The flag
@@ -258,7 +258,7 @@ Environment variables:
 
 ## Headless Mode
 
-By default, Terminal MCP uses a **dual-process architecture**: you run `terminal-mcp` in an interactive terminal (which creates a Unix socket), then your MCP client spawns a second instance that connects to that socket. This requires a TTY.
+By default, Terminal Toolkit uses a **dual-process architecture**: you run `terminal-toolkit` in an interactive terminal (which creates a Unix socket), then your MCP client spawns a second instance that connects to that socket. This requires a TTY.
 
 **Headless mode** (`--headless`) eliminates this requirement by spawning an embedded PTY internally and serving MCP directly over stdio in a single process. No interactive terminal session, no socket — just a self-contained MCP server with a built-in terminal.
 
@@ -275,7 +275,7 @@ By default, Terminal MCP uses a **dual-process architecture**: you run `terminal
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp",
+      "command": "terminal-toolkit",
       "args": ["--headless", "--cols", "120", "--rows", "40"]
     }
   }
@@ -288,7 +288,7 @@ By default, Terminal MCP uses a **dual-process architecture**: you run `terminal
 MCP Client (Claude Code, etc.)
     │ STDIO (JSON-RPC)
     ▼
-terminal-mcp --headless
+terminal-toolkit --headless
     ├── MCP Server (stdio transport)
     ├── Terminal Emulator (@xterm/headless)
     └── Embedded PTY (node-pty)
@@ -606,10 +606,10 @@ Run the terminal with restricted filesystem and network access:
 
 ```bash
 # Interactive permission configuration
-terminal-mcp --sandbox
+terminal-toolkit --sandbox
 
 # With a config file
-terminal-mcp --sandbox --sandbox-config ~/.terminal-mcp-sandbox.json
+terminal-toolkit --sandbox --sandbox-config ~/.terminal-toolkit-sandbox.json
 ```
 
 The interactive mode shows a TUI dialog to configure permissions:
@@ -645,20 +645,20 @@ See [Sandbox Documentation](./docs/sandbox.md) for detailed configuration option
 
 ## Recording
 
-Terminal MCP can record sessions to [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) format, compatible with [asciinema](https://asciinema.org/) for playback.
+Terminal Toolkit can record sessions to [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) format, compatible with [asciinema](https://asciinema.org/) for playback.
 
 ### Quick Start
 
 ```bash
 # Start with recording enabled
-terminal-mcp --record
+terminal-toolkit --record
 
 # Run your commands, then exit
 exit
 
 # Output shows the saved file path:
 # Recordings saved:
-#   ~/.local/state/terminal-mcp/recordings/20240115_143022.cast
+#   ~/.local/state/terminal-toolkit/recordings/20240115_143022.cast
 #
 # Play with: asciinema play <file>
 ```
@@ -675,7 +675,7 @@ brew install asciinema
 pip install asciinema
 
 # Play a recording
-asciinema play ~/.local/state/terminal-mcp/recordings/20240115_143022.cast
+asciinema play ~/.local/state/terminal-toolkit/recordings/20240115_143022.cast
 
 # Play at 2x speed
 asciinema play -s 2 recording.cast
@@ -688,7 +688,7 @@ asciinema play -s 2 recording.cast
 
 ```bash
 # Only save recordings when something fails
-terminal-mcp --record=on-failure
+terminal-toolkit --record=on-failure
 ```
 
 ### MCP Tool Recording
@@ -703,7 +703,7 @@ This enables AI-driven workflows like "record this debugging session" or "captur
 
 ## Architecture
 
-Terminal MCP has three operating modes:
+Terminal Toolkit has three operating modes:
 
 | Mode | Flag | Stdin | Description |
 |------|------|-------|-------------|
@@ -717,7 +717,7 @@ Terminal MCP has three operating modes:
 MCP Client (Claude Code, etc.)
     │ STDIO (JSON-RPC)
     ▼
-terminal-mcp --headless
+terminal-toolkit --headless
     ├── MCP SDK (@modelcontextprotocol/sdk)
     ├── Terminal Emulator (@xterm/headless)
     └── Embedded PTY (node-pty)
@@ -729,13 +729,13 @@ terminal-mcp --headless
 ### Interactive + Client mode (two-process)
 
 ```
-terminal-mcp (interactive, in your terminal)
+terminal-toolkit (interactive, in your terminal)
     ├── User shell (stdin/stdout)
-    └── Unix socket server (/tmp/terminal-mcp.sock)
+    └── Unix socket server (/tmp/terminal-toolkit.sock)
             ▲
             │ JSON-RPC over socket
             ▼
-terminal-mcp (client, spawned by MCP client)
+terminal-toolkit (client, spawned by MCP client)
     └── MCP server (stdio transport)
 ```
 
@@ -786,7 +786,7 @@ MIT
 Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `ALL_TOOLS`, `searchTools(query)`, `describeTool(name)`, and `describeNamespace("terminal")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
 
 ```sh
-terminal-mcp --headless --codemode --pi-operators
+terminal-toolkit --headless --codemode --pi-operators
 ```
 
 Codemode accepts an optional `timeoutMs` (integer 1–60000, default 60000) to bound one execution. Timeouts cancel pending cancellable operators, but cannot roll back writes already made to files or persistent PTY sessions.
