@@ -90,7 +90,8 @@ export function getBanner(options: BannerOptions): string {
   const mcpConfig = `{
   "mcpServers": {
     "terminal": {
-      "command": "terminal-toolkit"
+      "command": "terminal-toolkit",
+      "args": ["--mcp"]
     }
   }
 }`;

@@ -56555,7 +56555,8 @@ function getBanner(options2) {
   const mcpConfig = `{
   "mcpServers": {
     "terminal": {
-      "command": "terminal-toolkit"
+      "command": "terminal-toolkit",
+      "args": ["--mcp"]
     }
   }
 }`;
@@ -60997,7 +60998,8 @@ MCP Client Mode (add to your MCP client config):
   {
     "mcpServers": {
       "terminal": {
-        "command": "terminal-toolkit"
+        "command": "terminal-toolkit",
+        "args": ["--mcp"]
       }
     }
   }
