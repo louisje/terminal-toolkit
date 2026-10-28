@@ -46,3 +46,10 @@
 
 - Renamed the optional Pi `bash` tool to `shell` (the configured interpreter is not necessarily Bash); keep examples and tests synchronized.
 - Prefer PTY for long-running compile/build/test work; reserve stateless `shell` for quick one-shot commands.
+
+## MCP Skills 相容層評估（2026-10-28）
+
+- [ ] 評估是否提供可選的 MCP Tools 相容層，例如 `listSkills()`、`getSkill(name)`，讓尚未原生支援 MCP Skills Extension（SEP-2640）探索／匯入的 AI Client，仍能透過一般 MCP Tools 發現並讀取由內建 `skills/` 及 `~/.config/terminal-toolkit/settings.json` 指定的外部 Skills。
+- 保留既有 SEP-2640 `skills/list`、`skills/get`、`resources/read` 為標準途徑；相容層應重用同一套 Skill 清單、驗證及讀取邏輯，避免重複實作。
+- 需先確認 ChatGPT 實際對 MCP Skills 的支援與匯入行為，再決定相容層的啟用方式（預設或 opt-in）、在 `--codemode` 下的工具揭露，以及如何避免功能重複。
+- 透過一般 MCP Tool 讀取 `SKILL.md` **不等於** ChatGPT 原生安裝或啟用 Skill，也不保證自動觸發；這項功能僅作為跨 Client 的探索與讀取備援。現階段先記錄，不實作。
