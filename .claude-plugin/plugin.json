@@ -1,13 +1,13 @@
 {
-  "name": "terminal-mcp",
+  "name": "terminal-toolkit",
   "version": "0.5.1",
   "description": "A headless terminal emulator exposed via MCP — gives AI assistants a real PTY-backed shell for sudo prompts, SSH/interactive logins, TUI programs, and commands the user wants to watch live.",
   "author": {
     "name": "Louis Jeng",
     "email": "louisje@gmail.com"
   },
-  "homepage": "https://github.com/louisje/terminal-mcp",
-  "repository": "https://github.com/louisje/terminal-mcp",
+  "homepage": "https://github.com/louisje/terminal-toolkit",
+  "repository": "https://github.com/louisje/terminal-toolkit",
   "license": "MIT",
   "keywords": [
     "mcp",
@@ -19,7 +19,7 @@
     "tui"
   ],
   "mcpServers": {
-    "terminal-mcp": {
+    "terminal-toolkit": {
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/bootstrap.cjs",
