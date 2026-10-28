@@ -1,13 +1,13 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "terminal-mcp",
+  "name": "terminal-toolkit",
   "version": "0.5.1",
   "description": "Control persistent terminal sessions, run commands, and work with local files through an MCP server.",
   "author": {
     "name": "Louis Jeng"
   },
-  "homepage": "https://github.com/louisje/terminal-mcp",
-  "repository": "https://github.com/louisje/terminal-mcp",
+  "homepage": "https://github.com/louisje/terminal-toolkit",
+  "repository": "https://github.com/louisje/terminal-toolkit",
   "license": "MIT",
   "keywords": [
     "mcp",
