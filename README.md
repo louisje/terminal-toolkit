@@ -26,6 +26,9 @@ Each configured directory contains Skill subdirectories with a `SKILL.md`.
 Bundled skills take precedence over external skills of the same name; the first
 configured directory wins for other duplicates. Missing directories are ignored.
 The file is read on demand, so changes are reflected on the next request.
+The first Skills discovery request logs a short load summary to stderr
+(built-in/external counts and any skipped or unreadable paths). This does not
+interfere with MCP JSON-RPC on stdout.
 
 
 - `skills/list` enumerates skills and includes the full YAML frontmatter plus a

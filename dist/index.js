@@ -55725,6 +55725,7 @@ function decodeSkillUri(uri) {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) invalid("Invalid skill name");
   return { name, relative: files.join("/") };
 }
+var skillWarnings = /* @__PURE__ */ new Set();
 async function skillDirectories() {
   const roots = [SKILLS_ROOT];
   try {
@@ -55734,7 +55735,9 @@ async function skillDirectories() {
       const expanded = value === "~" ? os11.homedir() : value.startsWith("~/") ? path21.join(os11.homedir(), value.slice(2)) : value;
       roots.push(path21.resolve(expanded));
     }
-  } catch {
+  } catch (error2) {
+    if (!(error2 instanceof Error && "code" in error2 && error2.code === "ENOENT"))
+      skillWarnings.add("Cannot read settings.json: " + (error2 instanceof Error ? error2.message : String(error2)));
   }
   const dirs = /* @__PURE__ */ new Map();
   for (const rootPath of roots) {
@@ -55745,7 +55748,8 @@ async function skillDirectories() {
         const dir = await realpath(path21.join(root2, item.name));
         if (path21.dirname(dir) === root2) dirs.set(item.name, dir);
       }
-    } catch {
+    } catch (error2) {
+      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
     }
   }
   return dirs;
@@ -55796,13 +55800,25 @@ async function skillEntry(name) {
   }
   return { uri: `skill://${name}/SKILL.md`, frontmatter, resources };
 }
+var loggedSkillSummary = false;
 async function skills() {
+  const dirs = await skillDirectories();
   const result2 = [];
-  for (const name of [...(await skillDirectories()).keys()].sort()) {
+  const skipped = [];
+  let builtIn = 0;
+  for (const [name, dir] of [...dirs].sort(([a2], [b]) => a2.localeCompare(b))) {
     try {
       result2.push(await skillEntry(name));
-    } catch {
+      if (dir.startsWith(SKILLS_ROOT + path21.sep)) builtIn++;
+    } catch (error2) {
+      skipped.push(name + ": " + (error2 instanceof Error ? error2.message : String(error2)));
     }
+  }
+  if (!loggedSkillSummary) {
+    loggedSkillSummary = true;
+    console.error("[Terminal Toolkit] Skills: " + result2.length + " available (" + builtIn + " built-in, " + (result2.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
+    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
+    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
   }
   return result2;
 }

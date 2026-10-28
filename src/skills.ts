@@ -31,6 +31,8 @@ function decodeSkillUri(uri: string): { name: string; relative: string } {
   return { name, relative: files.join("/") };
 }
 
+const skillWarnings = new Set<string>();
+
 async function skillDirectories(): Promise<Map<string, string>> {
   const roots = [SKILLS_ROOT];
   try {
@@ -40,7 +42,10 @@ async function skillDirectories(): Promise<Map<string, string>> {
       const expanded = value === "~" ? os.homedir() : value.startsWith("~/") ? path.join(os.homedir(), value.slice(2)) : value;
       roots.push(path.resolve(expanded));
     }
-  } catch { /* Missing or invalid configuration preserves built-in skills. */ }
+  } catch (error) {
+    if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
+      skillWarnings.add("Cannot read settings.json: " + (error instanceof Error ? error.message : String(error)));
+  }
   const dirs = new Map<string, string>();
   for (const rootPath of roots) {
     try {
@@ -50,7 +55,9 @@ async function skillDirectories(): Promise<Map<string, string>> {
         const dir = await realpath(path.join(root, item.name));
         if (path.dirname(dir) === root) dirs.set(item.name, dir);
       }
-    } catch { /* Missing roots are optional. */ }
+    } catch (error) {
+      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error instanceof Error ? error.message : String(error)));
+    }
   }
   return dirs;
 }
@@ -97,10 +104,26 @@ async function skillEntry(name: string) {
   return { uri: `skill://${name}/SKILL.md`, frontmatter, resources };
 }
 
+let loggedSkillSummary = false;
+
 async function skills() {
+  const dirs = await skillDirectories();
   const result = [];
-  for (const name of [...(await skillDirectories()).keys()].sort()) {
-    try { result.push(await skillEntry(name)); } catch { /* Ignore invalid skill folders. */ }
+  const skipped: string[] = [];
+  let builtIn = 0;
+  for (const [name, dir] of [...dirs].sort(([a], [b]) => a.localeCompare(b))) {
+    try {
+      result.push(await skillEntry(name));
+      if (dir.startsWith(SKILLS_ROOT + path.sep)) builtIn++;
+    } catch (error) {
+      skipped.push(name + ": " + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+  if (!loggedSkillSummary) {
+    loggedSkillSummary = true;
+    console.error("[Terminal Toolkit] Skills: " + result.length + " available (" + builtIn + " built-in, " + (result.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
+    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
+    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
   }
   return result;
 }
