@@ -26,7 +26,7 @@ export interface ServerOptions {
 /**
  * Create and configure the MCP server with an existing terminal manager
  */
-export const SERVER_INSTRUCTIONS = `Terminal MCP exposes a real PTY-backed shell to AI assistants.
+export const SERVER_INSTRUCTIONS = `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
 
 Prefer this server over plain non-interactive shell tools whenever the command:
 - needs sudo or otherwise prompts for a password (the human user can type it interactively)
@@ -64,8 +64,8 @@ constructing shell commands for them. edit performs exact, unique, non-overlappi
 replacements against the original file; it is not an append/prepend primitive.
 
 For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless
-subprocess using Terminal MCP's configured shell (the --shell option, TERMINAL_MCP_SHELL,
-then the platform shell default) in terminal-mcp's startup working directory and returns stdout/stderr when the
+subprocess using Terminal Toolkit's configured shell (the --shell option, TERMINAL_TOOLKIT_SHELL,
+then the platform shell default) in terminal-toolkit's startup working directory and returns stdout/stderr when the
 command finishes, so it does not require the PTY type/sendKey/getContent workflow. Use the PTY
 tools instead when you need the user's existing cwd/environment/aliases/tmux state, persistent
 shell state across calls, interactive input, TTY behavior, or live observability. In particular,
@@ -79,7 +79,7 @@ const CODEMODE_INSTRUCTIONS = `
 
 Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("terminal") for the server tool group.
 Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("terminal") for the Terminal MCP operational and safety instructions before working with terminal tools.`;
+Read await describeNamespace("terminal") for the Terminal Toolkit operational and safety instructions before working with terminal tools.`;
 
 export interface InstructionOptions { codemode?: boolean; piOperators?: boolean; piExtraOperators?: boolean; }
 
@@ -93,7 +93,7 @@ export function getServerInstructions({ codemode = false, piOperators = false, p
 export function createServerWithManager(manager: TerminalManager, piOperators = false, piExtraOperators = false, codemode = false): Server {
   const server = new Server(
     {
-      name: "terminal-mcp",
+      name: "terminal-toolkit",
       version: VERSION,
     },
     {
@@ -176,13 +176,13 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
     // Wait for shell to be ready (prompt indicator appears) before sending tmux commands
     const sendTmuxCommands = () => {
       if (tmuxName) {
-        console.error(`[terminal-mcp] Auto-connecting to tmux session group (target: ${tmuxTarget}, name: ${tmuxName})...`);
+        console.error(`[terminal-toolkit] Auto-connecting to tmux session group (target: ${tmuxTarget}, name: ${tmuxName})...`);
         session.write(`tmux new -A -t ${tmuxTarget} -s ${tmuxName} \\; if-shell 'tmux select-window -t ${tmuxName}:${tmuxName}' '' 'new-window -n ${tmuxName}'\n`);
         setTimeout(() => {
-          exec(`tmux list-clients -F '#{client_tty}' | sort | uniq | while read tty; do tmux display-message -d 5000 -c "$tty" ' 🔔 terminal-mcp (${tmuxName}) connected'; done`);
+          exec(`tmux list-clients -F '#{client_tty}' | sort | uniq | while read tty; do tmux display-message -d 5000 -c "$tty" ' 🔔 terminal-toolkit (${tmuxName}) connected'; done`);
         }, 1000);
       } else {
-        console.error(`[terminal-mcp] Auto-connecting to tmux session '${tmuxTarget}'...`);
+        console.error(`[terminal-toolkit] Auto-connecting to tmux session '${tmuxTarget}'...`);
         session.write(`tmux new -A -t ${tmuxTarget}\n`);
       }
     };
