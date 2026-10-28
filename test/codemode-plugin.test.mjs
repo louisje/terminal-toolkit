@@ -29,7 +29,7 @@ test('Claude plugin bootstrap runs the bundled codemode without project node_mod
         command: process.execPath,
         args: [join(dir, 'bootstrap.cjs'), '--headless', '--codemode', '--pi-operators'],
         cwd: dir,
-        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'TERMINAL_MCP')),
+        env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'TERMINAL_TOOLKIT')),
         stderr: 'pipe',
       }));
       assert.deepEqual((await client.listTools()).tools.map(x => x.name), ['codemode']);

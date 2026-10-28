@@ -15,7 +15,7 @@ npm run lint:fix   # Run ESLint with auto-fix
 
 ## Architecture Overview
 
-Terminal MCP is a headless terminal emulator exposed via Model Context Protocol (MCP). It has three operating modes:
+Terminal Toolkit is a headless terminal emulator exposed via Model Context Protocol (MCP). It has three operating modes:
 
 ### Tri-Mode Architecture
 
@@ -25,13 +25,13 @@ Terminal MCP is a headless terminal emulator exposed via Model Context Protocol 
    - `src/index.ts` → `startServer()` from `src/server.ts` (eagerly inits session)
    - **Recommended for MCP client configs** (CI, containers, non-interactive environments)
 
-2. **Interactive Mode** (stdin is TTY, no `--headless`): User runs `terminal-mcp` in their terminal
+2. **Interactive Mode** (stdin is TTY, no `--headless`): User runs `terminal-toolkit` in their terminal
    - Spawns a PTY shell process, pipes I/O to user's terminal
-   - Exposes a Unix socket (Unix: `/tmp/terminal-mcp.sock`, Windows: `\\.\pipe\terminal-mcp`) for AI tool access
+   - Exposes a Unix socket (Unix: `/tmp/terminal-toolkit.sock`, Windows: `\\.\pipe\terminal-toolkit`) for AI tool access
    - `src/index.ts` → `startInteractiveMode()` → creates `TerminalManager` + `createToolProxyServer()`
    - Supports optional `--sandbox` mode and `--record` mode
 
-3. **MCP Client Mode** (stdin is not TTY, no `--headless`): Claude Code spawns `terminal-mcp` as MCP server
+3. **MCP Client Mode** (stdin is not TTY, no `--headless`): Claude Code spawns `terminal-toolkit` as MCP server
    - Connects to the Unix socket from interactive mode
    - Serves MCP protocol over stdio to Claude Code
    - `src/client.ts` → `startMcpClientMode()` → proxies tool calls to socket
@@ -55,7 +55,7 @@ Terminal MCP is a headless terminal emulator exposed via Model Context Protocol 
 
 **Setup Layer** (`src/setup/`):
 - `clients.ts`: One adapter per supported AI tool (codex, copilot, gemini, opencode, claude-code, claude-desktop). Each adapter knows the client's config path, format (JSON or TOML), and the exact MCP server schema that client expects. Most use the standard `mcpServers` JSON shape via `makeMcpServersJsonAdapter`; codex (TOML) and opencode (different schema entirely — top-level `mcp`, command as array) have their own adapters.
-- `index.ts`: Orchestrates the `terminal-mcp setup` subcommand — flag parsing happens in `src/index.ts`, this module handles client selection (auto-detect or explicit `--client`), per-client install/uninstall, and result printing. Writes are atomic (write-to-temp + rename) and always create a `.bak` of the original.
+- `index.ts`: Orchestrates the `terminal-toolkit setup` subcommand — flag parsing happens in `src/index.ts`, this module handles client selection (auto-detect or explicit `--client`), per-client install/uninstall, and result printing. Writes are atomic (write-to-temp + rename) and always create a `.bak` of the original.
 
 **Transport Layer** (`src/transport/`):
 - `socket.ts`: Unix socket (or Windows named pipe) server for tool proxying between modes. Also has `SocketTransport` class implementing MCP's Transport interface.
@@ -112,6 +112,6 @@ Tool Proxy Server ←───────────────→ Socket Cli
 - Tools return `{ content: [{ type: "text", text: string }], isError?: boolean }` (except `takeScreenshot` png format which returns `{ type: "image", data: string, mimeType: string }`)
 - Key sequences are in `src/utils/keys.ts` (ANSI escape codes)
 - Recording format is asciicast v2 (compatible with `asciinema play`)
-- Socket path is resolved via `resolveSocketPath()` in `src/utils/platform.ts`; can be overridden with `TERMINAL_MCP_SOCKET` env var
-- Terminal default dimensions resolved via `getDefaultCols()`/`getDefaultRows()` in `src/utils/platform.ts`; can be overridden with `TERMINAL_MCP_COLS`/`TERMINAL_MCP_ROWS` env vars
-- Recording output directory defaults to `~/.local/state/terminal-mcp/recordings`; can be overridden with `TERMINAL_MCP_RECORD_DIR` env var
+- Socket path is resolved via `resolveSocketPath()` in `src/utils/platform.ts`; can be overridden with `TERMINAL_TOOLKIT_SOCKET` env var
+- Terminal default dimensions resolved via `getDefaultCols()`/`getDefaultRows()` in `src/utils/platform.ts`; can be overridden with `TERMINAL_TOOLKIT_COLS`/`TERMINAL_TOOLKIT_ROWS` env vars
+- Recording output directory defaults to `~/.local/state/terminal-toolkit/recordings`; can be overridden with `TERMINAL_TOOLKIT_RECORD_DIR` env var

@@ -62,7 +62,7 @@ export async function initialize(state, id = 1) {
     params: {
       protocolVersion: "2024-11-05",
       capabilities: {},
-      clientInfo: { name: "terminal-mcp-tests", version: "0" },
+      clientInfo: { name: "terminal-toolkit-tests", version: "0" },
     },
   });
   const response = await waitFor(() => findResponse(state, id));

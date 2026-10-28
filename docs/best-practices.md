@@ -1,4 +1,4 @@
-# Terminal MCP Best Practices
+# Terminal Toolkit Best Practices
 
 ## Choose PTY or stateless shell
 

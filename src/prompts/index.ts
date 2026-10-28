@@ -4,7 +4,7 @@ import {
   GetPromptRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const TOOL_USAGE_PROMPT = `# Terminal MCP Tool Usage Guide
+const TOOL_USAGE_PROMPT = `# Terminal Toolkit Tool Usage Guide
 
 ## Overview
 This MCP server provides tools to interact with a terminal emulator. Use these tools to execute commands and read output.
@@ -14,7 +14,7 @@ The terminal session is automatically initialized when the server starts - you c
 **First call getContent() without sessionId** to inspect whether the default terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
 
 ## When to prefer this server
-Prefer terminal-mcp over plain non-interactive shell tools whenever the command:
+Prefer terminal-toolkit over plain non-interactive shell tools whenever the command:
 - needs sudo or otherwise prompts for a password (the human can type it interactively into this PTY)
 - prompts the user for input during execution (ssh login, git push over HTTPS, npm login, etc.)
 - runs a TUI (vim, nano, less, more, htop, top, man, kubectl edit, gh pr create)
@@ -129,7 +129,7 @@ Send an OS-level desktop notification (popup/toast), not terminal output.
 
 Use this when a long-running task finishes, or when you need the user's input/decision, especially if they may not be watching this conversation right now. This is visible even if the user is focused on a different window.
 
-**Arguments:** message (required), title (default: "Terminal MCP"), sound (default: true)
+**Arguments:** message (required), title (default: "Terminal Toolkit"), sound (default: true)
 
 **Note:** Degrades gracefully to a text-only response in headless/CI environments without a desktop notification service - it will not throw an error.
 `;
@@ -137,7 +137,7 @@ Use this when a long-running task finishes, or when you need the user's input/de
 const prompts = [
   {
     name: "tool-usage",
-    description: "Instructions for effectively using terminal-mcp tools",
+    description: "Instructions for effectively using terminal-toolkit tools",
   },
 ];
 

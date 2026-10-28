@@ -1,6 +1,6 @@
 # Recording
 
-Terminal MCP supports recording terminal sessions to [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) format, compatible with [asciinema](https://asciinema.org/) for playback and sharing.
+Terminal Toolkit supports recording terminal sessions to [asciicast v2](https://docs.asciinema.org/manual/asciicast/v2/) format, compatible with [asciinema](https://asciinema.org/) for playback and sharing.
 
 ## Overview
 
@@ -11,19 +11,19 @@ There are two ways to record terminal sessions:
 
 ## CLI Recording
 
-Start terminal-mcp with recording enabled to capture the entire session.
+Start terminal-toolkit with recording enabled to capture the entire session.
 
 ### Basic Usage
 
 ```bash
-# Record with defaults (saves to ~/.local/state/terminal-mcp/recordings/)
-terminal-mcp --record
+# Record with defaults (saves to ~/.local/state/terminal-toolkit/recordings/)
+terminal-toolkit --record
 
 # Specify output directory
-terminal-mcp --record --record-dir=./my-recordings
+terminal-toolkit --record --record-dir=./my-recordings
 
 # Record only on failure (non-zero exit code)
-terminal-mcp --record=on-failure
+terminal-toolkit --record=on-failure
 ```
 
 ### CLI Options
@@ -41,9 +41,9 @@ terminal-mcp --record=on-failure
 
 The default recording directory follows XDG conventions:
 
-1. `TERMINAL_MCP_RECORD_DIR` environment variable (if set)
-2. `$XDG_STATE_HOME/terminal-mcp/recordings` (if XDG_STATE_HOME is set)
-3. `~/.local/state/terminal-mcp/recordings` (fallback)
+1. `TERMINAL_TOOLKIT_RECORD_DIR` environment variable (if set)
+2. `$XDG_STATE_HOME/terminal-toolkit/recordings` (if XDG_STATE_HOME is set)
+3. `~/.local/state/terminal-toolkit/recordings` (fallback)
 
 ### Recording Modes
 
@@ -77,7 +77,7 @@ Start recording terminal output. Only one recording can be active at a time.
 ```json
 {
   "recordingId": "63f64b587bd8817a",
-  "path": "/Users/you/.local/state/terminal-mcp/recordings/terminal-1769449938208-63f64b587bd8817a.cast",
+  "path": "/Users/you/.local/state/terminal-toolkit/recordings/terminal-1769449938208-63f64b587bd8817a.cast",
   "format": "v2",
   "mode": "always",
   "maxDuration": 3600,
@@ -111,7 +111,7 @@ Stop an active recording and finalize the asciicast file.
 ```json
 {
   "recordingId": "63f64b587bd8817a",
-  "path": "/Users/you/.local/state/terminal-mcp/recordings/terminal-1769449938208-63f64b587bd8817a.cast",
+  "path": "/Users/you/.local/state/terminal-toolkit/recordings/terminal-1769449938208-63f64b587bd8817a.cast",
   "durationMs": 62186,
   "bytesWritten": 11752,
   "saved": true,
@@ -143,24 +143,24 @@ any of those reasons is discarded rather than written to disk.
 4. getContent: {}
 
 5. stopRecording: {"recordingId": "abc123"}
-   → Recording saved to ~/.local/state/terminal-mcp/recordings/
+   → Recording saved to ~/.local/state/terminal-toolkit/recordings/
 ```
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `TERMINAL_MCP_RECORD_DIR` | Override default recording output directory |
-| `XDG_STATE_HOME` | XDG base directory for state files (used if TERMINAL_MCP_RECORD_DIR not set) |
+| `TERMINAL_TOOLKIT_RECORD_DIR` | Override default recording output directory |
+| `XDG_STATE_HOME` | XDG base directory for state files (used if TERMINAL_TOOLKIT_RECORD_DIR not set) |
 
 ### Example
 
 ```bash
 # Set default recording directory in .bashrc/.zshrc
-export TERMINAL_MCP_RECORD_DIR=~/my-recordings
+export TERMINAL_TOOLKIT_RECORD_DIR=~/my-recordings
 
 # Or override for a single session
-TERMINAL_MCP_RECORD_DIR=/tmp/debug-session terminal-mcp --record
+TERMINAL_TOOLKIT_RECORD_DIR=/tmp/debug-session terminal-toolkit --record
 ```
 
 ## Output Files
@@ -198,7 +198,7 @@ brew install asciinema  # macOS
 apt install asciinema   # Ubuntu/Debian
 
 # Play recording
-asciinema play ~/.local/state/terminal-mcp/recordings/terminal-*.cast
+asciinema play ~/.local/state/terminal-toolkit/recordings/terminal-*.cast
 
 # Play at 2x speed
 asciinema play -s 2 recording.cast
@@ -245,10 +245,10 @@ Stop recording after no terminal output for the specified number of seconds. The
 
 ```bash
 # Record with shorter timeouts for debugging
-terminal-mcp --record --max-duration=300 --inactivity-timeout=60
+terminal-toolkit --record --max-duration=300 --inactivity-timeout=60
 
 # Record with no inactivity limit (for long-running processes)
-terminal-mcp --record --inactivity-timeout=0
+terminal-toolkit --record --inactivity-timeout=0
 ```
 
 Via MCP tools:
@@ -279,7 +279,7 @@ Example: If you wait 30 seconds between commands, the recording will show only 2
 
 3. **Use `on-failure` for debugging** - Only keep recordings when something goes wrong
 
-4. **Set a default directory** - Configure `TERMINAL_MCP_RECORD_DIR` in your shell profile
+4. **Set a default directory** - Configure `TERMINAL_TOOLKIT_RECORD_DIR` in your shell profile
 
 5. **Clean up old recordings** - Recordings can accumulate; periodically clean the output directory
 

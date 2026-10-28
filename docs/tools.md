@@ -1,6 +1,6 @@
 # Tools Reference
 
-Terminal MCP exposes PTY tools and optional Pi-style operators. This document describes the terminal tools and the optional stateless shell operator.
+Terminal Toolkit exposes PTY tools and optional Pi-style operators. This document describes the terminal tools and the optional stateless shell operator.
 
 ## Overview
 
@@ -23,7 +23,7 @@ The default session may be directly visible to the human in interactive mode, bu
 
 ## shell (optional: `--pi-operators`)
 
-Runs one non-interactive command in a fresh subprocess using the configured Terminal MCP shell, **not necessarily Bash**. It uses the server startup working directory, not the current PTY directory. The call waits until the command finishes and does not retain environment variables, aliases, or cwd across invocations.
+Runs one non-interactive command in a fresh subprocess using the configured Terminal Toolkit shell, **not necessarily Bash**. It uses the server startup working directory, not the current PTY directory. The call waits until the command finishes and does not retain environment variables, aliases, or cwd across invocations.
 
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
@@ -549,7 +549,7 @@ Start recording terminal output to an asciicast v2 file. Only one recording can 
   "content": [
     {
       "type": "text",
-      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-mcp/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"format\": \"v2\",\n  \"mode\": \"always\"\n}"
+      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-toolkit/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"format\": \"v2\",\n  \"mode\": \"always\"\n}"
     }
   ]
 }
@@ -571,7 +571,7 @@ Start recording terminal output to an asciicast v2 file. Only one recording can 
   "content": [
     {
       "type": "text",
-      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-mcp/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"format\": \"v2\",\n  \"mode\": \"always\"\n}"
+      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-toolkit/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"format\": \"v2\",\n  \"mode\": \"always\"\n}"
     }
   ]
 }
@@ -596,8 +596,8 @@ If a recording is already active:
 ### Notes
 
 - Only one recording can be active at a time
-- Default output directory: `~/.local/state/terminal-mcp/recordings/`
-- Override with `TERMINAL_MCP_RECORD_DIR` environment variable
+- Default output directory: `~/.local/state/terminal-toolkit/recordings/`
+- Override with `TERMINAL_TOOLKIT_RECORD_DIR` environment variable
 - See [Recording Documentation](recording.md) for full details
 
 ---
@@ -643,7 +643,7 @@ Stop an active recording and finalize the asciicast file.
   "content": [
     {
       "type": "text",
-      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-mcp/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"durationMs\": 62186,\n  \"bytesWritten\": 11752,\n  \"saved\": true,\n  \"mode\": \"always\"\n}"
+      "text": "{\n  \"recordingId\": \"63f64b587bd8817a\",\n  \"path\": \"/Users/you/.local/state/terminal-toolkit/recordings/terminal-1769449938208-63f64b587bd8817a.cast\",\n  \"durationMs\": 62186,\n  \"bytesWritten\": 11752,\n  \"saved\": true,\n  \"mode\": \"always\"\n}"
     }
   ]
 }
@@ -754,7 +754,7 @@ All tools return errors in a consistent format:
 4. getContent: {}
 
 5. stopRecording: {"recordingId": "abc123"}
-   → Recording saved to ~/.local/state/terminal-mcp/recordings/
+   → Recording saved to ~/.local/state/terminal-toolkit/recordings/
 
 6. Play with: asciinema play <path-to-recording.cast>
 ```

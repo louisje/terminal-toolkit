@@ -70,7 +70,7 @@ export async function startMcpClientMode(
   // Create MCP server
   const server = new Server(
     {
-      name: "terminal-mcp",
+      name: "terminal-toolkit",
       version: VERSION,
     },
     {

@@ -28991,8 +28991,8 @@ var init_clients = __esm({
   "src/setup/clients.ts"() {
     "use strict";
     init_dist();
-    SERVER_NAME = "terminal-mcp";
-    SERVER_COMMAND = "terminal-mcp";
+    SERVER_NAME = "terminal-toolkit";
+    SERVER_COMMAND = "terminal-toolkit";
     SERVER_ARGS = ["--headless"];
     codex = {
       name: "codex",
@@ -29203,8 +29203,8 @@ async function runSetup(opts) {
   if (opts.dryRun) {
     console.log("Re-run without --dry-run to apply changes.");
   } else if (!opts.uninstall) {
-    console.log(`MCP entry installed as "terminal-mcp" with command: terminal-mcp --headless`);
-    console.log(`Make sure 'terminal-mcp' is on PATH (or use 'npm install -g @ellery/terminal-mcp').`);
+    console.log(`MCP entry installed as "terminal-toolkit" with command: terminal-toolkit --headless`);
+    console.log(`Make sure 'terminal-toolkit' is on PATH (or use 'npm install -g @ellery/terminal-toolkit').`);
   }
   return exitCode;
 }
@@ -29569,14 +29569,14 @@ var Temp = {
     }
   },
   truncate: (filePath) => {
-    const basename2 = path2.basename(filePath);
-    if (basename2.length <= LIMIT_BASENAME_LENGTH)
+    const basename = path2.basename(filePath);
+    if (basename.length <= LIMIT_BASENAME_LENGTH)
       return filePath;
-    const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename2);
+    const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename);
     if (!truncable)
       return filePath;
-    const truncationLength = basename2.length - LIMIT_BASENAME_LENGTH;
-    return `${filePath.slice(0, -basename2.length)}${truncable[1]}${truncable[2].slice(0, -truncationLength)}${truncable[3]}`;
+    const truncationLength = basename.length - LIMIT_BASENAME_LENGTH;
+    return `${filePath.slice(0, -basename.length)}${truncable[1]}${truncable[2].slice(0, -truncationLength)}${truncable[3]}`;
   }
 };
 node_default(Temp.purgeSyncAll);
@@ -43734,26 +43734,26 @@ import * as path10 from "path";
 import * as path9 from "path";
 import * as os5 from "os";
 function getDefaultRecordDir() {
-  if (process.env.TERMINAL_MCP_RECORD_DIR) {
-    return process.env.TERMINAL_MCP_RECORD_DIR;
+  if (process.env.TERMINAL_TOOLKIT_RECORD_DIR) {
+    return process.env.TERMINAL_TOOLKIT_RECORD_DIR;
   }
   const stateHome = process.env.XDG_STATE_HOME || path9.join(os5.homedir(), ".local", "state");
-  return path9.join(stateHome, "terminal-mcp", "recordings");
+  return path9.join(stateHome, "terminal-toolkit", "recordings");
 }
 function getDefaultSocketPath() {
-  if (process.env.TERMINAL_MCP_SOCKET) {
-    return process.env.TERMINAL_MCP_SOCKET;
+  if (process.env.TERMINAL_TOOLKIT_SOCKET) {
+    return process.env.TERMINAL_TOOLKIT_SOCKET;
   }
   if (process.platform === "win32") {
-    return "\\\\.\\pipe\\terminal-mcp";
+    return "\\\\.\\pipe\\terminal-toolkit";
   }
-  return path9.join(os5.tmpdir(), "terminal-mcp.sock");
+  return path9.join(os5.tmpdir(), "terminal-toolkit.sock");
 }
 function resolveSocketPath(socketPath) {
   return socketPath || getDefaultSocketPath();
 }
 function getDefaultCols() {
-  const envVal = process.env.TERMINAL_MCP_COLS;
+  const envVal = process.env.TERMINAL_TOOLKIT_COLS;
   if (envVal) {
     const parsed = parseInt(envVal, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -43761,7 +43761,7 @@ function getDefaultCols() {
   return 120;
 }
 function getDefaultRows() {
-  const envVal = process.env.TERMINAL_MCP_ROWS;
+  const envVal = process.env.TERMINAL_TOOLKIT_ROWS;
   if (envVal) {
     const parsed = parseInt(envVal, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -43769,8 +43769,8 @@ function getDefaultRows() {
   return 40;
 }
 function getDefaultShell() {
-  if (process.env.TERMINAL_MCP_SHELL) {
-    return process.env.TERMINAL_MCP_SHELL;
+  if (process.env.TERMINAL_TOOLKIT_SHELL) {
+    return process.env.TERMINAL_TOOLKIT_SHELL;
   }
   if (process.platform === "win32") {
     return process.env.COMSPEC || "cmd.exe";
@@ -43810,23 +43810,30 @@ var TerminalSession = class _TerminalSession {
     await session.initialize(options2);
     return session;
   }
+  // Git Bash expects POSIX paths even when Node.js runs on Windows.
+  // Use the OS temporary directory, translating drive paths for MSYS Bash.
+  shellPath(filePath) {
+    if (process.platform !== "win32") return filePath;
+    const normalized = filePath.replace(/\\/g, "/");
+    return normalized.replace(/^([A-Za-z]):\//, (_, drive) => `/${drive.toLowerCase()}/`);
+  }
   /**
    * Set up shell-specific prompt customization
    * Returns args to pass to shell and env modifications
    */
   setupShellPrompt(shellName, extraEnv, startupBanner, login) {
     const env5 = {
-      TERMINAL_MCP: "1",
+      TERMINAL_TOOLKIT: "1",
       ...extraEnv
     };
     const escapeBannerForShell = (banner) => {
       return banner.replace(/'/g, "'\\''");
     };
     if (shellName === "bash" || shellName === "sh") {
-      const homeDir = os6.homedir();
+      const homeDir = this.shellPath(os6.homedir());
       const bannerCmd = startupBanner ? `printf '%s\\n' '${escapeBannerForShell(startupBanner)}'` : "";
-      this.titleFile = path10.join(os6.tmpdir(), `terminal-mcp-title-${process.pid}`);
-      fs5.writeFileSync(this.titleFile, "terminal-mcp");
+      this.titleFile = path10.join(os6.tmpdir(), `terminal-toolkit-title-${process.pid}`);
+      fs5.writeFileSync(this.titleFile, "terminal-toolkit");
       let sourceUserConfig;
       if (login) {
         sourceUserConfig = `
@@ -43846,14 +43853,14 @@ fi`;
       const bashrcContent = `
 ${sourceUserConfig}
 # Title file for dynamic title updates from MCP clients
-_TERMINAL_MCP_TITLE_FILE="${this.titleFile}"
+_TERMINAL_TOOLKIT_TITLE_FILE="${this.shellPath(this.titleFile)}"
 # Set initial terminal title
-printf '\\033]0;[terminal-mcp]\\a'
+printf '\\033]0;[terminal-toolkit]\\a'
 # Prepend a marker to PS1 every prompt and refresh the title.
 # Re-runs each PROMPT_COMMAND so themes that rebuild PS1 keep the marker.
 _terminal_mcp_prompt_marker() {
-  local _title="terminal-mcp"
-  [ -f "$_TERMINAL_MCP_TITLE_FILE" ] && _title="$(< "$_TERMINAL_MCP_TITLE_FILE")"
+  local _title="terminal-toolkit"
+  [ -f "$_TERMINAL_TOOLKIT_TITLE_FILE" ] && _title="$(< "$_TERMINAL_TOOLKIT_TITLE_FILE")"
   printf '\\033]0;[%s] %s\\a' "$_title" "\${PWD/#$HOME/'~'}"
   case "$PS1" in
     *"${PROMPT_INDICATOR}"*) ;;
@@ -43867,18 +43874,18 @@ esac
 # Print startup banner
 ${bannerCmd}
 `;
-      this.rcFile = path10.join(os6.tmpdir(), `terminal-mcp-bashrc-${process.pid}`);
+      this.rcFile = path10.join(os6.tmpdir(), `terminal-toolkit-bashrc-${process.pid}`);
       fs5.writeFileSync(this.rcFile, bashrcContent);
-      env5.TERMINAL_MCP_RCFILE = this.rcFile;
-      return { args: ["--rcfile", this.rcFile], env: env5 };
+      env5.TERMINAL_TOOLKIT_RCFILE = this.rcFile;
+      return { args: ["--rcfile", this.shellPath(this.rcFile)], env: env5 };
     }
     if (shellName === "zsh") {
       const homeDir = os6.homedir();
-      this.zdotdir = path10.join(os6.tmpdir(), `terminal-mcp-zsh-${process.pid}`);
+      this.zdotdir = path10.join(os6.tmpdir(), `terminal-toolkit-zsh-${process.pid}`);
       fs5.mkdirSync(this.zdotdir, { recursive: true });
       if (!this.titleFile) {
-        this.titleFile = path10.join(os6.tmpdir(), `terminal-mcp-title-${process.pid}`);
-        fs5.writeFileSync(this.titleFile, "terminal-mcp");
+        this.titleFile = path10.join(os6.tmpdir(), `terminal-toolkit-title-${process.pid}`);
+        fs5.writeFileSync(this.titleFile, "terminal-toolkit");
       }
       const bannerCmd = startupBanner ? `printf '%s\\n' '${escapeBannerForShell(startupBanner)}'` : "";
       if (login) {
@@ -43896,16 +43903,16 @@ export ZDOTDIR="${homeDir}"
 # Source user's zshrc if it exists
 [ -f "${homeDir}/.zshrc" ] && source "${homeDir}/.zshrc"
 # Title file for dynamic title updates from MCP clients
-_TERMINAL_MCP_TITLE_FILE="${this.titleFile}"
+_TERMINAL_TOOLKIT_TITLE_FILE="${this.titleFile}"
 # Set initial terminal title
-print -Pn '\\e]0;[terminal-mcp]\\a'
+print -Pn '\\e]0;[terminal-toolkit]\\a'
 # Prepend a marker to PROMPT every precmd and refresh the title.
 # Registers AFTER user's zshrc so this hook fires after p10k/starship
 # regenerate PROMPT.
 autoload -Uz add-zsh-hook
 _terminal_mcp_prompt_marker() {
-  local _title="terminal-mcp"
-  [ -f "$_TERMINAL_MCP_TITLE_FILE" ] && _title="$(< "$_TERMINAL_MCP_TITLE_FILE")"
+  local _title="terminal-toolkit"
+  [ -f "$_TERMINAL_TOOLKIT_TITLE_FILE" ] && _title="$(< "$_TERMINAL_TOOLKIT_TITLE_FILE")"
   print -Pn "\\e]0;[$_title] %~\\a"
   if [[ "$PROMPT" != *"${PROMPT_INDICATOR}"* ]]; then
     PROMPT="%K{yellow}%F{black} ${PROMPT_INDICATOR} %f%k $PROMPT"
@@ -43922,11 +43929,11 @@ ${bannerCmd}
 `;
         fs5.writeFileSync(path10.join(this.zdotdir, ".zlogin"), zloginContent);
       }
-      env5.ZDOTDIR = this.zdotdir;
+      env5.ZDOTDIR = this.shellPath(this.zdotdir);
       return { args: login ? ["-l"] : [], env: env5 };
     }
     if (shellName === "powershell" || shellName === "powershell.exe" || shellName === "pwsh" || shellName === "pwsh.exe") {
-      env5.TERMINAL_MCP_PROMPT = "1";
+      env5.TERMINAL_TOOLKIT_PROMPT = "1";
       return { args: ["-NoLogo"], env: env5 };
     }
     if (shellName === "cmd" || shellName === "cmd.exe") {
@@ -43950,7 +43957,7 @@ ${bannerCmd}
       scrollback: 1e3,
       allowProposedApi: true
     });
-    const shellName = path10.basename(shell);
+    const shellName = path10.win32.basename(shell).replace(/\.exe$/i, "").toLowerCase();
     const { args: args2, env: env5 } = this.setupShellPrompt(shellName, options2.env, options2.startupBanner, options2.login);
     let spawnCmd = shell;
     let spawnArgs = args2;
@@ -44305,7 +44312,7 @@ var Recorder = class {
     this.inactivityTimeout = inactivityTimeout;
     const timestamp = Date.now();
     const filename = `terminal-${timestamp}-${id}.cast`;
-    this.tempPath = path11.join(os7.tmpdir(), `terminal-mcp-recording-${id}.cast`);
+    this.tempPath = path11.join(os7.tmpdir(), `terminal-toolkit-recording-${id}.cast`);
     this.finalPath = path11.join(outputDir, filename);
   }
   /**
@@ -45152,7 +45159,7 @@ var TOOL_DESCRIPTIONS = {
     main: "Start recording terminal output to an asciicast v2 file. Returns the recording ID and path where the file will be saved. Only one recording can be active at a time.",
     format: "Recording format (default: v2, asciicast v2 format)",
     mode: "Recording mode: always saves the recording, on-failure only saves if session exits with non-zero code (default: always)",
-    outputDir: "Directory to save the recording (default: ~/.local/state/terminal-mcp/recordings, or TERMINAL_MCP_RECORD_DIR env var)",
+    outputDir: "Directory to save the recording (default: ~/.local/state/terminal-toolkit/recordings, or TERMINAL_TOOLKIT_RECORD_DIR env var)",
     idleTimeLimit: "Max seconds between events in the recording (default: 2). Caps idle time to prevent long pauses during playback.",
     maxDuration: "Max recording duration in seconds (default: 3600 = 60 minutes). Recording will auto-stop when this limit is reached.",
     inactivityTimeout: "Stop recording after N seconds of no terminal output (default: 600 = 10 minutes). Resets on each output event."
@@ -45171,7 +45178,7 @@ var TOOL_DESCRIPTIONS = {
   notify: {
     main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. Silently degrades to a text-only response (no error thrown) in headless/CI environments without a desktop notification service.",
     message: "The notification body text (e.g. 'Build finished' or 'Need your input: which option do you want?')",
-    title: "The notification title (default: 'Terminal MCP')",
+    title: "The notification title (default: 'Terminal Toolkit')",
     sound: "Whether to play the OS notification sound (default: true). Set to false for quieter, less intrusive notifications."
   }
 };
@@ -45857,7 +45864,7 @@ async function handleStopRecording(manager, args2) {
 
 // src/tools/createSession.ts
 var createSessionSchema = external_exports.object({
-  shell: external_exports.string().optional().describe("Shell to use for this session (default: $TERMINAL_MCP_SHELL, $SHELL, or /bin/bash)"),
+  shell: external_exports.string().optional().describe("Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"),
   cols: external_exports.number().int().positive().optional().describe("Terminal width in columns (default: 80)"),
   rows: external_exports.number().int().positive().optional().describe("Terminal height in rows (default: 25)")
 });
@@ -45869,7 +45876,7 @@ var createSessionTool = {
     properties: {
       shell: {
         type: "string",
-        description: "Shell to use for this session (default: $TERMINAL_MCP_SHELL, $SHELL, or /bin/bash)"
+        description: "Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"
       },
       cols: {
         type: "number",
@@ -53887,7 +53894,7 @@ async function handleSetClipboard(_manager, args2) {
 var import_node_notifier = __toESM(require_node_notifier(), 1);
 var notifySchema = external_exports.object({
   message: external_exports.string().min(1).describe(TOOL_DESCRIPTIONS.notify.message),
-  title: external_exports.string().optional().default("Terminal MCP").describe(TOOL_DESCRIPTIONS.notify.title),
+  title: external_exports.string().optional().default("Terminal Toolkit").describe(TOOL_DESCRIPTIONS.notify.title),
   sound: external_exports.boolean().optional().default(true).describe(TOOL_DESCRIPTIONS.notify.sound)
 });
 var notifyTool = {
@@ -53903,7 +53910,7 @@ var notifyTool = {
       title: {
         type: "string",
         description: TOOL_DESCRIPTIONS.notify.title,
-        default: "Terminal MCP"
+        default: "Terminal Toolkit"
       },
       sound: {
         type: "boolean",
@@ -53990,7 +53997,7 @@ var operatorToolDefinitions = [
   { name: "read", description: "Read a text file directly without using the PTY or shell. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
   { name: "write", description: "Write a text file directly, creating parent directories and overwriting the file. Prefer this over shell redirection for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
   { name: "edit", description: "Apply exact unique non-overlapping string replacements against a file's original content. This is replacement-only, not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
-  { name: "shell", description: "Execute a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal MCP shell in the terminal-mcp startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
+  { name: "shell", description: "Execute a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
 ];
 var localPath = (path28) => resolve(operatorCwd, path28);
 async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal) {
@@ -55401,7 +55408,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
         if (query !== void 0 && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options2?.limit !== void 0 && (typeof options2.limit !== "number" || !Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options2?.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options2?.namespace && options2.namespace !== "terminal" && options2.namespace !== "terminal-mcp") return [];
+        if (options2?.namespace && options2.namespace !== "terminal" && options2.namespace !== "terminal-toolkit") return [];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         return summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => !words.length || d.score > 0).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
       }
@@ -55422,7 +55429,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
       execute: (args3) => {
         const [name] = args3;
         if (typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        return name === "terminal" || name === "terminal-mcp" ? { name: "terminal", instruction: namespaceInstruction, tools: summaries.map(({ name: name2, description }) => ({ name: name2, description })) } : null;
+        return name === "terminal" || name === "terminal-toolkit" ? { name: "terminal", instruction: namespaceInstruction, tools: summaries.map(({ name: name2, description }) => ({ name: name2, description })) } : null;
       }
     }
   ];
@@ -55530,7 +55537,7 @@ async function dispatchTool(manager, name, args2, piOperators = false, piExtraOp
 }
 
 // src/prompts/index.ts
-var TOOL_USAGE_PROMPT = `# Terminal MCP Tool Usage Guide
+var TOOL_USAGE_PROMPT = `# Terminal Toolkit Tool Usage Guide
 
 ## Overview
 This MCP server provides tools to interact with a terminal emulator. Use these tools to execute commands and read output.
@@ -55540,7 +55547,7 @@ The terminal session is automatically initialized when the server starts - you c
 **First call getContent() without sessionId** to inspect whether the default terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
 
 ## When to prefer this server
-Prefer terminal-mcp over plain non-interactive shell tools whenever the command:
+Prefer terminal-toolkit over plain non-interactive shell tools whenever the command:
 - needs sudo or otherwise prompts for a password (the human can type it interactively into this PTY)
 - prompts the user for input during execution (ssh login, git push over HTTPS, npm login, etc.)
 - runs a TUI (vim, nano, less, more, htop, top, man, kubectl edit, gh pr create)
@@ -55655,14 +55662,14 @@ Send an OS-level desktop notification (popup/toast), not terminal output.
 
 Use this when a long-running task finishes, or when you need the user's input/decision, especially if they may not be watching this conversation right now. This is visible even if the user is focused on a different window.
 
-**Arguments:** message (required), title (default: "Terminal MCP"), sound (default: true)
+**Arguments:** message (required), title (default: "Terminal Toolkit"), sound (default: true)
 
 **Note:** Degrades gracefully to a text-only response in headless/CI environments without a desktop notification service - it will not throw an error.
 `;
 var prompts = [
   {
     name: "tool-usage",
-    description: "Instructions for effectively using terminal-mcp tools"
+    description: "Instructions for effectively using terminal-toolkit tools"
   }
 ];
 function registerPrompts(server) {
@@ -55816,7 +55823,7 @@ function installStdioShutdownHandlers({ cleanup }) {
       process.stdout.write("", () => process.exit(code));
     };
     Promise.resolve().then(cleanup).catch((err) => {
-      console.error("[terminal-mcp] Shutdown cleanup failed:", err);
+      console.error("[terminal-toolkit] Shutdown cleanup failed:", err);
     }).finally(exitAfterStdoutDrain);
   };
   process.on("SIGINT", () => shutdown(0));
@@ -55837,7 +55844,7 @@ function installStdioShutdownHandlers({ cleanup }) {
 }
 
 // src/server.ts
-var SERVER_INSTRUCTIONS = `Terminal MCP exposes a real PTY-backed shell to AI assistants.
+var SERVER_INSTRUCTIONS = `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
 
 Prefer this server over plain non-interactive shell tools whenever the command:
 - needs sudo or otherwise prompts for a password (the human user can type it interactively)
@@ -55874,8 +55881,8 @@ constructing shell commands for them. edit performs exact, unique, non-overlappi
 replacements against the original file; it is not an append/prepend primitive.
 
 For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless
-subprocess using Terminal MCP's configured shell (the --shell option, TERMINAL_MCP_SHELL,
-then the platform shell default) in terminal-mcp's startup working directory and returns stdout/stderr when the
+subprocess using Terminal Toolkit's configured shell (the --shell option, TERMINAL_TOOLKIT_SHELL,
+then the platform shell default) in terminal-toolkit's startup working directory and returns stdout/stderr when the
 command finishes, so it does not require the PTY type/sendKey/getContent workflow. Use the PTY
 tools instead when you need the user's existing cwd/environment/aliases/tmux state, persistent
 shell state across calls, interactive input, TTY behavior, or live observability. In particular,
@@ -55888,7 +55895,7 @@ var CODEMODE_INSTRUCTIONS = `
 
 Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("terminal") for the server tool group.
 Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("terminal") for the Terminal MCP operational and safety instructions before working with terminal tools.`;
+Read await describeNamespace("terminal") for the Terminal Toolkit operational and safety instructions before working with terminal tools.`;
 function getServerInstructions({ codemode = false, piOperators = false, piExtraOperators = false } = {}) {
   if (codemode) return CODEMODE_INSTRUCTIONS.trim();
   return SERVER_INSTRUCTIONS + (piOperators ? PI_OPERATOR_INSTRUCTIONS : "") + (piExtraOperators ? PI_EXTRA_OPERATOR_INSTRUCTIONS : "");
@@ -55896,7 +55903,7 @@ function getServerInstructions({ codemode = false, piOperators = false, piExtraO
 function createServerWithManager(manager, piOperators = false, piExtraOperators = false, codemode = false) {
   const server = new Server(
     {
-      name: "terminal-mcp",
+      name: "terminal-toolkit",
       version: VERSION
     },
     {
@@ -55941,14 +55948,14 @@ async function startServer(options2 = {}) {
     const tmuxName = options2.title?.toLowerCase();
     const sendTmuxCommands = () => {
       if (tmuxName) {
-        console.error(`[terminal-mcp] Auto-connecting to tmux session group (target: ${tmuxTarget}, name: ${tmuxName})...`);
+        console.error(`[terminal-toolkit] Auto-connecting to tmux session group (target: ${tmuxTarget}, name: ${tmuxName})...`);
         session.write(`tmux new -A -t ${tmuxTarget} -s ${tmuxName} \\; if-shell 'tmux select-window -t ${tmuxName}:${tmuxName}' '' 'new-window -n ${tmuxName}'
 `);
         setTimeout(() => {
-          exec2(`tmux list-clients -F '#{client_tty}' | sort | uniq | while read tty; do tmux display-message -d 5000 -c "$tty" ' \u{1F514} terminal-mcp (${tmuxName}) connected'; done`);
+          exec2(`tmux list-clients -F '#{client_tty}' | sort | uniq | while read tty; do tmux display-message -d 5000 -c "$tty" ' \u{1F514} terminal-toolkit (${tmuxName}) connected'; done`);
         }, 1e3);
       } else {
-        console.error(`[terminal-mcp] Auto-connecting to tmux session '${tmuxTarget}'...`);
+        console.error(`[terminal-toolkit] Auto-connecting to tmux session '${tmuxTarget}'...`);
         session.write(`tmux new -A -t ${tmuxTarget}
 `);
       }
@@ -55982,7 +55989,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   } });
   const server = new Server(
     {
-      name: "terminal-mcp",
+      name: "terminal-toolkit",
       version: VERSION
     },
     {
@@ -56501,20 +56508,7 @@ var YELLOW_COLOR = "\x1B[33m";
 var WHITE_COLOR = "\x1B[39m";
 var GREEN_COLOR = "\x1B[32m";
 var RESET = "\x1B[0m";
-var LOGO = `
-\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2557   \u2588\u2588\u2588\u2557\u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557
-\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551
-   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2554\u2588\u2588\u2588\u2588\u2554\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551
-   \u2588\u2588\u2551   \u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u255A\u2588\u2588\u2554\u255D\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2551
-   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551 \u255A\u2550\u255D \u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
-   \u255A\u2550\u255D   \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u255D\u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D
-                    \u2588\u2588\u2588\u2557   \u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2557
-                    \u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557
-                    \u2588\u2588\u2554\u2588\u2588\u2588\u2588\u2554\u2588\u2588\u2551\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D
-                    \u2588\u2588\u2551\u255A\u2588\u2588\u2554\u255D\u2588\u2588\u2551\u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2550\u2550\u255D
-                    \u2588\u2588\u2551 \u255A\u2550\u255D \u2588\u2588\u2551\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551
-                    \u255A\u2550\u255D     \u255A\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D
-`.trim();
+var LOGO = " _______ ______ _____  __  __ _____ _   _          _\n|__   __|  ____|  __ \\|  \\/  |_   _| \\ | |   /\\   | |\n   | |  | |__  | |__) | \\  / | | | |  \\| |  /  \\  | |\n   | |  |  __| |  _  /| |\\/| | | | | . ` | / /\\ \\ | |\n   | |  | |____| | \\ \\| |  | |_| |_| |\\  |/ ____ \\| |____\n   |_|  |______|_|  \\_\\_|  |_|_____|_| \\_/_/    \\_\\______|\n _______ ____   ____  _      _  _______ _______\n|__   __/ __ \\ / __ \\| |    | |/ /_   _|__   __|\n   | | | |  | | |  | | |    | ' /  | |    | |\n   | | | |  | | |  | | |    |  <   | |    | |\n   | | | |__| | |__| | |____| . \\ _| |_   | |\n   |_|  \\____/ \\____/|______|_|\\_\\_____|  |_|";
 function getBanner(options2) {
   const logoLines = LOGO.split("\n");
   const maxLogoWidth = Math.max(...logoLines.map((l) => stringWidth2(l)));
@@ -56540,7 +56534,7 @@ function getBanner(options2) {
   const mcpConfig = `{
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp"
+      "command": "terminal-toolkit"
     }
   }
 }`;
@@ -60359,7 +60353,7 @@ function isSelectable(item) {
 }
 async function promptForPermissions() {
   if (!process.stdin.isTTY) {
-    console.log("[terminal-mcp] Non-interactive mode, using default sandbox permissions");
+    console.log("[terminal-toolkit] Non-interactive mode, using default sandbox permissions");
     return getDefaultFromItems(createDefaultItems());
   }
   const items = createDefaultItems();
@@ -60714,22 +60708,22 @@ if (subcommand === "setup") {
       i2++;
     } else if (a2 === "--help" || a2 === "-h") {
       console.log(`
-terminal-mcp setup \u2014 install the terminal-mcp MCP server entry into AI tool configs
+terminal-toolkit setup \u2014 install the terminal-toolkit MCP server entry into AI tool configs
 
-Usage: terminal-mcp setup [options]
+Usage: terminal-toolkit setup [options]
 
 Options:
   --client <names>   Comma-separated client names, or 'all'. Default: every detected client.
                      Known: codex, copilot, gemini, opencode, claude-code, claude-desktop
   --dry-run          Print what would change without writing.
-  --uninstall        Remove the terminal-mcp entry instead of adding it.
+  --uninstall        Remove the terminal-toolkit entry instead of adding it.
   --help, -h         Show this help.
 
 Examples:
-  terminal-mcp setup
-  terminal-mcp setup --dry-run
-  terminal-mcp setup --client claude-code,gemini
-  terminal-mcp setup --uninstall --client all
+  terminal-toolkit setup
+  terminal-toolkit setup --dry-run
+  terminal-toolkit setup --client claude-code,gemini
+  terminal-toolkit setup --uninstall --client all
 `);
       process.exit(0);
     }
@@ -60863,20 +60857,20 @@ for (let i2 = 0; i2 < args.length; i2++) {
       break;
     case "--version":
     case "-v":
-      console.log(`terminal-mcp v${version4}`);
+      console.log(`terminal-toolkit v${version4}`);
       process.exit(0);
     case "--help":
     case "-h":
       console.log(`
-terminal-mcp v${version4} - A headless terminal emulator exposed via MCP
+terminal-toolkit v${version4} - A headless terminal emulator exposed via MCP
 
-Usage: terminal-mcp [options]
-       terminal-mcp setup [options]   Install MCP entry into AI tool configs (run 'terminal-mcp setup --help')
+Usage: terminal-toolkit [options]
+       terminal-toolkit setup [options]   Install MCP entry into AI tool configs (run 'terminal-toolkit setup --help')
 
 Options:
-  --cols <number>        Terminal width in columns (default: $TERMINAL_MCP_COLS or 120)
-  --rows <number>        Terminal height in rows (default: $TERMINAL_MCP_ROWS or 40)
-  --shell <path>         Shell to use (default: $TERMINAL_MCP_SHELL, $SHELL, or bash)
+  --cols <number>        Terminal width in columns (default: $TERMINAL_TOOLKIT_COLS or 120)
+  --rows <number>        Terminal height in rows (default: $TERMINAL_TOOLKIT_ROWS or 40)
+  --shell <path>         Shell to use (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or bash)
   -l, --login            Start a login shell (sources ~/.bash_profile or ~/.zprofile
                          instead of ~/.bashrc or ~/.zshrc only)
   --socket <path>        IPC socket/pipe path for MCP (default: ${DEFAULT_SOCKET_PATH})
@@ -60902,8 +60896,8 @@ Recording Options:
                       - on-failure: Only save recordings on non-zero exit
                       - off: Disable recording
   --record-dir <dir>  Recording output directory
-                      Default: ~/.local/state/terminal-mcp/recordings
-                      Override: TERMINAL_MCP_RECORD_DIR env var
+                      Default: ~/.local/state/terminal-toolkit/recordings
+                      Override: TERMINAL_TOOLKIT_RECORD_DIR env var
   --record-format <f> Recording format: v2 (default: v2, asciicast v2 format)
   --idle-time-limit <sec>  Max idle time between events (default: 2s)
                       Caps idle time in recordings to prevent long pauses
@@ -60913,10 +60907,10 @@ Recording Options:
                       Resets on each terminal output event
 
 Environment Variables:
-  TERMINAL_MCP_COLS        Default terminal width (overridden by --cols)
-  TERMINAL_MCP_ROWS        Default terminal height (overridden by --rows)
-  TERMINAL_MCP_SOCKET      Default socket/pipe path for MCP (overridden by --socket)
-  TERMINAL_MCP_RECORD_DIR  Default recording output directory
+  TERMINAL_TOOLKIT_COLS        Default terminal width (overridden by --cols)
+  TERMINAL_TOOLKIT_ROWS        Default terminal height (overridden by --rows)
+  TERMINAL_TOOLKIT_SOCKET      Default socket/pipe path for MCP (overridden by --socket)
+  TERMINAL_TOOLKIT_RECORD_DIR  Default recording output directory
 
 Mode Detection:
   - If --headless or --tmux: Headless mode (embedded PTY + MCP server over stdio)
@@ -60924,15 +60918,15 @@ Mode Detection:
   - If stdin is not a TTY: MCP client mode (connects to socket, serves MCP)
 
 Interactive Mode (run in your terminal):
-  terminal-mcp              # Normal mode
-  terminal-mcp --sandbox    # With sandbox (interactive permission prompt)
+  terminal-toolkit              # Normal mode
+  terminal-toolkit --sandbox    # With sandbox (interactive permission prompt)
 
   This gives you an interactive shell. AI can observe/interact via MCP.
 
   With recording:
-  terminal-mcp --record
-  terminal-mcp --record --record-dir=./project-recordings
-  terminal-mcp --record=on-failure --idle-time-limit=5
+  terminal-toolkit --record
+  terminal-toolkit --record --record-dir=./project-recordings
+  terminal-toolkit --record=on-failure --idle-time-limit=5
 
 Sandbox Mode:
   When --sandbox is enabled, the terminal runs with restricted access:
@@ -60941,7 +60935,7 @@ Sandbox Mode:
 
   Without --sandbox-config, an interactive prompt lets you configure permissions.
 
-  Example config file (~/.terminal-mcp-sandbox.json):
+  Example config file (~/.terminal-toolkit-sandbox.json):
   {
     "filesystem": {
       "readWrite": [".", "/tmp"],
@@ -60954,8 +60948,8 @@ Sandbox Mode:
   }
 
 Headless Mode (no TTY required, for CI/containers/MCP servers):
-  terminal-mcp --headless
-  terminal-mcp --headless --cols 120 --rows 40
+  terminal-toolkit --headless
+  terminal-toolkit --headless --cols 120 --rows 40
 
   Spawns a PTY shell internally and serves MCP directly over stdio.
   No separate interactive session or socket needed.
@@ -60964,7 +60958,7 @@ Headless Mode (no TTY required, for CI/containers/MCP servers):
   {
     "mcpServers": {
       "terminal": {
-        "command": "terminal-mcp",
+        "command": "terminal-toolkit",
         "args": ["--headless", "--cols", "120", "--rows", "40"]
       }
     }
@@ -60974,7 +60968,7 @@ MCP Client Mode (add to your MCP client config):
   {
     "mcpServers": {
       "terminal": {
-        "command": "terminal-mcp"
+        "command": "terminal-toolkit"
       }
     }
   }
@@ -60988,21 +60982,21 @@ if (options.tmux) {
 async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (options.useMcp) {
-    console.error("[terminal-mcp] Starting in MCP mode...");
+    console.error("[terminal-toolkit] Starting in MCP mode...");
     const fs25 = await import("fs");
     if (fs25.existsSync(socketPath)) {
       try {
-        console.error("[terminal-mcp] Found existing session, connecting as client...");
+        console.error("[terminal-toolkit] Found existing session, connecting as client...");
         if (options.tmux) {
-          console.error("[terminal-mcp] Note: --tmux ignored when connecting to existing session.");
+          console.error("[terminal-toolkit] Note: --tmux ignored when connecting to existing session.");
         }
         await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
         return;
       } catch {
-        console.error("[terminal-mcp] Failed to connect to existing session, creating new PTY...");
+        console.error("[terminal-toolkit] Failed to connect to existing session, creating new PTY...");
       }
     } else {
-      console.error("[terminal-mcp] No existing session found, creating new PTY...");
+      console.error("[terminal-toolkit] No existing session found, creating new PTY...");
     }
     await startServer({
       cols: options.cols ?? getDefaultCols(),
@@ -61018,9 +61012,9 @@ async function main() {
     return;
   }
   const isInteractive = process.stdin.isTTY;
-  if (process.env.TERMINAL_MCP === "1") {
+  if (process.env.TERMINAL_TOOLKIT === "1") {
     console.error(
-      "Error: terminal-mcp cannot be run from within itself.\nYou are already inside a terminal-mcp session.\n\nTo use MCP tools, configure your MCP client to connect to this session."
+      "Error: terminal-toolkit cannot be run from within itself.\nYou are already inside a terminal-toolkit session.\n\nTo use MCP tools, configure your MCP client to connect to this session."
     );
     process.exit(1);
   }
@@ -61059,17 +61053,17 @@ async function startInteractiveMode(socketPath) {
     if (!sandboxController.isSupported()) {
       const platform2 = sandboxController.getPlatform();
       if (platform2 === "win32") {
-        console.error("[terminal-mcp] Error: Sandbox mode is not supported on Windows.");
+        console.error("[terminal-toolkit] Error: Sandbox mode is not supported on Windows.");
       } else {
-        console.error(`[terminal-mcp] Error: Sandbox mode is not supported on platform '${platform2}'.`);
+        console.error(`[terminal-toolkit] Error: Sandbox mode is not supported on platform '${platform2}'.`);
       }
-      console.error("[terminal-mcp] Please run without the --sandbox flag.");
+      console.error("[terminal-toolkit] Please run without the --sandbox flag.");
       process.exit(1);
     }
     const depCheck = sandboxController.checkLinuxDependencies();
     if (!depCheck.supported) {
-      console.error(`[terminal-mcp] Error: Sandbox dependencies not available.`);
-      console.error(`[terminal-mcp] Missing: ${depCheck.message}`);
+      console.error(`[terminal-toolkit] Error: Sandbox dependencies not available.`);
+      console.error(`[terminal-toolkit] Missing: ${depCheck.message}`);
       console.error("");
       console.error("To install on Arch Linux:");
       console.error("  sudo pacman -S bubblewrap socat");
@@ -61084,9 +61078,9 @@ async function startInteractiveMode(socketPath) {
     if (options.sandboxConfig) {
       try {
         permissions = loadConfigFromFile(options.sandboxConfig);
-        console.log(`[terminal-mcp] Loaded sandbox config from ${options.sandboxConfig}`);
+        console.log(`[terminal-toolkit] Loaded sandbox config from ${options.sandboxConfig}`);
       } catch (error2) {
-        console.error(`[terminal-mcp] Failed to load sandbox config: ${error2}`);
+        console.error(`[terminal-toolkit] Failed to load sandbox config: ${error2}`);
         process.exit(1);
       }
     } else {
@@ -61094,7 +61088,7 @@ async function startInteractiveMode(socketPath) {
         permissions = await promptForPermissions();
       } catch (error2) {
         if (error2 instanceof Error && error2.message === "cancelled") {
-          console.log("[terminal-mcp] Cancelled.");
+          console.log("[terminal-toolkit] Cancelled.");
           process.exit(0);
         }
         throw error2;
@@ -61103,10 +61097,10 @@ async function startInteractiveMode(socketPath) {
     const status = await sandboxController.initialize(permissions);
     sandboxEnabled = status.enabled;
     if (status.enabled) {
-      console.log(`[terminal-mcp] Sandbox enabled (${status.platform})`);
+      console.log(`[terminal-toolkit] Sandbox enabled (${status.platform})`);
     } else {
-      console.error(`[terminal-mcp] Error: Failed to initialize sandbox: ${status.reason}`);
-      console.error("[terminal-mcp] Please run without the --sandbox flag or fix the issue above.");
+      console.error(`[terminal-toolkit] Error: Failed to initialize sandbox: ${status.reason}`);
+      console.error("[terminal-toolkit] Please run without the --sandbox flag or fix the issue above.");
       process.exit(1);
     }
   }
@@ -61150,7 +61144,7 @@ async function startInteractiveMode(socketPath) {
   session.onExit(async (code) => {
     const recordings = await manager.finalizeRecordings(code);
     console.log(`
-[terminal-mcp] Shell exited with code ${code}`);
+[terminal-toolkit] Shell exited with code ${code}`);
     const savedRecordings = recordings.filter((r) => r.saved);
     if (savedRecordings.length > 0) {
       console.log("\nRecordings saved:");

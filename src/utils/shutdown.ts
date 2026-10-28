@@ -50,7 +50,7 @@ export function installStdioShutdownHandlers({ cleanup }: ShutdownOptions): {
       .catch((err) => {
         // stderr is safe in stdio MCP mode; a stranded recording or failed
         // teardown must not vanish without a trace.
-        console.error("[terminal-mcp] Shutdown cleanup failed:", err);
+        console.error("[terminal-toolkit] Shutdown cleanup failed:", err);
       })
       .finally(exitAfterStdoutDrain);
   };

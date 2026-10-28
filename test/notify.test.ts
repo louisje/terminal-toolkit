@@ -9,7 +9,7 @@ test("notifySchema requires a non-empty message", () => {
 
 test("notifySchema defaults title and sound", () => {
   const parsed = notifySchema.parse({ message: "hello" });
-  assert.equal(parsed.title, "Terminal MCP");
+  assert.equal(parsed.title, "Terminal Toolkit");
   assert.equal(parsed.sound, true);
 });
 

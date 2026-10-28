@@ -8,7 +8,7 @@ export const notifySchema = z.object({
   title: z
     .string()
     .optional()
-    .default("Terminal MCP")
+    .default("Terminal Toolkit")
     .describe(TOOL_DESCRIPTIONS.notify.title),
   sound: z
     .boolean()
@@ -32,7 +32,7 @@ export const notifyTool = {
       title: {
         type: "string",
         description: TOOL_DESCRIPTIONS.notify.title,
-        default: "Terminal MCP",
+        default: "Terminal Toolkit",
       },
       sound: {
         type: "boolean",

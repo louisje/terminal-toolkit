@@ -13,7 +13,7 @@ test("tool definitions keep 15 by default and expose 19 with pi operators", () =
 });
 
 test("read, write, and edit implement the basic operator semantics", async () => {
-  const dir = await mkdtemp(join(tmpdir(), "terminal-mcp-operators-"));
+  const dir = await mkdtemp(join(tmpdir(), "terminal-toolkit-operators-"));
   const path = join(dir, "nested", "file.txt");
   try {
     await handleOperatorTool("write", { path, content: "one\ntwo\nthree" });
@@ -44,7 +44,7 @@ test("shell returns output, exit failures, and timeout failures", async () => {
 
 test("shell honors an explicitly configured shell", async (t) => {
   if (process.platform === "win32") return t.skip("POSIX shell fixture");
-  const dir = await mkdtemp(join(tmpdir(), "terminal-mcp-shell-"));
+  const dir = await mkdtemp(join(tmpdir(), "terminal-toolkit-shell-"));
   const shell = join(dir, "configured-shell");
   try {
     await writeFile(shell, "#!/bin/sh\nprintf 'configured-shell\\n' >&2\nexec /bin/sh \"$@\"\n", { mode: 0o755 });
@@ -57,17 +57,17 @@ test("shell honors an explicitly configured shell", async (t) => {
 
 test("shell uses the environment-selected shell by default", async (t) => {
   if (process.platform === "win32") return t.skip("POSIX shell fixture");
-  const dir = await mkdtemp(join(tmpdir(), "terminal-mcp-shell-env-"));
+  const dir = await mkdtemp(join(tmpdir(), "terminal-toolkit-shell-env-"));
   const shell = join(dir, "configured-shell");
-  const previous = process.env.TERMINAL_MCP_SHELL;
+  const previous = process.env.TERMINAL_TOOLKIT_SHELL;
   try {
     await writeFile(shell, "#!/bin/sh\nprintf 'env-shell\\n' >&2\nexec /bin/sh \"$@\"\n", { mode: 0o755 });
-    process.env.TERMINAL_MCP_SHELL = shell;
+    process.env.TERMINAL_TOOLKIT_SHELL = shell;
     const response = await handleOperatorTool("shell", { command: "printf env-ok" });
     assert.equal(response.content[0]?.text, "env-okenv-shell\n");
   } finally {
-    if (previous === undefined) delete process.env.TERMINAL_MCP_SHELL;
-    else process.env.TERMINAL_MCP_SHELL = previous;
+    if (previous === undefined) delete process.env.TERMINAL_TOOLKIT_SHELL;
+    else process.env.TERMINAL_TOOLKIT_SHELL = previous;
     await rm(dir, { recursive: true, force: true });
   }
 });

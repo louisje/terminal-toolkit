@@ -26,7 +26,7 @@ export declare const notifyTool: {
             };
             title: {
                 type: string;
-                description: "The notification title (default: 'Terminal MCP')";
+                description: "The notification title (default: 'Terminal Toolkit')";
                 default: string;
             };
             sound: {

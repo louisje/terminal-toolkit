@@ -13,21 +13,8 @@ const WHITE_COLOR = "\x1b[39m";   // default foreground (theme-appropriate)
 const GREEN_COLOR = "\x1b[32m";   // green
 const RESET = "\x1b[0m";
 
-// ANSI Shadow style figlet logo for "TERMINAL" + "MCP" stacked
-const LOGO = `
-████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗
-╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║
-   ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║
-   ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║
-   ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
-                    ███╗   ███╗ ██████╗██████╗
-                    ████╗ ████║██╔════╝██╔══██╗
-                    ██╔████╔██║██║     ██████╔╝
-                    ██║╚██╔╝██║██║     ██╔═══╝
-                    ██║ ╚═╝ ██║╚██████╗██║
-                    ╚═╝     ╚═╝ ╚═════╝╚═╝
-`.trim();
+// Large figlet logo for TERMINAL + TOOLKIT, rendered in two brand colors
+const LOGO = " _______ ______ _____  __  __ _____ _   _          _\n|__   __|  ____|  __ \\|  \\/  |_   _| \\ | |   /\\   | |\n   | |  | |__  | |__) | \\  / | | | |  \\| |  /  \\  | |\n   | |  |  __| |  _  /| |\\/| | | | | . ` | / /\\ \\ | |\n   | |  | |____| | \\ \\| |  | |_| |_| |\\  |/ ____ \\| |____\n   |_|  |______|_|  \\_\\_|  |_|_____|_| \\_/_/    \\_\\______|\n _______ ____   ____  _      _  _______ _______\n|__   __/ __ \\ / __ \\| |    | |/ /_   _|__   __|\n   | | | |  | | |  | | |    | ' /  | |    | |\n   | | | |  | | |  | | |    |  <   | |    | |\n   | | | |__| | |__| | |____| . \\ _| |_   | |\n   |_|  \\____/ \\____/|______|_|\\_\\_____|  |_|";
 
 export interface BannerOptions {
   socketPath: string;
@@ -51,7 +38,7 @@ export function getBanner(options: BannerOptions): string {
   const horizontalLine = "─".repeat(boxWidth);
 
   // Center the logo as a block (same left padding for all lines)
-  // First 6 lines are TERMINAL (blue), last 6 lines are MCP (pink)
+  // First 6 lines are TERMINAL (cyan), last 6 lines are TOOLKIT (magenta)
   const centeredLogo = logoLines.map((line, index) => {
     const rightPad = boxWidth - 2 - stringWidth(line);
     const color = index < 6 ? BRAND_COLOR : PINK_COLOR;
@@ -79,7 +66,7 @@ export function getBanner(options: BannerOptions): string {
   const mcpConfig = `{
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp"
+      "command": "terminal-toolkit"
     }
   }
 }`;

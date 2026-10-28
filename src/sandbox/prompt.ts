@@ -69,7 +69,7 @@ function isSelectable(item: Item): item is PathItem | NetworkItem | AddItem {
 export async function promptForPermissions(): Promise<SandboxPermissions> {
   // If not a TTY, return defaults
   if (!process.stdin.isTTY) {
-    console.log("[terminal-mcp] Non-interactive mode, using default sandbox permissions");
+    console.log("[terminal-toolkit] Non-interactive mode, using default sandbox permissions");
     return getDefaultFromItems(createDefaultItems());
   }
 

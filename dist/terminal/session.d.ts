@@ -50,6 +50,7 @@ export declare class TerminalSession {
      * Use this instead of the constructor to support async sandbox initialization
      */
     static create(options?: TerminalSessionOptions): Promise<TerminalSession>;
+    private shellPath;
     /**
      * Set up shell-specific prompt customization
      * Returns args to pass to shell and env modifications

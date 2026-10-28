@@ -1,12 +1,12 @@
 # Installation
 
-This guide covers how to install and set up Terminal MCP.
+This guide covers how to install and set up Terminal Toolkit.
 
 ## Prerequisites
 
 ### Node.js
 
-Terminal MCP requires Node.js 18.0.0 or later. Check your version:
+Terminal Toolkit requires Node.js 18.0.0 or later. Check your version:
 
 ```bash
 node --version
@@ -16,7 +16,7 @@ If you need to install or update Node.js, visit [nodejs.org](https://nodejs.org/
 
 ### Build Tools
 
-Terminal MCP uses `node-pty`, a native module that requires compilation. You'll need platform-specific build tools:
+Terminal Toolkit uses `node-pty`, a native module that requires compilation. You'll need platform-specific build tools:
 
 #### macOS
 
@@ -56,8 +56,8 @@ Or install Visual Studio Build Tools manually from [visualstudio.microsoft.com](
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/elleryfamilia/terminal-mcp.git
-cd terminal-mcp
+git clone https://github.com/elleryfamilia/terminal-toolkit.git
+cd terminal-toolkit
 ```
 
 2. Install dependencies:
@@ -80,24 +80,24 @@ ls dist/
 The easiest way to install is using the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-mcp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-toolkit/main/install.sh | bash
 ```
 
-This will clone the repo, build it, and create a `terminal-mcp` symlink in your PATH.
+This will clone the repo, build it, and create a `terminal-toolkit` symlink in your PATH.
 
 ## MCP Client Integration
 
-Terminal MCP works with any MCP-compatible client. Add it to your MCP server configuration.
+Terminal Toolkit works with any MCP-compatible client. Add it to your MCP server configuration.
 
 ### Configuration
 
-After running the install script, add Terminal MCP to your MCP client configuration:
+After running the install script, add Terminal Toolkit to your MCP client configuration:
 
 ```json
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp"
+      "command": "terminal-toolkit"
     }
   }
 }
@@ -109,7 +109,7 @@ With custom options:
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp",
+      "command": "terminal-toolkit",
       "args": ["--cols", "100", "--rows", "30", "--shell", "/bin/zsh"]
     }
   }
@@ -186,13 +186,13 @@ npm run build
 Re-run the install script to update:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-mcp/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-toolkit/main/install.sh | bash
 ```
 
 Or manually:
 
 ```bash
-cd ~/.terminal-mcp
+cd ~/.terminal-toolkit
 git pull
 npm install
 npm run build

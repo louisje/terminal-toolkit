@@ -37,7 +37,7 @@ test('discovery honors enabled operator sets and validates search options', {tim
   assert.equal(none.names.includes('shell'), false);
   assert.deepEqual(none.names, none.ns.tools.map(t => t.name));
   assert.equal((await evaluate('text(await searchTools("shell"))')).some(t=>t.name==='shell'), false);
-  const enabled = await evaluate('text({names:(await searchTools()).map(t=>t.name), ns:await describeNamespace("terminal-mcp")})', true);
+  const enabled = await evaluate('text({names:(await searchTools()).map(t=>t.name), ns:await describeNamespace("terminal-toolkit")})', true);
   assert.equal(enabled.names.includes('shell'), true);
   assert.deepEqual(enabled.names, enabled.ns.tools.map(t => t.name));
   assert.equal((await evaluate('text(await searchTools("shell"))', true)).some(t=>t.name==='shell'), true);

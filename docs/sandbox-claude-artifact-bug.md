@@ -2,7 +2,7 @@
 
 ## Issue Summary
 
-On Linux, running terminal-mcp with `--sandbox` fails on the second invocation with:
+On Linux, running terminal-toolkit with `--sandbox` fails on the second invocation with:
 
 ```
 bwrap: Can't mkdir parents for /path/to/.claude/commands: Not a directory
@@ -88,7 +88,7 @@ To reproduce:
 
 ```bash
 # On Linux with bwrap and socat installed
-cd /path/to/terminal-mcp
+cd /path/to/terminal-toolkit
 
 # Clean state
 rm -f .claude
@@ -108,6 +108,6 @@ npm run dev -- --sandbox
 
 ## Status
 
-- **Workaround**: Implemented in terminal-mcp (commit 7d462ac)
+- **Workaround**: Implemented in terminal-toolkit (commit 7d462ac)
 - **Upstream fix**: Pending - needs to be addressed in sandbox-runtime
 - **Affected platforms**: Linux only (uses bwrap)

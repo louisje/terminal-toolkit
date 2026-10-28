@@ -65,7 +65,7 @@ export class Recorder {
     // Generate temp and final paths
     const timestamp = Date.now();
     const filename = `terminal-${timestamp}-${id}.cast`;
-    this.tempPath = path.join(os.tmpdir(), `terminal-mcp-recording-${id}.cast`);
+    this.tempPath = path.join(os.tmpdir(), `terminal-toolkit-recording-${id}.cast`);
     this.finalPath = path.join(outputDir, filename);
   }
 

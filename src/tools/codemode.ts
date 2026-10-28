@@ -1,4 +1,4 @@
-/** Opt-in QuickJS orchestration around the existing Terminal MCP tools. */
+/** Opt-in QuickJS orchestration around the existing Terminal Toolkit tools. */
 import { CodemodeSandbox, loadQuickJSWasm, type CodemodeTool } from "@earendil-works/pi-codemode";
 import { fileURLToPath } from "node:url";
 import type { TerminalManager } from "../terminal/index.js";
@@ -63,7 +63,7 @@ export async function runCodemodeWithDispatch(
         if (query !== undefined && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options?.limit !== undefined && (typeof options.limit !== "number" || !Number.isInteger(options.limit) || options.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options?.namespace !== undefined && typeof options.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options?.namespace && options.namespace !== "terminal" && options.namespace !== "terminal-mcp") return [];
+        if (options?.namespace && options.namespace !== "terminal" && options.namespace !== "terminal-toolkit") return [];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         return summaries.map(d => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) }))
           .filter(d => !words.length || d.score > 0).sort((a,b) => b.score - a.score)
@@ -84,7 +84,7 @@ export async function runCodemodeWithDispatch(
       execute: (args) => {
         const [name] = args as unknown[];
         if (typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        return name === "terminal" || name === "terminal-mcp"
+        return name === "terminal" || name === "terminal-toolkit"
           ? { name: "terminal", instruction: namespaceInstruction, tools: summaries.map(({name, description}) => ({name, description})) }
           : null;
       },

@@ -1,6 +1,6 @@
 # Configuration
 
-Terminal MCP can be configured via command-line arguments and selected environment variables when starting the server.
+Terminal Toolkit can be configured via command-line arguments and selected environment variables when starting the server.
 
 ## Command-Line Options
 
@@ -42,41 +42,41 @@ See [Recording Documentation](recording.md) for full details on recording featur
 
 ```bash
 # Use defaults (120x40, system shell)
-terminal-mcp
+terminal-toolkit
 
 # Headless mode (no TTY required — recommended for MCP configs)
-terminal-mcp --headless
+terminal-toolkit --headless
 
 # Custom dimensions
-terminal-mcp --cols 80 --rows 24
+terminal-toolkit --cols 80 --rows 24
 
 # Headless with custom dimensions
-terminal-mcp --headless --cols 100 --rows 30
+terminal-toolkit --headless --cols 100 --rows 30
 
 # Specific shell
-terminal-mcp --shell /bin/zsh
+terminal-toolkit --shell /bin/zsh
 
 # Combined options
-terminal-mcp --cols 100 --rows 30 --shell /usr/local/bin/fish
+terminal-toolkit --cols 100 --rows 30 --shell /usr/local/bin/fish
 
 # Check version
-terminal-mcp --version
+terminal-toolkit --version
 ```
 
 ### Recording Usage
 
 ```bash
-# Record with defaults (saves to ~/.local/state/terminal-mcp/recordings/)
-terminal-mcp --record
+# Record with defaults (saves to ~/.local/state/terminal-toolkit/recordings/)
+terminal-toolkit --record
 
 # Record to specific directory
-terminal-mcp --record --record-dir=./my-recordings
+terminal-toolkit --record --record-dir=./my-recordings
 
 # Record only on failure
-terminal-mcp --record=on-failure
+terminal-toolkit --record=on-failure
 
 # Custom idle time limit (5 seconds max between events)
-terminal-mcp --record --idle-time-limit=5
+terminal-toolkit --record --idle-time-limit=5
 ```
 
 ### Tmux Integration
@@ -85,17 +85,17 @@ The `--tmux` flag auto-connects to a tmux session in headless mode (it implies `
 
 ```bash
 # Attach to tmux session '0' (create if not exists)
-terminal-mcp --tmux
+terminal-toolkit --tmux
 
 # Attach to a specific tmux session
-terminal-mcp --tmux myproject
+terminal-toolkit --tmux myproject
 
 # Session group mode: attach to session '0' with named session and window
-terminal-mcp --tmux --title Copilot
+terminal-toolkit --tmux --title Copilot
 # Equivalent to: tmux new -A -t 0 -s copilot && tmux select-window -t copilot || tmux new-window -n copilot
 
 # Session group mode with custom target session
-terminal-mcp --tmux myproject --title Copilot
+terminal-toolkit --tmux myproject --title Copilot
 # Equivalent to: tmux new -A -t myproject -s copilot && ...
 ```
 
@@ -113,9 +113,9 @@ node dist/index.js --help
 
 Output:
 ```
-terminal-mcp - A headless terminal emulator exposed via MCP
+terminal-toolkit - A headless terminal emulator exposed via MCP
 
-Usage: terminal-mcp [options]
+Usage: terminal-toolkit [options]
 
 Options:
   --cols <number>   Terminal width in columns (default: 120)
@@ -124,7 +124,7 @@ Options:
   --help, -h        Show this help message
 
 Example:
-  terminal-mcp --cols 80 --rows 24 --shell /bin/zsh
+  terminal-toolkit --cols 80 --rows 24 --shell /bin/zsh
 ```
 
 ## Claude Code Configuration
@@ -137,7 +137,7 @@ The simplest setup — no separate interactive session needed:
 {
   "mcpServers": {
     "terminal": {
-      "command": "terminal-mcp",
+      "command": "terminal-toolkit",
       "args": ["--headless", "--cols", "120", "--rows", "40"]
     }
   }
@@ -151,7 +151,7 @@ The simplest setup — no separate interactive session needed:
   "mcpServers": {
     "terminal": {
       "command": "node",
-      "args": ["/path/to/terminal-mcp/dist/index.js"]
+      "args": ["/path/to/terminal-toolkit/dist/index.js"]
     }
   }
 }
@@ -165,7 +165,7 @@ The simplest setup — no separate interactive session needed:
     "terminal": {
       "command": "node",
       "args": [
-        "/path/to/terminal-mcp/dist/index.js",
+        "/path/to/terminal-toolkit/dist/index.js",
         "--cols", "100",
         "--rows", "30",
         "--shell", "/bin/zsh"
@@ -178,8 +178,8 @@ The simplest setup — no separate interactive session needed:
 ### Using npx
 
 Runs the published package without installing it globally. Note the scoped
-name: an unrelated placeholder package occupies the unscoped `terminal-mcp`,
-so `npx terminal-mcp` would fetch the wrong thing.
+name: an unrelated placeholder package occupies the unscoped `terminal-toolkit`,
+so `npx terminal-toolkit` would fetch the wrong thing.
 
 `--headless` is required here. Without it, stdin is not a TTY when an MCP
 client spawns the process, so it starts in MCP client mode and tries to
@@ -190,7 +190,7 @@ connect to the Unix socket of an interactive session that isn't running.
   "mcpServers": {
     "terminal": {
       "command": "npx",
-      "args": ["-y", "@ellery/terminal-mcp", "--headless", "--cols", "80", "--rows", "24"]
+      "args": ["-y", "@ellery/terminal-toolkit", "--headless", "--cols", "80", "--rows", "24"]
     }
   }
 }
@@ -220,7 +220,7 @@ Future versions may support dynamic resizing via an MCP tool.
 
 ### Default Shell Detection
 
-Terminal MCP uses this priority for shell selection:
+Terminal Toolkit uses this priority for shell selection:
 
 1. `--shell` command-line argument (if provided)
 2. `$SHELL` environment variable
@@ -268,7 +268,7 @@ The terminal session inherits the environment from the parent process. Key varia
 | Variable | Effect |
 |----------|--------|
 | `SHELL` | Default shell if `--shell` not specified |
-| `TERM` | Set to `xterm-256color` by Terminal MCP |
+| `TERM` | Set to `xterm-256color` by Terminal Toolkit |
 | `PATH` | Determines available commands |
 | `HOME` | Home directory for shell |
 | `USER` | Current username |
@@ -293,7 +293,7 @@ The socket path is resolved in this order:
 
 1. `--socket` command-line argument (if provided)
 2. `TERMINAL_TOOLKIT_SOCKET` environment variable (if set)
-3. Platform default (`\\.\\pipe\\terminal-mcp` on Windows, `$TMPDIR/terminal-mcp.sock` elsewhere)
+3. Platform default (`\\.\\pipe\\terminal-toolkit` on Windows, `$TMPDIR/terminal-toolkit.sock` elsewhere)
 
 ### Recording Directory Resolution
 
@@ -301,12 +301,12 @@ The default recording directory is resolved in this order:
 
 1. `--record-dir` command-line argument (if provided)
 2. `TERMINAL_TOOLKIT_RECORD_DIR` environment variable (if set)
-3. `$XDG_STATE_HOME/terminal-mcp/recordings` (if XDG_STATE_HOME is set)
-4. `~/.local/state/terminal-mcp/recordings` (fallback)
+3. `$XDG_STATE_HOME/terminal-toolkit/recordings` (if XDG_STATE_HOME is set)
+4. `~/.local/state/terminal-toolkit/recordings` (fallback)
 
 ### Customizing Environment
 
-Most environment variables are inherited from the process running Terminal MCP. To customize:
+Most environment variables are inherited from the process running Terminal Toolkit. To customize:
 
 1. Set variables before starting:
    ```bash
@@ -319,11 +319,11 @@ Additional environment configuration options may be added in future versions.
 
 ## Working Directory
 
-The terminal session starts in the current working directory of the Terminal MCP process.
+The terminal session starts in the current working directory of the Terminal Toolkit process.
 
 ```bash
 # Start in a specific directory
-cd /path/to/project && node /path/to/terminal-mcp/dist/index.js
+cd /path/to/project && node /path/to/terminal-toolkit/dist/index.js
 ```
 
 ## Scrollback Buffer
@@ -336,7 +336,7 @@ The scrollback size is currently fixed but may become configurable in future ver
 
 ## Terminal Type
 
-Terminal MCP identifies itself as `xterm-256color`, which:
+Terminal Toolkit identifies itself as `xterm-256color`, which:
 
 - Supports 256-color output
 - Enables most terminal applications to render correctly
@@ -363,6 +363,6 @@ The terminal session lives for the duration of the MCP connection. When the AI a
 
 ### Concurrent Sessions
 
-Currently, Terminal MCP supports a single terminal session. The session is created on first tool use and persists until shutdown.
+Currently, Terminal Toolkit supports a single terminal session. The session is created on first tool use and persists until shutdown.
 
 Future versions may support multiple named sessions.

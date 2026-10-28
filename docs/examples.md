@@ -1,6 +1,6 @@
 # Usage Examples
 
-This guide provides practical examples of using Terminal MCP for various tasks.
+This guide provides practical examples of using Terminal Toolkit for various tasks.
 
 ## Basic Operations
 

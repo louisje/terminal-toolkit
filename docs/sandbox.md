@@ -1,6 +1,6 @@
 # Sandbox Mode
 
-Terminal MCP includes an opt-in sandbox mode that restricts filesystem and network access for enhanced security. This is useful when you want to limit what the AI assistant can access through the terminal.
+Terminal Toolkit includes an opt-in sandbox mode that restricts filesystem and network access for enhanced security. This is useful when you want to limit what the AI assistant can access through the terminal.
 
 ## Overview
 
@@ -14,15 +14,15 @@ Sandbox mode uses [Anthropic's sandbox-runtime](https://github.com/anthropic-exp
 
 ```bash
 # Interactive mode with sandbox
-terminal-mcp --sandbox
+terminal-toolkit --sandbox
 
 # With a config file
-terminal-mcp --sandbox --sandbox-config ~/.terminal-mcp-sandbox.json
+terminal-toolkit --sandbox --sandbox-config ~/.terminal-toolkit-sandbox.json
 ```
 
 ## Interactive Permission Dialog
 
-When you run `terminal-mcp --sandbox` without a config file, an interactive TUI dialog lets you configure permissions:
+When you run `terminal-toolkit --sandbox` without a config file, an interactive TUI dialog lets you configure permissions:
 
 ```
 ╭─────────────── Sandbox Permissions ───────────────╮
@@ -83,7 +83,7 @@ Custom paths appear with a `*` indicator and can be removed with `d`.
 For repeatable configurations, use a JSON config file:
 
 ```bash
-terminal-mcp --sandbox --sandbox-config ~/.terminal-mcp-sandbox.json
+terminal-toolkit --sandbox --sandbox-config ~/.terminal-toolkit-sandbox.json
 ```
 
 ### Config File Format

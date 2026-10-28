@@ -1,10 +1,10 @@
-# Terminal MCP
+# Terminal Toolkit
 
 A headless terminal emulator exposed via the Model Context Protocol (MCP), enabling AI assistants like Claude Code to interact with terminal applications programmatically.
 
-## What is Terminal MCP?
+## What is Terminal Toolkit?
 
-Terminal MCP bridges the gap between AI assistants and interactive terminal applications. It provides a full PTY (pseudo-terminal) with VT100 emulation, allowing AI agents to:
+Terminal Toolkit bridges the gap between AI assistants and interactive terminal applications. It provides a full PTY (pseudo-terminal) with VT100 emulation, allowing AI agents to:
 
 - Run interactive CLI programs (vim, htop, less, etc.)
 - Navigate TUI (Text User Interface) applications
@@ -42,7 +42,7 @@ Configure in Claude Code's MCP settings:
   "mcpServers": {
     "terminal": {
       "command": "node",
-      "args": ["/path/to/terminal-mcp/dist/index.js"]
+      "args": ["/path/to/terminal-toolkit/dist/index.js"]
     }
   }
 }
@@ -65,7 +65,7 @@ AI Assistant (Claude Code)
     │
     │ STDIO (JSON-RPC / MCP Protocol)
     ▼
-Terminal MCP Server (Node.js)
+Terminal Toolkit Server (Node.js)
     ├── MCP SDK - Protocol handling
     ├── xterm.js Headless - Terminal emulation
     └── node-pty - PTY management
@@ -77,9 +77,9 @@ Terminal MCP Server (Node.js)
         Interactive Applications
 ```
 
-1. The AI assistant connects to Terminal MCP via stdio using the MCP protocol
+1. The AI assistant connects to Terminal Toolkit via stdio using the MCP protocol
 2. Commands are sent through MCP tools (`type`, `sendKey`, etc.)
-3. Terminal MCP writes to a pseudo-terminal connected to a real shell
+3. Terminal Toolkit writes to a pseudo-terminal connected to a real shell
 4. Output is captured by the xterm.js headless terminal emulator
 5. The AI can read the terminal state via `getContent`, `getBufferInfo`, or `takeScreenshot`
 

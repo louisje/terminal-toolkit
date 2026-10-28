@@ -19,7 +19,7 @@ async function loadPty(): Promise<PtyModule> {
   return ptyModule;
 }
 
-// Custom prompt indicator for terminal-mcp.
+// Custom prompt indicator for terminal-toolkit.
 // Includes "mcp" so it's unmistakable — many shell themes (oh-my-zsh,
 // starship, etc.) already use ⚡ on its own and a bare lightning bolt
 // would blend in. Used both as the rendered text and as the idempotency
@@ -105,7 +105,7 @@ export class TerminalSession {
     login?: boolean
   ): { args: string[]; env: Record<string, string> } {
     const env: Record<string, string> = {
-      TERMINAL_MCP: "1",
+      TERMINAL_TOOLKIT: "1",
       ...extraEnv,
     };
 
@@ -124,8 +124,8 @@ export class TerminalSession {
       // like a real login shell would. In non-login mode, source ~/.bashrc.
       const homeDir = this.shellPath(os.homedir());
       const bannerCmd = startupBanner ? `printf '%s\\n' '${escapeBannerForShell(startupBanner)}'` : "";
-      this.titleFile = path.join(os.tmpdir(), `terminal-mcp-title-${process.pid}`);
-      fs.writeFileSync(this.titleFile, "terminal-mcp");
+      this.titleFile = path.join(os.tmpdir(), `terminal-toolkit-title-${process.pid}`);
+      fs.writeFileSync(this.titleFile, "terminal-toolkit");
 
       let sourceUserConfig: string;
       if (login) {
@@ -148,14 +148,14 @@ fi`;
       const bashrcContent = `
 ${sourceUserConfig}
 # Title file for dynamic title updates from MCP clients
-_TERMINAL_MCP_TITLE_FILE="${this.shellPath(this.titleFile)}"
+_TERMINAL_TOOLKIT_TITLE_FILE="${this.shellPath(this.titleFile)}"
 # Set initial terminal title
-printf '\\033]0;[terminal-mcp]\\a'
+printf '\\033]0;[terminal-toolkit]\\a'
 # Prepend a marker to PS1 every prompt and refresh the title.
 # Re-runs each PROMPT_COMMAND so themes that rebuild PS1 keep the marker.
 _terminal_mcp_prompt_marker() {
-  local _title="terminal-mcp"
-  [ -f "\$_TERMINAL_MCP_TITLE_FILE" ] && _title="\$(< "\$_TERMINAL_MCP_TITLE_FILE")"
+  local _title="terminal-toolkit"
+  [ -f "\$_TERMINAL_TOOLKIT_TITLE_FILE" ] && _title="\$(< "\$_TERMINAL_TOOLKIT_TITLE_FILE")"
   printf '\\033]0;[%s] %s\\a' "\$_title" "\${PWD/#$HOME/'~'}"
   case "$PS1" in
     *"${PROMPT_INDICATOR}"*) ;;
@@ -169,9 +169,9 @@ esac
 # Print startup banner
 ${bannerCmd}
 `;
-      this.rcFile = path.join(os.tmpdir(), `terminal-mcp-bashrc-${process.pid}`);
+      this.rcFile = path.join(os.tmpdir(), `terminal-toolkit-bashrc-${process.pid}`);
       fs.writeFileSync(this.rcFile, bashrcContent);
-      env.TERMINAL_MCP_RCFILE = this.rcFile;
+      env.TERMINAL_TOOLKIT_RCFILE = this.rcFile;
       return { args: ["--rcfile", this.shellPath(this.rcFile)], env };
     }
 
@@ -181,12 +181,12 @@ ${bannerCmd}
       // theme regenerators like powerlevel10k / starship that rebuild PROMPT
       // every precmd.
       const homeDir = os.homedir();
-      this.zdotdir = path.join(os.tmpdir(), `terminal-mcp-zsh-${process.pid}`);
+      this.zdotdir = path.join(os.tmpdir(), `terminal-toolkit-zsh-${process.pid}`);
       fs.mkdirSync(this.zdotdir, { recursive: true });
 
       if (!this.titleFile) {
-        this.titleFile = path.join(os.tmpdir(), `terminal-mcp-title-${process.pid}`);
-        fs.writeFileSync(this.titleFile, "terminal-mcp");
+        this.titleFile = path.join(os.tmpdir(), `terminal-toolkit-title-${process.pid}`);
+        fs.writeFileSync(this.titleFile, "terminal-toolkit");
       }
       const bannerCmd = startupBanner ? `printf '%s\\n' '${escapeBannerForShell(startupBanner)}'` : "";
 
@@ -207,16 +207,16 @@ export ZDOTDIR="${homeDir}"
 # Source user's zshrc if it exists
 [ -f "${homeDir}/.zshrc" ] && source "${homeDir}/.zshrc"
 # Title file for dynamic title updates from MCP clients
-_TERMINAL_MCP_TITLE_FILE="${this.titleFile}"
+_TERMINAL_TOOLKIT_TITLE_FILE="${this.titleFile}"
 # Set initial terminal title
-print -Pn '\\e]0;[terminal-mcp]\\a'
+print -Pn '\\e]0;[terminal-toolkit]\\a'
 # Prepend a marker to PROMPT every precmd and refresh the title.
 # Registers AFTER user's zshrc so this hook fires after p10k/starship
 # regenerate PROMPT.
 autoload -Uz add-zsh-hook
 _terminal_mcp_prompt_marker() {
-  local _title="terminal-mcp"
-  [ -f "\$_TERMINAL_MCP_TITLE_FILE" ] && _title="\$(< "\$_TERMINAL_MCP_TITLE_FILE")"
+  local _title="terminal-toolkit"
+  [ -f "\$_TERMINAL_TOOLKIT_TITLE_FILE" ] && _title="\$(< "\$_TERMINAL_TOOLKIT_TITLE_FILE")"
   print -Pn "\\e]0;[\$_title] %~\\a"
   if [[ "$PROMPT" != *"${PROMPT_INDICATOR}"* ]]; then
     PROMPT="%K{yellow}%F{black} ${PROMPT_INDICATOR} %f%k $PROMPT"
@@ -248,7 +248,7 @@ ${bannerCmd}
       shellName === "pwsh" ||
       shellName === "pwsh.exe"
     ) {
-      env.TERMINAL_MCP_PROMPT = "1";
+      env.TERMINAL_TOOLKIT_PROMPT = "1";
       return { args: ["-NoLogo"], env };
     }
 

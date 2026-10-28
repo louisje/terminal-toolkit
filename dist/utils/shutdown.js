@@ -11,7 +11,7 @@ function installStdioShutdownHandlers({ cleanup }) {
       process.stdout.write("", () => process.exit(code));
     };
     Promise.resolve().then(cleanup).catch((err) => {
-      console.error("[terminal-mcp] Shutdown cleanup failed:", err);
+      console.error("[terminal-toolkit] Shutdown cleanup failed:", err);
     }).finally(exitAfterStdoutDrain);
   };
   process.on("SIGINT", () => shutdown(0));

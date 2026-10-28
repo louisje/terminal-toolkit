@@ -2,7 +2,7 @@ import { z } from "zod";
 import { TerminalManager } from "../terminal/index.js";
 
 export const createSessionSchema = z.object({
-  shell: z.string().optional().describe("Shell to use for this session (default: $TERMINAL_MCP_SHELL, $SHELL, or /bin/bash)"),
+  shell: z.string().optional().describe("Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"),
   cols: z.number().int().positive().optional().describe("Terminal width in columns (default: 80)"),
   rows: z.number().int().positive().optional().describe("Terminal height in rows (default: 25)"),
 });
@@ -15,7 +15,7 @@ export const createSessionTool = {
     properties: {
       shell: {
         type: "string",
-        description: "Shell to use for this session (default: $TERMINAL_MCP_SHELL, $SHELL, or /bin/bash)",
+        description: "Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)",
       },
       cols: {
         type: "number",

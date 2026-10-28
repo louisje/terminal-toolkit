@@ -40,7 +40,7 @@ export declare const startRecordingTool: {
             };
             outputDir: {
                 type: string;
-                description: "Directory to save the recording (default: ~/.local/state/terminal-mcp/recordings, or TERMINAL_MCP_RECORD_DIR env var)";
+                description: "Directory to save the recording (default: ~/.local/state/terminal-toolkit/recordings, or TERMINAL_TOOLKIT_RECORD_DIR env var)";
             };
             idleTimeLimit: {
                 type: string;

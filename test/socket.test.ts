@@ -9,7 +9,7 @@ import { createToolProxyServer } from "../src/transport/socket.ts";
 import { TerminalManager } from "../src/terminal/index.js";
 
 test("createToolProxyServer forwards clientConnected notifications to the interactive notifier", async () => {
-  const socketPath = path.join(os.tmpdir(), `terminal-mcp-test-${process.pid}-${Date.now()}.sock`);
+  const socketPath = path.join(os.tmpdir(), `terminal-toolkit-test-${process.pid}-${Date.now()}.sock`);
   const notifications: Array<{ title?: string }> = [];
   const server = createToolProxyServer(
     socketPath,

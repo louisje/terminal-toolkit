@@ -6,7 +6,7 @@ export interface SandboxStatus {
     reason?: string;
 }
 /**
- * Controller that wraps sandbox-runtime for terminal-mcp
+ * Controller that wraps sandbox-runtime for terminal-toolkit
  * Manages sandbox lifecycle and command wrapping
  */
 export declare class SandboxController {

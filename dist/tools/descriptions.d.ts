@@ -33,7 +33,7 @@ export declare const TOOL_DESCRIPTIONS: {
         readonly main: "Start recording terminal output to an asciicast v2 file. Returns the recording ID and path where the file will be saved. Only one recording can be active at a time.";
         readonly format: "Recording format (default: v2, asciicast v2 format)";
         readonly mode: "Recording mode: always saves the recording, on-failure only saves if session exits with non-zero code (default: always)";
-        readonly outputDir: "Directory to save the recording (default: ~/.local/state/terminal-mcp/recordings, or TERMINAL_MCP_RECORD_DIR env var)";
+        readonly outputDir: "Directory to save the recording (default: ~/.local/state/terminal-toolkit/recordings, or TERMINAL_TOOLKIT_RECORD_DIR env var)";
         readonly idleTimeLimit: "Max seconds between events in the recording (default: 2). Caps idle time to prevent long pauses during playback.";
         readonly maxDuration: "Max recording duration in seconds (default: 3600 = 60 minutes). Recording will auto-stop when this limit is reached.";
         readonly inactivityTimeout: "Stop recording after N seconds of no terminal output (default: 600 = 10 minutes). Resets on each output event.";
@@ -52,7 +52,7 @@ export declare const TOOL_DESCRIPTIONS: {
     readonly notify: {
         readonly main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. Silently degrades to a text-only response (no error thrown) in headless/CI environments without a desktop notification service.";
         readonly message: "The notification body text (e.g. 'Build finished' or 'Need your input: which option do you want?')";
-        readonly title: "The notification title (default: 'Terminal MCP')";
+        readonly title: "The notification title (default: 'Terminal Toolkit')";
         readonly sound: "Whether to play the OS notification sound (default: true). Set to false for quieter, less intrusive notifications.";
     };
 };

@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# Terminal MCP Installer
-# https://github.com/elleryfamilia/terminal-mcp
+# Terminal Toolkit Installer
+# https://github.com/elleryfamilia/terminal-toolkit
 
-REPO_URL="https://github.com/elleryfamilia/terminal-mcp.git"
-INSTALL_DIR="$HOME/.terminal-mcp"
+REPO_URL="https://github.com/elleryfamilia/terminal-toolkit.git"
+INSTALL_DIR="$HOME/.terminal-toolkit"
 
 # Colors for output
 RED='\033[0;31m'
@@ -63,7 +63,7 @@ get_bin_dir() {
 main() {
     echo ""
     echo "╔════════════════════════════════════════╗"
-    echo "║       Terminal MCP Installer           ║"
+    echo "║       Terminal Toolkit Installer           ║"
     echo "╚════════════════════════════════════════╝"
     echo ""
 
@@ -90,7 +90,7 @@ main() {
 
     # Create symlink
     BIN_DIR=$(get_bin_dir)
-    SYMLINK_PATH="$BIN_DIR/terminal-mcp"
+    SYMLINK_PATH="$BIN_DIR/terminal-toolkit"
 
     if [ -L "$SYMLINK_PATH" ] || [ -f "$SYMLINK_PATH" ]; then
         rm "$SYMLINK_PATH"
@@ -116,14 +116,14 @@ main() {
     echo -e "${GREEN}✓ Installation complete!${NC}"
     echo ""
     echo "Usage:"
-    echo "  terminal-mcp              # Run the MCP server"
-    echo "  terminal-mcp --help       # Show help"
+    echo "  terminal-toolkit              # Run the MCP server"
+    echo "  terminal-toolkit --help       # Show help"
     echo ""
     echo "MCP client configuration:"
     echo '  {'
     echo '    "mcpServers": {'
     echo '      "terminal": {'
-    echo '        "command": "terminal-mcp"'
+    echo '        "command": "terminal-toolkit"'
     echo '      }'
     echo '    }'
     echo '  }'

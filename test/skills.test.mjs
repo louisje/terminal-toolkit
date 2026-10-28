@@ -33,15 +33,15 @@ test("Skills extension advertises capabilities and preserves tools", async () =>
     assert.equal(list.resultType,"complete");
     assert.equal(list.cacheScope,"public");
     assert.equal(list.skills.length,1);
-    assert.equal(list.skills[0].uri,"skill://terminal-mcp/SKILL.md");
+    assert.equal(list.skills[0].uri,"skill://terminal-toolkit/SKILL.md");
     const entry = list.skills[0];
-    assert.equal(entry.frontmatter.name,"terminal-mcp");
+    assert.equal(entry.frontmatter.name,"terminal-toolkit");
     assert.equal(typeof entry.frontmatter.description,"string");
     assert.ok(entry.resources.length >= 1);
     const get = await call(client,"skills/get",{uri:entry.uri});
     assert.deepEqual(get.skill,entry);
     const resource = await call(client,"resources/read",{uri:entry.uri});
-    const actual = await readFile("skills/terminal-mcp/SKILL.md");
+    const actual = await readFile("skills/terminal-toolkit/SKILL.md");
     assert.equal(resource.contents[0].text,actual.toString());
     assert.equal(entry.resources[0].size,actual.length);
     assert.equal(entry.resources[0].digest,"sha256:"+createHash("sha256").update(actual).digest("hex"));
@@ -57,8 +57,8 @@ test("stdio headless and codemode both advertise and serve skills", async () => 
   for (const codemode of [false, true]) {
     const client = new Client({ name: "stdio-skills-test", version: "1.0.0" }, { capabilities: {} });
     const env = { ...process.env };
-    delete env.TERMINAL_MCP; // Avoid the intentional nested-terminal guard.
-    delete env.TERMINAL_MCP_SOCKET;
+    delete env.TERMINAL_TOOLKIT; // Avoid the intentional nested-terminal guard.
+    delete env.TERMINAL_TOOLKIT_SOCKET;
     const transport = new StdioClientTransport({
       command: process.execPath,
       args: ["dist/index.js", "--headless", ...(codemode ? ["--codemode"] : [])],
@@ -69,7 +69,7 @@ test("stdio headless and codemode both advertise and serve skills", async () => 
     try {
       await client.connect(transport);
       assert.ok(client.getServerCapabilities().extensions["io.modelcontextprotocol/skills"]);
-      assert.equal((await call(client,"skills/list")).skills[0].frontmatter.name,"terminal-mcp");
+      assert.equal((await call(client,"skills/list")).skills[0].frontmatter.name,"terminal-toolkit");
       const tools = await call(client,"tools/list");
       assert.equal(tools.tools.some((t)=>t.name==="codemode"),codemode);
     } finally {
@@ -105,7 +105,7 @@ test("socket/client MCP mode exposes the Skills extension independently of socke
   await new Promise((resolve,reject) => socketServer.once("error",reject).listen(socketPath,resolve));
   const client = new Client({name:"socket-skills-test",version:"1.0.0"},{capabilities:{}});
   const env = {...process.env};
-  delete env.TERMINAL_MCP;
+  delete env.TERMINAL_TOOLKIT;
   const transport = new StdioClientTransport({
     command:process.execPath,
     args:["dist/index.js","--socket",socketPath,"--codemode"],
@@ -116,7 +116,7 @@ test("socket/client MCP mode exposes the Skills extension independently of socke
   try {
     await client.connect(transport);
     assert.ok(client.getServerCapabilities().extensions["io.modelcontextprotocol/skills"]);
-    assert.equal((await call(client,"skills/list")).skills[0].uri,"skill://terminal-mcp/SKILL.md");
+    assert.equal((await call(client,"skills/list")).skills[0].uri,"skill://terminal-toolkit/SKILL.md");
     assert.equal((await call(client,"tools/list")).tools[0].name,"codemode");
   } finally {
     await client.close();
@@ -129,14 +129,14 @@ test("Skills extension rejects nonexistent and traversal URIs", async () => {
   await withClient(async (client) => {
     for (const uri of [
       "skill://missing/SKILL.md",
-      "skill://terminal-mcp/../../package.json",
-      "skill://terminal-mcp/%2e%2e/package.json",
-      "skill://terminal-mcp/%2fetc/passwd",
+      "skill://terminal-toolkit/../../package.json",
+      "skill://terminal-toolkit/%2e%2e/package.json",
+      "skill://terminal-toolkit/%2fetc/passwd",
       "file:///etc/passwd",
-      "skill://terminal-mcp/SKILL.md?x=1",
+      "skill://terminal-toolkit/SKILL.md?x=1",
     ]) {
       await assert.rejects(call(client,"resources/read",{uri}), /-32602/);
     }
-    await assert.rejects(call(client,"skills/get",{uri:"skill://terminal-mcp/../SKILL.md"}), /-32602/);
+    await assert.rejects(call(client,"skills/get",{uri:"skill://terminal-toolkit/../SKILL.md"}), /-32602/);
   });
 });

@@ -1,6 +1,6 @@
 # Windows Support
 
-This document describes the changes made to support Windows in terminal-mcp.
+This document describes the changes made to support Windows in terminal-toolkit.
 
 ## Overview
 
@@ -23,12 +23,12 @@ This version includes prebuilt binaries for all platforms (Windows, macOS, Linux
 
 ### 2. Socket Path for Windows
 
-**Issue:** Unix sockets (`/tmp/terminal-mcp.sock`) don't work on Windows.
+**Issue:** Unix sockets (`/tmp/terminal-toolkit.sock`) don't work on Windows.
 
 **Solution:** Use Windows named pipes instead. The `getDefaultSocketPath()` function in `src/utils/platform.ts` returns the appropriate path based on platform:
 
-- **Unix/Mac:** `/tmp/terminal-mcp.sock`
-- **Windows:** `\\.\pipe\terminal-mcp`
+- **Unix/Mac:** `/tmp/terminal-toolkit.sock`
+- **Windows:** `\\.\pipe\terminal-toolkit`
 
 ### 3. Default Shell Detection
 
@@ -101,7 +101,7 @@ session.write("\r");  // Not "\n"
 
 When testing Windows support, verify:
 
-- [ ] `terminal-mcp` starts without errors
+- [ ] `terminal-toolkit` starts without errors
 - [ ] Startup banner displays correctly and doesn't get cleared
 - [ ] MCP configuration JSON is visible and copyable
 - [ ] Fresh prompt appears after banner
