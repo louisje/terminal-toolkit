@@ -11,10 +11,28 @@ const PINK_COLOR = "\x1b[35m";    // magenta
 const YELLOW_COLOR = "\x1b[33m";  // yellow (rendered as orange-ish on light themes)
 const WHITE_COLOR = "\x1b[39m";   // default foreground (theme-appropriate)
 const GREEN_COLOR = "\x1b[32m";   // green
+// One Dark Pro-inspired JSON palette (24-bit ANSI).
+const CODE_BG = "\x1b[48;2;65;70;80m";       // #414650, lighter slate gray
+const CODE_TEXT = "\x1b[38;2;171;178;191m"; // #ABB2BF punctuation
+const CODE_KEY = "\x1b[38;2;224;108;117m";  // #E06C75 property names
+const CODE_VALUE = "\x1b[38;2;152;195;121m";// #98C379 string values
 const RESET = "\x1b[0m";
 
-// Large figlet logo for TERMINAL + TOOLKIT, rendered in two brand colors
-const LOGO = " _______ ______ _____  __  __ _____ _   _          _\n|__   __|  ____|  __ \\|  \\/  |_   _| \\ | |   /\\   | |\n   | |  | |__  | |__) | \\  / | | | |  \\| |  /  \\  | |\n   | |  |  __| |  _  /| |\\/| | | | | . ` | / /\\ \\ | |\n   | |  | |____| | \\ \\| |  | |_| |_| |\\  |/ ____ \\| |____\n   |_|  |______|_|  \\_\\_|  |_|_____|_| \\_/_/    \\_\\______|\n _______ ____   ____  _      _  _______ _______\n|__   __/ __ \\ / __ \\| |    | |/ /_   _|__   __|\n   | | | |  | | |  | | |    | ' /  | |    | |\n   | | | |  | | |  | | |    |  <   | |    | |\n   | | | |__| | |__| | |____| . \\ _| |_   | |\n   |_|  \\____/ \\____/|______|_|\\_\\_____|  |_|";
+// ANSI Shadow-style block logo for TERMINAL + TOOLKIT
+const LOGO = `
+████████╗███████╗██████╗ ███╗   ███╗██╗███╗   ██╗ █████╗ ██╗
+╚══██╔══╝██╔════╝██╔══██╗████╗ ████║██║████╗  ██║██╔══██╗██║
+   ██║   █████╗  ██████╔╝██╔████╔██║██║██╔██╗ ██║███████║██║
+   ██║   ██╔══╝  ██╔══██╗██║╚██╔╝██║██║██║╚██╗██║██╔══██║██║
+   ██║   ███████╗██║  ██║██║ ╚═╝ ██║██║██║ ╚████║██║  ██║███████╗
+   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝╚══════╝
+████████╗ ██████╗  ██████╗ ██╗     ██╗  ██╗██╗████████╗
+╚══██╔══╝██╔═══██╗██╔═══██╗██║     ██║ ██╔╝██║╚══██╔══╝
+   ██║   ██║   ██║██║   ██║██║     █████╔╝ ██║   ██║
+   ██║   ██║   ██║██║   ██║██║     ██╔═██╗ ██║   ██║
+   ██║   ╚██████╔╝╚██████╔╝███████╗██║  ██╗██║   ██║
+   ╚═╝    ╚═════╝  ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝   ╚═╝
+`.trim();
 
 export interface BannerOptions {
   socketPath: string;
@@ -31,18 +49,24 @@ export function getBanner(options: BannerOptions): string {
   // Build the logo with box around it
   const logoLines = LOGO.split("\n");
 
-  // Find the widest logo line to determine box width (using visual width)
-  const maxLogoWidth = Math.max(...logoLines.map((l) => stringWidth(l)));
-  const boxWidth = maxLogoWidth + 4; // 2 chars padding on each side
+  // The full frame is 79 columns, including its two border characters.
+  const frameWidth = 79;
+  const boxWidth = frameWidth - 2;
+  const maxLogoWidth = Math.max(...logoLines.map((line) => stringWidth(line)));
 
   const horizontalLine = "─".repeat(boxWidth);
 
-  // Center the logo as a block (same left padding for all lines)
-  // First 6 lines are TERMINAL (cyan), last 6 lines are TOOLKIT (magenta)
+  // Center each six-line word as a unit, preserving its internal letter spacing.
+  // TERMINAL is cyan; TOOLKIT is magenta.
   const centeredLogo = logoLines.map((line, index) => {
-    const rightPad = boxWidth - 2 - stringWidth(line);
+    const group = index < 6 ? logoLines.slice(0, 6) : logoLines.slice(6);
+    const groupWidth = Math.max(...group.map((part) => stringWidth(part)));
+    const leftPad = Math.floor((boxWidth - groupWidth) / 2);
+    const rightPad = boxWidth - groupWidth - leftPad;
     const color = index < 6 ? BRAND_COLOR : PINK_COLOR;
-    return YELLOW_COLOR + "│ " + color + line + " ".repeat(Math.max(0, rightPad)) + " " + YELLOW_COLOR + "│";
+    return YELLOW_COLOR + "│" + " ".repeat(leftPad) + color
+      + line + " ".repeat(Math.max(0, groupWidth - stringWidth(line)))
+      + " ".repeat(rightPad) + YELLOW_COLOR + "│";
   });
 
   // Helper: build a box content line with correct padding.
@@ -70,6 +94,21 @@ export function getBanner(options: BannerOptions): string {
     }
   }
 }`;
+
+  // One Dark Pro-inspired JSON syntax highlighting on a full-width code panel.
+  // Keep an empty shaded row above and below the JSON.
+  const configLines = mcpConfig.split("\n");
+  const styledMcpConfig = ["", ...configLines, ""].map((line) => {
+    const highlighted = line.replace(
+      /("(?:[^"\\]|\\.)*")(\s*:)?/g,
+      (_match, quoted: string, colon: string | undefined) =>
+        colon
+          ? CODE_KEY + quoted + CODE_TEXT + colon
+          : CODE_VALUE + quoted + CODE_TEXT
+    );
+    return CODE_BG + CODE_TEXT + "  " + highlighted
+      + " ".repeat(Math.max(0, frameWidth - stringWidth(line) - 2)) + RESET;
+  }).join("\n");
 
   // Build info lines using boxLine helper
   const socketContent = `  Socket: ${options.socketPath}`;
@@ -104,7 +143,7 @@ ${YELLOW_COLOR}╰${horizontalLine}╯${RESET}
 
 ${WHITE_COLOR}MCP Configuration (add to your MCP client):${RESET}
 
-${mcpConfig}
+${styledMcpConfig}
 
 ${YELLOW_COLOR}╭${horizontalLine}╮
 ${boxLine(restartContent, restartStyled)}

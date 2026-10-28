@@ -56507,17 +56507,38 @@ var PINK_COLOR = "\x1B[35m";
 var YELLOW_COLOR = "\x1B[33m";
 var WHITE_COLOR = "\x1B[39m";
 var GREEN_COLOR = "\x1B[32m";
+var CODE_BG = "\x1B[48;2;65;70;80m";
+var CODE_TEXT = "\x1B[38;2;171;178;191m";
+var CODE_KEY = "\x1B[38;2;224;108;117m";
+var CODE_VALUE = "\x1B[38;2;152;195;121m";
 var RESET = "\x1B[0m";
-var LOGO = " _______ ______ _____  __  __ _____ _   _          _\n|__   __|  ____|  __ \\|  \\/  |_   _| \\ | |   /\\   | |\n   | |  | |__  | |__) | \\  / | | | |  \\| |  /  \\  | |\n   | |  |  __| |  _  /| |\\/| | | | | . ` | / /\\ \\ | |\n   | |  | |____| | \\ \\| |  | |_| |_| |\\  |/ ____ \\| |____\n   |_|  |______|_|  \\_\\_|  |_|_____|_| \\_/_/    \\_\\______|\n _______ ____   ____  _      _  _______ _______\n|__   __/ __ \\ / __ \\| |    | |/ /_   _|__   __|\n   | | | |  | | |  | | |    | ' /  | |    | |\n   | | | |  | | |  | | |    |  <   | |    | |\n   | | | |__| | |__| | |____| . \\ _| |_   | |\n   |_|  \\____/ \\____/|______|_|\\_\\_____|  |_|";
+var LOGO = `
+\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2557   \u2588\u2588\u2588\u2557\u2588\u2588\u2557\u2588\u2588\u2588\u2557   \u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557
+\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551
+   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2554\u2588\u2588\u2588\u2588\u2554\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2554\u2588\u2588\u2557 \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551
+   \u2588\u2588\u2551   \u2588\u2588\u2554\u2550\u2550\u255D  \u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551\u255A\u2588\u2588\u2554\u255D\u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2551\u255A\u2588\u2588\u2557\u2588\u2588\u2551\u2588\u2588\u2554\u2550\u2550\u2588\u2588\u2551\u2588\u2588\u2551
+   \u2588\u2588\u2551   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2551 \u255A\u2550\u255D \u2588\u2588\u2551\u2588\u2588\u2551\u2588\u2588\u2551 \u255A\u2588\u2588\u2588\u2588\u2551\u2588\u2588\u2551  \u2588\u2588\u2551\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
+   \u255A\u2550\u255D   \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u255D\u255A\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D
+\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2588\u2588\u2588\u2588\u2557  \u2588\u2588\u2588\u2588\u2588\u2588\u2557 \u2588\u2588\u2557     \u2588\u2588\u2557  \u2588\u2588\u2557\u2588\u2588\u2557\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557
+\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D\u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2554\u2550\u2550\u2550\u2588\u2588\u2557\u2588\u2588\u2551     \u2588\u2588\u2551 \u2588\u2588\u2554\u255D\u2588\u2588\u2551\u255A\u2550\u2550\u2588\u2588\u2554\u2550\u2550\u255D
+   \u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2551\u2588\u2588\u2551   \u2588\u2588\u2551\u2588\u2588\u2551     \u2588\u2588\u2588\u2588\u2588\u2554\u255D \u2588\u2588\u2551   \u2588\u2588\u2551
+   \u2588\u2588\u2551   \u2588\u2588\u2551   \u2588\u2588\u2551\u2588\u2588\u2551   \u2588\u2588\u2551\u2588\u2588\u2551     \u2588\u2588\u2554\u2550\u2588\u2588\u2557 \u2588\u2588\u2551   \u2588\u2588\u2551
+   \u2588\u2588\u2551   \u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u255A\u2588\u2588\u2588\u2588\u2588\u2588\u2554\u255D\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2557\u2588\u2588\u2551  \u2588\u2588\u2557\u2588\u2588\u2551   \u2588\u2588\u2551
+   \u255A\u2550\u255D    \u255A\u2550\u2550\u2550\u2550\u2550\u255D  \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D   \u255A\u2550\u255D
+`.trim();
 function getBanner(options2) {
   const logoLines = LOGO.split("\n");
-  const maxLogoWidth = Math.max(...logoLines.map((l) => stringWidth2(l)));
-  const boxWidth = maxLogoWidth + 4;
+  const frameWidth = 79;
+  const boxWidth = frameWidth - 2;
+  const maxLogoWidth = Math.max(...logoLines.map((line) => stringWidth2(line)));
   const horizontalLine = "\u2500".repeat(boxWidth);
   const centeredLogo = logoLines.map((line, index) => {
-    const rightPad = boxWidth - 2 - stringWidth2(line);
+    const group = index < 6 ? logoLines.slice(0, 6) : logoLines.slice(6);
+    const groupWidth = Math.max(...group.map((part) => stringWidth2(part)));
+    const leftPad = Math.floor((boxWidth - groupWidth) / 2);
+    const rightPad = boxWidth - groupWidth - leftPad;
     const color = index < 6 ? BRAND_COLOR : PINK_COLOR;
-    return YELLOW_COLOR + "\u2502 " + color + line + " ".repeat(Math.max(0, rightPad)) + " " + YELLOW_COLOR + "\u2502";
+    return YELLOW_COLOR + "\u2502" + " ".repeat(leftPad) + color + line + " ".repeat(Math.max(0, groupWidth - stringWidth2(line))) + " ".repeat(rightPad) + YELLOW_COLOR + "\u2502";
   });
   const boxLine = (content, styled) => {
     const pad = boxWidth - stringWidth2(content);
@@ -56538,6 +56559,14 @@ function getBanner(options2) {
     }
   }
 }`;
+  const configLines = mcpConfig.split("\n");
+  const styledMcpConfig = ["", ...configLines, ""].map((line) => {
+    const highlighted = line.replace(
+      /("(?:[^"\\]|\\.)*")(\s*:)?/g,
+      (_match, quoted, colon) => colon ? CODE_KEY + quoted + CODE_TEXT + colon : CODE_VALUE + quoted + CODE_TEXT
+    );
+    return CODE_BG + CODE_TEXT + "  " + highlighted + " ".repeat(Math.max(0, frameWidth - stringWidth2(line) - 2)) + RESET;
+  }).join("\n");
   const socketContent = `  Socket: ${options2.socketPath}`;
   const socketStyled = `${WHITE_COLOR}${socketContent}`;
   const terminalContent = `  Terminal: ${padRight(`${options2.cols}x${options2.rows}`, 12)}Shell: ${options2.shell}`;
@@ -56563,7 +56592,7 @@ ${YELLOW_COLOR}\u2570${horizontalLine}\u256F${RESET}
 
 ${WHITE_COLOR}MCP Configuration (add to your MCP client):${RESET}
 
-${mcpConfig}
+${styledMcpConfig}
 
 ${YELLOW_COLOR}\u256D${horizontalLine}\u256E
 ${boxLine(restartContent, restartStyled)}
