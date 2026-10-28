@@ -1,20 +1,20 @@
 {
-  "name": "@ellery/terminal-mcp",
+  "name": "@louisje/terminal-toolkit",
   "version": "0.5.1",
-  "description": "A headless terminal emulator exposed via MCP for AI assistants",
+  "description": "A universal terminal toolkit for humans and AI agents",
   "author": "Ellery Familia",
   "repository": {
     "type": "git",
-    "url": "https://github.com/elleryfamilia/terminal-mcp.git"
+    "url": "https://github.com/louisje/terminal-toolkit.git"
   },
   "bugs": {
-    "url": "https://github.com/elleryfamilia/terminal-mcp/issues"
+    "url": "https://github.com/louisje/terminal-toolkit/issues"
   },
-  "homepage": "https://github.com/elleryfamilia/terminal-mcp#readme",
+  "homepage": "https://github.com/louisje/terminal-toolkit#readme",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "terminal-mcp": "bootstrap.cjs"
+    "terminal-toolkit": "bootstrap.cjs"
   },
   "files": [
     "bootstrap.cjs",
