@@ -3,36 +3,36 @@ import * as os from "os";
 
 /**
  * Get the default recording directory.
- * Uses XDG_STATE_HOME or falls back to ~/.local/state/terminal-mcp/recordings.
- * Can be overridden with TERMINAL_MCP_RECORD_DIR environment variable.
+ * Uses XDG_STATE_HOME or falls back to ~/.local/state/terminal-toolkit/recordings.
+ * Can be overridden with TERMINAL_TOOLKIT_RECORD_DIR environment variable.
  */
 export function getDefaultRecordDir(): string {
   // Check env var override first
-  if (process.env.TERMINAL_MCP_RECORD_DIR) {
-    return process.env.TERMINAL_MCP_RECORD_DIR;
+  if (process.env.TERMINAL_TOOLKIT_RECORD_DIR) {
+    return process.env.TERMINAL_TOOLKIT_RECORD_DIR;
   }
 
   // Use XDG_STATE_HOME or fallback
   const stateHome = process.env.XDG_STATE_HOME
     || path.join(os.homedir(), '.local', 'state');
 
-  return path.join(stateHome, 'terminal-mcp', 'recordings');
+  return path.join(stateHome, 'terminal-toolkit', 'recordings');
 }
 
 /**
  * Get the default IPC path for cross-platform communication.
  * Uses named pipes on Windows, Unix sockets elsewhere.
- * Can be overridden with TERMINAL_MCP_SOCKET environment variable.
+ * Can be overridden with TERMINAL_TOOLKIT_SOCKET environment variable.
  */
 export function getDefaultSocketPath(): string {
-  if (process.env.TERMINAL_MCP_SOCKET) {
-    return process.env.TERMINAL_MCP_SOCKET;
+  if (process.env.TERMINAL_TOOLKIT_SOCKET) {
+    return process.env.TERMINAL_TOOLKIT_SOCKET;
   }
 
   if (process.platform === "win32") {
-    return "\\\\.\\pipe\\terminal-mcp";
+    return "\\\\.\\pipe\\terminal-toolkit";
   }
-  return path.join(os.tmpdir(), "terminal-mcp.sock");
+  return path.join(os.tmpdir(), "terminal-toolkit.sock");
 }
 
 /**
@@ -44,10 +44,10 @@ export function resolveSocketPath(socketPath?: string): string {
 
 /**
  * Get the default terminal columns.
- * Priority: TERMINAL_MCP_COLS env var → fallback (120).
+ * Priority: TERMINAL_TOOLKIT_COLS env var → fallback (120).
  */
 export function getDefaultCols(): number {
-  const envVal = process.env.TERMINAL_MCP_COLS;
+  const envVal = process.env.TERMINAL_TOOLKIT_COLS;
   if (envVal) {
     const parsed = parseInt(envVal, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -57,10 +57,10 @@ export function getDefaultCols(): number {
 
 /**
  * Get the default terminal rows.
- * Priority: TERMINAL_MCP_ROWS env var → fallback (40).
+ * Priority: TERMINAL_TOOLKIT_ROWS env var → fallback (40).
  */
 export function getDefaultRows(): number {
-  const envVal = process.env.TERMINAL_MCP_ROWS;
+  const envVal = process.env.TERMINAL_TOOLKIT_ROWS;
   if (envVal) {
     const parsed = parseInt(envVal, 10);
     if (!isNaN(parsed) && parsed > 0) return parsed;
@@ -70,11 +70,11 @@ export function getDefaultRows(): number {
 
 /**
  * Get the default shell for the current platform.
- * Priority: TERMINAL_MCP_SHELL → SHELL/COMSPEC → fallback.
+ * Priority: TERMINAL_TOOLKIT_SHELL → SHELL/COMSPEC → fallback.
  */
 export function getDefaultShell(): string {
-  if (process.env.TERMINAL_MCP_SHELL) {
-    return process.env.TERMINAL_MCP_SHELL;
+  if (process.env.TERMINAL_TOOLKIT_SHELL) {
+    return process.env.TERMINAL_TOOLKIT_SHELL;
   }
   if (process.platform === "win32") {
     return process.env.COMSPEC || "cmd.exe";
