@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the technical architecture of Terminal MCP and provides guidance for development and contribution.
+This document describes the technical architecture of Terminal Toolkit and provides guidance for development and contribution.
 
 ## System Overview
 
@@ -13,7 +13,7 @@ This document describes the technical architecture of Terminal MCP and provides 
                             │ JSON-RPC (MCP Protocol)
                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Terminal MCP Server                          │
+│                     Terminal Toolkit Server                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐    │
 │  │  MCP SDK     │  │    Tools     │  │  Terminal Manager  │    │
 │  │  (Protocol)  │──│  (Handlers)  │──│    (Lifecycle)     │    │
@@ -44,7 +44,7 @@ This document describes the technical architecture of Terminal MCP and provides 
 
 ### Operating Modes
 
-Terminal MCP has three operating modes, selected by the `--headless` flag and TTY detection:
+Terminal Toolkit has three operating modes, selected by the `--headless` flag and TTY detection:
 
 | Mode | Condition | Description |
 |------|-----------|-------------|
@@ -83,7 +83,7 @@ Responsible for:
 
 ```typescript
 const server = new Server(
-  { name: "terminal-mcp", version: "0.1.0" },
+  { name: "terminal-toolkit", version: "0.1.0" },
   { capabilities: { tools: {} } }
 );
 ```
@@ -212,7 +212,7 @@ Schema validation:
 ## File Structure
 
 ```
-terminal-mcp/
+terminal-toolkit/
 ├── src/
 │   ├── index.ts              # CLI entry point
 │   ├── server.ts             # MCP server setup
@@ -406,4 +406,4 @@ process.on("SIGINT", () => {
 
 ## Session visibility
 
-Only the default session may be displayed directly to the user, when Terminal MCP runs interactively. In headless mode the default session is not displayed directly. Each additional PTY made by `createSession()` is headless, independent of the server mode; AI tools can interact with it, but it is not attached to the user-facing terminal. This matters for passwords and direct human observation: creating a new session does not make its prompt visible to the user.
+Only the default session may be displayed directly to the user, when Terminal Toolkit runs interactively. In headless mode the default session is not displayed directly. Each additional PTY made by `createSession()` is headless, independent of the server mode; AI tools can interact with it, but it is not attached to the user-facing terminal. This matters for passwords and direct human observation: creating a new session does not make its prompt visible to the user.
