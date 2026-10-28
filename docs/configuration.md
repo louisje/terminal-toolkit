@@ -8,10 +8,10 @@ Terminal MCP can be configured via command-line arguments and selected environme
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--cols` | number | `$TERMINAL_MCP_COLS` or 120 | Terminal width in columns |
-| `--rows` | number | `$TERMINAL_MCP_ROWS` or 40 | Terminal height in rows |
+| `--cols` | number | `$TERMINAL_TOOLKIT_COLS` or 120 | Terminal width in columns |
+| `--rows` | number | `$TERMINAL_TOOLKIT_ROWS` or 40 | Terminal height in rows |
 | `--shell` | string | `$SHELL` or `bash` | Shell executable to use |
-| `--socket` | string | platform default or `TERMINAL_MCP_SOCKET` | IPC socket/pipe path for MCP |
+| `--socket` | string | platform default or `TERMINAL_TOOLKIT_SOCKET` | IPC socket/pipe path for MCP |
 | `--headless` | flag | - | Run in headless mode (embedded PTY + MCP over stdio, no TTY needed) |
 | `--tmux` | string | `0` | Auto-connect to tmux target session (implies `--headless`). With `--title`: use session group and named window |
 | `--sandbox` | flag | - | Enable sandbox mode (restricts filesystem/network) |
@@ -272,10 +272,10 @@ The terminal session inherits the environment from the parent process. Key varia
 | `PATH` | Determines available commands |
 | `HOME` | Home directory for shell |
 | `USER` | Current username |
-| `TERMINAL_MCP_COLS` | Default terminal width (overridden by `--cols`) |
-| `TERMINAL_MCP_ROWS` | Default terminal height (overridden by `--rows`) |
-| `TERMINAL_MCP_SOCKET` | Default socket/pipe path for MCP |
-| `TERMINAL_MCP_RECORD_DIR` | Default recording output directory |
+| `TERMINAL_TOOLKIT_COLS` | Default terminal width (overridden by `--cols`) |
+| `TERMINAL_TOOLKIT_ROWS` | Default terminal height (overridden by `--rows`) |
+| `TERMINAL_TOOLKIT_SOCKET` | Default socket/pipe path for MCP |
+| `TERMINAL_TOOLKIT_RECORD_DIR` | Default recording output directory |
 | `XDG_STATE_HOME` | XDG base directory for state files (fallback for recordings) |
 
 ### Terminal Dimensions Resolution
@@ -283,7 +283,7 @@ The terminal session inherits the environment from the parent process. Key varia
 Terminal dimensions are resolved in this order:
 
 1. `--cols` / `--rows` command-line arguments (if provided)
-2. `TERMINAL_MCP_COLS` / `TERMINAL_MCP_ROWS` environment variables (if set)
+2. `TERMINAL_TOOLKIT_COLS` / `TERMINAL_TOOLKIT_ROWS` environment variables (if set)
 3. Actual terminal size from stdout (interactive mode only)
 4. Hardcoded defaults: 120 columns, 40 rows
 
@@ -292,7 +292,7 @@ Terminal dimensions are resolved in this order:
 The socket path is resolved in this order:
 
 1. `--socket` command-line argument (if provided)
-2. `TERMINAL_MCP_SOCKET` environment variable (if set)
+2. `TERMINAL_TOOLKIT_SOCKET` environment variable (if set)
 3. Platform default (`\\.\\pipe\\terminal-mcp` on Windows, `$TMPDIR/terminal-mcp.sock` elsewhere)
 
 ### Recording Directory Resolution
@@ -300,7 +300,7 @@ The socket path is resolved in this order:
 The default recording directory is resolved in this order:
 
 1. `--record-dir` command-line argument (if provided)
-2. `TERMINAL_MCP_RECORD_DIR` environment variable (if set)
+2. `TERMINAL_TOOLKIT_RECORD_DIR` environment variable (if set)
 3. `$XDG_STATE_HOME/terminal-mcp/recordings` (if XDG_STATE_HOME is set)
 4. `~/.local/state/terminal-mcp/recordings` (fallback)
 
