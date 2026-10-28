@@ -4,8 +4,8 @@ import * as path from "path";
 import { execSync } from "child_process";
 import * as toml from "smol-toml";
 
-const SERVER_NAME = "terminal-mcp";
-const SERVER_COMMAND = "terminal-mcp";
+const SERVER_NAME = "terminal-toolkit";
+const SERVER_COMMAND = "terminal-toolkit";
 const SERVER_ARGS = ["--headless"];
 
 export interface InstallResult {
