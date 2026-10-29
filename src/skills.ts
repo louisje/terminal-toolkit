@@ -128,6 +128,10 @@ async function skills() {
   return result;
 }
 
+export async function logSkillsOnStartup(): Promise<void> {
+  await skills();
+}
+
 export function registerSkills(server: Server): void {
   server.setRequestHandler(listRequest, async (request) => {
     if (request.params?.cursor) invalid("Unknown skills cursor");

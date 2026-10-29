@@ -5,6 +5,7 @@ import { createRequire } from "module";
 import updateNotifier from "update-notifier";
 import { startServer } from "./server.js";
 import { startMcpClientMode } from "./client.js";
+import { logSkillsOnStartup } from "./skills.js";
 import { TerminalManager } from "./terminal/index.js";
 import { createToolProxyServer } from "./transport/index.js";
 import { getBanner } from "./ui/index.js";
@@ -350,6 +351,7 @@ if (options.tmux) {
 
 async function main() {
   const socketPath = resolveSocketPath(options.socket);
+  if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
 
   // Check if --mcp flag is set to use direct MCP mode
   if (options.useMcp) {

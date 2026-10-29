@@ -55822,6 +55822,9 @@ async function skills() {
   }
   return result2;
 }
+async function logSkillsOnStartup() {
+  await skills();
+}
 function registerSkills(server) {
   server.setRequestHandler(listRequest, async (request) => {
     if (request.params?.cursor) invalid("Unknown skills cursor");
@@ -61051,6 +61054,7 @@ if (options.tmux) {
 }
 async function main() {
   const socketPath = resolveSocketPath(options.socket);
+  if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
     console.error("[terminal-toolkit] Starting in MCP mode...");
     const fs25 = await import("fs");
