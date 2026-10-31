@@ -46,13 +46,25 @@ export interface BannerOptions {
  * Generate the startup banner string
  */
 export function getBanner(options: BannerOptions): string {
-  // Build the logo with box around it
-  const logoLines = LOGO.split("\n");
+  // Keep the 79-column layout when possible; use 69 columns on smaller screens.
+  const frameWidth = options.cols >= 79 ? 79 : 69;
+  if (options.cols < 69) {
+    return [
+      "",
+      BRAND_COLOR + "Terminal" + RESET + " " + PINK_COLOR + "Toolkit" + RESET + " v" + VERSION,
+      "Socket: " + options.socketPath,
+      "Terminal: " + options.cols + "x" + options.rows,
+      "Shell: " + options.shell,
+      ...(options.sandboxEnabled ? ["Sandbox: ENABLED"] : []),
+      "MCP: terminal-toolkit --mcp",
+      "Restart your MCP client to connect.",
+      "",
+    ].join("\n");
+  }
 
-  // The full frame is 79 columns, including its two border characters.
-  const frameWidth = 79;
+  // Build the logo with box around it.
+  const logoLines = LOGO.split("\n");
   const boxWidth = frameWidth - 2;
-  const maxLogoWidth = Math.max(...logoLines.map((line) => stringWidth(line)));
 
   const horizontalLine = "─".repeat(boxWidth);
 
