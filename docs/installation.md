@@ -77,13 +77,11 @@ ls dist/
 
 ### Quick Install
 
-The easiest way to install is using the install script:
+Install the published package:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-toolkit/main/install.sh | bash
+npm install -g @louisje/terminal-toolkit
 ```
-
-This will clone the repo, build it, and create a `terminal-toolkit` symlink in your PATH.
 
 ## MCP Client Integration
 
@@ -91,7 +89,7 @@ Terminal Toolkit works with any MCP-compatible client. Add it to your MCP server
 
 ### Configuration
 
-After running the install script, add Terminal Toolkit to your MCP client configuration:
+After installing Terminal Toolkit, add it to your MCP client configuration:
 
 ```json
 {
@@ -183,17 +181,10 @@ npm run build
 
 ## Updating
 
-Re-run the install script to update:
+Update the globally installed package:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/elleryfamilia/terminal-toolkit/main/install.sh | bash
+npm install -g @louisje/terminal-toolkit@latest
 ```
 
-Or manually:
-
-```bash
-cd ~/.terminal-toolkit
-git pull
-npm install
-npm run build
-```
+For a source checkout, use `git pull`, `npm install`, and `npm run build` in that checkout.

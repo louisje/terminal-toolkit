@@ -91,12 +91,6 @@ connection in ChatGPT; the Plugin manifest does not start the tunnel.
 npm install -g @louisje/terminal-toolkit
 ```
 
-Or via install script:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/louisje/terminal-toolkit/main/install.sh | bash
-```
-
 ### Configure your AI tools
 
 Wire `terminal-toolkit` into the MCP config of every AI tool installed on your machine in one shot:
@@ -771,7 +765,7 @@ terminal-toolkit (client, spawned by MCP client)
 ## Development
 
 ```bash
-npm run build    # Compile TypeScript
+npm run build    # Generate TypeScript declarations, bundle JavaScript with esbuild, and copy QuickJS WASM
 npm run dev      # Run with tsx (development)
 ```
 
