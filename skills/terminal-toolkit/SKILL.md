@@ -132,7 +132,7 @@ Example (`code` argument to `codemode`):
 ```javascript
 const all = await searchTools(); // all tools, with descriptions
 text(all);
-const matches = await searchTools("shell", { namespace: "terminal", limit: 5 });
+const matches = await searchTools("shell", { namespace: "tools/pi", limit: 5 });
 text(matches);
 text(await describeNamespace("tools/pty")); // instructions and tool descriptions
 const shell = await describeTool("shell"); // null unless --pi-operators is enabled
@@ -152,6 +152,41 @@ agent; do not dump large intermediate results. Use `Promise.allSettled()` for
 independent calls where partial failures are acceptable. QuickJS has no direct
 filesystem/network access, but injected tools retain their host permissions.
 A new JavaScript execution starts for each call; terminal sessions persist.
+
+### Codemode usage statistics
+
+Codemode also provides `getToolStat()` as a built-in global function, alongside
+`searchTools()`, `describeTool()`, and `describeNamespace()`. It is **not**
+an MCP tool or a member of `tools.*`, and does not appear in `searchTools()`.
+
+```javascript
+text(await getToolStat()); // all discovery and tool execution statistics
+text(await getToolStat({ category: "discovery" })); // search/describe usage
+text(await getToolStat({ category: "tool" })); // actual tools.* calls
+text(await getToolStat({
+  category: "tool",
+  namespace: "tools/pi",
+  sortBy: "calls",
+  limit: 10
+}));
+```
+
+Optional filters: `category` (`"discovery"` or `"tool"`), `namespace`
+(e.g. `"tools/pi"`), `sortBy` (`"calls"`, `"name"`, or
+`"totalDurationMs"`), and positive integer `limit`. With no arguments,
+the function returns all available statistics, sorted by call count.
+
+The result includes `since`, `totalCalls`, and per-function `tools` entries
+with call counts, success/error/cancellation counts, and timing metrics.
+`discovery` additionally reports search query strings with counts and result
+metrics, per-tool `describeTool()` counts, and per-namespace
+`describeNamespace()` counts (`"(all)"` means no namespace argument).
+Distinct search queries are bounded to 1,000 entries and 256 characters each.
+
+Counters accumulate across Codemode executions in the current MCP server process
+and reset on restart. `getToolStat()` itself is counted; the in-progress
+query may appear as called but not yet successful. Tool arguments and outputs
+are not stored (except the explicitly recorded discovery query strings).
 
 The package requires Node.js >=22.19.0. The Claude Code plugin launcher is
 `bootstrap.cjs`, and the bundled Worker/WASM assets belong alongside
