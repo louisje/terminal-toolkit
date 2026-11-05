@@ -2,20 +2,6 @@
 
 Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作與歷史進度以 Git 紀錄為準。
 
-## 追查 npm 環境變數來源
-
-- [ ] 追查 shell session 中 `npm_config_allow_scripts`、`npm_config_allow_git` 是由哪個父行程或 launcher 動態注入。
-- 背景：`npx -y louisje/terminal-toolkit` 曾出現 `EALLOWSCRIPTS`；清除殘留環境變數後，`node-pty` 可正常安裝與啟動。已排除 repo 與 `node-pty` 本身，常見 shell/npm 設定檔亦未找到來源。
-
-## Claude Plugin 的 node-pty 原生依賴
-
-- [ ] 評估僅透過 Git clone 安裝 `.claude-plugin`、未執行 `npm install` 時，如何可靠提供平台相依的 `node-pty`（例如預編譯檔或其他安裝機制）。
-- `node-pty` 無法直接打包進 esbuild 的單一 JavaScript 檔案。
-
-## 測試行為
-
-- [ ] 重新驗證 `npm test -- test/platform.test.ts` 的參數轉發行為，以及 `client.test.ts` 曾發生的 `Cannot find module ../package.json` 問題（涉及 `src/utils/version.ts`）。先前 `node --test --import tsx test/platform.test.ts` 可單獨通過。
-
 ## MCP Skills 相容層
 
 - [ ] 評估是否提供選用的 MCP Tools 相容層，例如 `listSkills()`、`getSkill(name)`，供尚未原生支援 MCP Skills Extension（SEP-2640）的 AI Client 探索、讀取 Skills。

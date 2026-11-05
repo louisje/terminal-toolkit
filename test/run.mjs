@@ -10,10 +10,21 @@ import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const testDir = path.dirname(fileURLToPath(import.meta.url));
-const files = readdirSync(testDir)
+const allFiles = readdirSync(testDir)
   .filter((f) => f.endsWith(".test.mjs") || f.endsWith(".test.ts"))
   .sort()
   .map((f) => path.join("test", f));
+
+const requested = process.argv.slice(2);
+const files = requested.length === 0 ? allFiles : requested.map((arg) => {
+  const normalized = arg.replaceAll("\\", "/");
+  const basename = path.posix.basename(normalized);
+  if (!allFiles.some((file) => path.basename(file) === basename)) {
+    console.error(`Unknown test file: ${arg}`);
+    process.exit(1);
+  }
+  return path.join("test", basename);
+});
 
 if (files.length === 0) {
   console.error("No test files found in test/");
