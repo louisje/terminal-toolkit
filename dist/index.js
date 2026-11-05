@@ -54193,6 +54193,11 @@ async function handleExtraOperatorTool(name, args2) {
 }
 
 // src/tools/definitions.ts
+function getToolNamespace(name) {
+  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/pi";
+  if (["getClipboard", "setClipboard", "notify", "sleep"].includes(name)) return "tools/misc";
+  return "tools/pty";
+}
 var toolDefinitions = [
   typeTool,
   sendKeyTool,
@@ -54237,6 +54242,7 @@ var TOOL_SUMMARIES = {
 function getCodemodeToolDefinitions(piOperators = false, piExtraOperators = false) {
   return getToolDefinitions(piOperators, piExtraOperators).map((tool) => ({
     ...tool,
+    namespace: getToolNamespace(tool.name),
     description: TOOL_SUMMARIES[tool.name] ?? tool.description,
     instruction: tool.description
   }));
@@ -55363,7 +55369,7 @@ var codemodeDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
-- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Read await describeNamespace("terminal") for terminal-wide instructions, and await describeTool(name) for tool usage guidance and inputSchema.
+- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/pi, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
@@ -55379,7 +55385,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
   const timeoutMs = requestedTimeout === void 0 ? 6e4 : Number(requestedTimeout);
   const summaries = definitions.map((definition) => ({
     name: definition.name,
-    namespace: "terminal",
+    namespace: definition.namespace,
     description: definition.description,
     instruction: definition.instruction,
     inputSchema: definition.inputSchema
@@ -55408,9 +55414,9 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
         if (query !== void 0 && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options2?.limit !== void 0 && (typeof options2.limit !== "number" || !Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options2?.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options2?.namespace && options2.namespace !== "terminal" && options2.namespace !== "terminal-toolkit") return [];
+        if (options2?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options2.namespace)) return [];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        return summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => !words.length || d.score > 0).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
+        return summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => (!options2?.namespace || d.namespace === options2.namespace) && (!words.length || d.score > 0)).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
       }
     },
     {
@@ -55428,8 +55434,15 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
       spread: true,
       execute: (args3) => {
         const [name] = args3;
-        if (typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        return name === "terminal" || name === "terminal-toolkit" ? { name: "terminal", instruction: namespaceInstruction, tools: summaries.map(({ name: name2, description }) => ({ name: name2, description })) } : null;
+        if (name !== void 0 && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
+        const namespaces = [
+          { name: "tools/pi", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
+          { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
+          { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
+        ];
+        if (name === void 0) return namespaces.filter((ns2) => summaries.some((tool) => tool.namespace === ns2.name)).map(({ name: name2, description }) => ({ name: name2, description }));
+        const ns = namespaces.find((ns2) => ns2.name === name);
+        return ns ? { ...ns, tools: summaries.filter((tool) => tool.namespace === name).map(({ name: name2, description }) => ({ name: name2, description })) } : null;
       }
     }
   ];
@@ -55935,9 +55948,9 @@ var PI_EXTRA_OPERATOR_INSTRUCTIONS = `
 Pi extra operators are enabled: ls lists directory entries, grep searches file contents using installed rg, and find searches paths using installed fd/fdfind. These tools do not install dependencies. If a required executable is missing, ask the user to install it.`;
 var CODEMODE_INSTRUCTIONS = `
 
-Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("terminal") for the server tool group.
+Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/pi, tools/pty, tools/misc).
 Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("terminal") for the Terminal Toolkit operational and safety instructions before working with terminal tools.`;
+Read await describeNamespace("tools/pty") for PTY operational and safety instructions before working with terminal tools.`;
 function getServerInstructions({ codemode = false, piOperators = false, piExtraOperators = false } = {}) {
   if (codemode) return CODEMODE_INSTRUCTIONS.trim();
   return SERVER_INSTRUCTIONS + (piOperators ? PI_OPERATOR_INSTRUCTIONS : "") + (piExtraOperators ? PI_EXTRA_OPERATOR_INSTRUCTIONS : "");
@@ -56569,10 +56582,22 @@ var LOGO = `
    \u255A\u2550\u255D    \u255A\u2550\u2550\u2550\u2550\u2550\u255D  \u255A\u2550\u2550\u2550\u2550\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D   \u255A\u2550\u255D
 `.trim();
 function getBanner(options2) {
+  const frameWidth = options2.cols >= 79 ? 79 : 69;
+  if (options2.cols < 69) {
+    return [
+      "",
+      BRAND_COLOR + "Terminal" + RESET + " " + PINK_COLOR + "Toolkit" + RESET + " v" + VERSION,
+      "Socket: " + options2.socketPath,
+      "Terminal: " + options2.cols + "x" + options2.rows,
+      "Shell: " + options2.shell,
+      ...options2.sandboxEnabled ? ["Sandbox: ENABLED"] : [],
+      "MCP: terminal-toolkit --mcp",
+      "Restart your MCP client to connect.",
+      ""
+    ].join("\n");
+  }
   const logoLines = LOGO.split("\n");
-  const frameWidth = 79;
   const boxWidth = frameWidth - 2;
-  const maxLogoWidth = Math.max(...logoLines.map((line) => stringWidth2(line)));
   const horizontalLine = "\u2500".repeat(boxWidth);
   const centeredLogo = logoLines.map((line, index) => {
     const group = index < 6 ? logoLines.slice(0, 6) : logoLines.slice(6);

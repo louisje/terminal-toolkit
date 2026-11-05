@@ -21,7 +21,16 @@ import { notifyTool } from "./notify.js";
 import { operatorToolDefinitions } from "./operators.js";
 import { extraOperatorToolDefinitions } from "./extra-operators.js";
 
+export type ToolNamespace = "tools/pi" | "tools/pty" | "tools/misc";
+
+export function getToolNamespace(name: string): ToolNamespace {
+  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/pi";
+  if (["getClipboard", "setClipboard", "notify", "sleep"].includes(name)) return "tools/misc";
+  return "tools/pty";
+}
+
 export interface ToolDefinition {
+  namespace?: ToolNamespace;
   name: string;
   description: string;
   instruction?: string;
@@ -82,6 +91,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
 export function getCodemodeToolDefinitions(piOperators = false, piExtraOperators = false): ToolDefinition[] {
   return getToolDefinitions(piOperators, piExtraOperators).map(tool => ({
     ...tool,
+    namespace: getToolNamespace(tool.name),
     description: TOOL_SUMMARIES[tool.name] ?? tool.description,
     instruction: tool.description,
   }));

@@ -4,7 +4,7 @@ import { getServerInstructions } from '../src/server.ts';
 
 test('codemode outer guidance and shared terminal instructions are separately exposed', () => {
   const value = getServerInstructions({ codemode: true, piOperators: true });
-  assert.match(value, /describeNamespace\("terminal"\)/);
+  assert.match(value, /describeNamespace\("tools\/pty"\)/);
   assert.match(value, /searchTools\(\)/);
   assert.doesNotMatch(value, /ALL_TOOLS/);
   assert.match(value, /Promise\.allSettled/);

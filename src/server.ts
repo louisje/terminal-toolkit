@@ -77,9 +77,9 @@ const PI_EXTRA_OPERATOR_INSTRUCTIONS = `\n\nPi extra operators are enabled: ls l
 
 const CODEMODE_INSTRUCTIONS = `
 
-Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("terminal") for the server tool group.
+Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/pi, tools/pty, tools/misc).
 Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("terminal") for the Terminal Toolkit operational and safety instructions before working with terminal tools.`;
+Read await describeNamespace("tools/pty") for PTY operational and safety instructions before working with terminal tools.`;
 
 export interface InstructionOptions { codemode?: boolean; piOperators?: boolean; piExtraOperators?: boolean; }
 

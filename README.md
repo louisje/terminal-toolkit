@@ -799,7 +799,7 @@ MIT
 
 ### Experimental codemode (opt-in)
 
-Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `ALL_TOOLS`, `searchTools(query)`, `describeTool(name)`, and `describeNamespace("terminal")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
+Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `describeNamespace()` to list namespaces (`tools/pi`, `tools/pty`, `tools/misc`), then `searchTools(query)`, `describeTool(name)`, and `describeNamespace("tools/pty")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
 
 ```sh
 terminal-toolkit --headless --codemode --pi-operators

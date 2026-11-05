@@ -22,3 +22,13 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Generated distribution: track only runtime bundles and optional source map
+/dist/**
+!/dist/index.js
+!/dist/index.js.map
+!/dist/codemode-worker.js
+!/dist/quickjs.wasm
+!/dist/utils/
+/dist/utils/**
+!/dist/utils/shutdown.js

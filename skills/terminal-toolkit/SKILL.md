@@ -134,7 +134,7 @@ const all = await searchTools(); // all tools, with descriptions
 text(all);
 const matches = await searchTools("shell", { namespace: "terminal", limit: 5 });
 text(matches);
-text(await describeNamespace("terminal")); // instructions and tool descriptions
+text(await describeNamespace("tools/pty")); // instructions and tool descriptions
 const shell = await describeTool("shell"); // null unless --pi-operators is enabled
 text(shell?.inputSchema);
 // In an operator-enabled connection:
@@ -142,7 +142,7 @@ text(shell?.inputSchema);
 ```
 
 `searchTools()` lists all currently available tools with names, namespaces, and
-descriptions; pass a query to filter the results. `describeNamespace("terminal")`
+descriptions; pass a query to filter the results. `describeNamespace("tools/pty")`
 provides namespace instructions and available tools with descriptions.
 `describeTool(name)` provides the tool-specific instruction and input schema,
 without repeating the description already available during discovery. Use
