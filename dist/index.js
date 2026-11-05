@@ -51672,10 +51672,10 @@ var errorStream = (stream, error2) => {
 };
 var noop2 = () => {
 };
-var updateMaxListeners = (passThroughStream, increment2) => {
+var updateMaxListeners = (passThroughStream, increment3) => {
   const maxListeners = passThroughStream.getMaxListeners();
   if (maxListeners !== 0 && maxListeners !== Number.POSITIVE_INFINITY) {
-    passThroughStream.setMaxListeners(maxListeners + increment2);
+    passThroughStream.setMaxListeners(maxListeners + increment3);
   }
 };
 var PASSTHROUGH_LISTENERS_COUNT = 2;
@@ -55365,6 +55365,81 @@ SOURCE: /[\s\S]+/
 
 // src/tools/codemode.ts
 import { fileURLToPath as fileURLToPath8 } from "node:url";
+
+// src/tools/stats.ts
+var startedAt = (/* @__PURE__ */ new Date()).toISOString();
+var counters = /* @__PURE__ */ new Map();
+var searches = /* @__PURE__ */ new Map();
+var describedTools = /* @__PURE__ */ new Map();
+var describedNamespaces = /* @__PURE__ */ new Map();
+var otherQueries = 0;
+var MAX_QUERIES = 1e3;
+var MAX_QUERY_LENGTH = 256;
+function increment2(map, key) {
+  map.set(key, (map.get(key) ?? 0) + 1);
+}
+function recordSearch(query, results) {
+  const key = query.slice(0, MAX_QUERY_LENGTH);
+  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
+    otherQueries++;
+    return;
+  }
+  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
+  stat2.calls++;
+  stat2.totalResults += results;
+  if (!results) stat2.zeroResults++;
+  searches.set(key, stat2);
+}
+function recordDescribeTool(name) {
+  increment2(describedTools, name);
+}
+function recordDescribeNamespace(name) {
+  increment2(describedNamespaces, name);
+}
+async function trackCall(name, fn2, signal) {
+  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
+  counters.set(name, stat2);
+  stat2.calls++;
+  const start = performance.now();
+  try {
+    const result2 = await fn2();
+    stat2.success++;
+    return result2;
+  } catch (error2) {
+    if (signal?.aborted) stat2.cancelled++;
+    else stat2.errors++;
+    throw error2;
+  } finally {
+    const elapsed = performance.now() - start;
+    stat2.totalDurationMs += elapsed;
+    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
+  }
+}
+function getToolStat(options2 = {}, namespaces = {}) {
+  if (options2.category !== void 0 && !["discovery", "tool"].includes(options2.category)) throw new Error("Invalid category");
+  if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
+  if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
+  if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
+  const entries = [...counters.entries()].filter(([name]) => {
+    const discovery = ["searchTools", "describeTool", "describeNamespace", "getToolStat"].includes(name);
+    return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
+  }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
+  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
+  return {
+    since: startedAt,
+    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
+    tools: entries.slice(0, options2.limit),
+    ...!options2.category || options2.category === "discovery" ? {
+      discovery: {
+        searchTools: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
+        describeTool: Object.fromEntries(describedTools),
+        describeNamespace: Object.fromEntries(describedNamespaces)
+      }
+    } : {}
+  };
+}
+
+// src/tools/codemode.ts
 var codemodeDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
@@ -55395,55 +55470,75 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
     description: summaries.find((d) => d.name === definition.name).description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result2 = await dispatch(definition.name, value ?? {}, context.signal);
-      if (result2.isError) throw new Error(result2.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
+      const result2 = await trackCall(definition.name, async () => {
+        const valueResult = await dispatch(definition.name, value ?? {}, context.signal);
+        if (valueResult.isError) throw new Error(valueResult.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
+        return valueResult;
+      }, context.signal);
       if (result2.structuredContent !== void 0) return result2.structuredContent;
       const content = result2.content ?? [];
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     }
   }));
+  const namespaces = Object.fromEntries(definitions.filter((d) => d.namespace).map((d) => [d.name, d.namespace]));
   const globals = [
     {
       name: "searchTools",
       spread: true,
-      execute: (args3) => {
+      execute: (args3) => trackCall("searchTools", () => {
         const [query, rawOptions] = args3;
         if (rawOptions !== null && rawOptions !== void 0 && (typeof rawOptions !== "object" || Array.isArray(rawOptions))) throw new Error("searchTools() options must be an object");
         const options2 = rawOptions;
         if (query !== void 0 && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options2?.limit !== void 0 && (typeof options2.limit !== "number" || !Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options2?.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options2?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options2.namespace)) return [];
+        if (options2?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options2.namespace)) {
+          recordSearch(query ?? "", 0);
+          return [];
+        }
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        return summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => (!options2?.namespace || d.namespace === options2.namespace) && (!words.length || d.score > 0)).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
-      }
+        const results = summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => (!options2?.namespace || d.namespace === options2.namespace) && (!words.length || d.score > 0)).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
+        recordSearch(query ?? "", results.length);
+        return results;
+      })
     },
     {
       name: "describeTool",
       spread: true,
-      execute: (args3) => {
+      execute: (args3) => trackCall("describeTool", () => {
         const [name] = args3;
         if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
+        recordDescribeTool(name);
         const tool = summaries.find((d) => d.name === name);
         return tool ? { name: tool.name, namespace: tool.namespace, ...tool.instruction ? { instruction: tool.instruction } : {}, inputSchema: tool.inputSchema } : null;
-      }
+      })
     },
     {
       name: "describeNamespace",
       spread: true,
-      execute: (args3) => {
+      execute: (args3) => trackCall("describeNamespace", () => {
         const [name] = args3;
         if (name !== void 0 && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        const namespaces = [
+        recordDescribeNamespace(name ?? "(all)");
+        const namespaces2 = [
           { name: "tools/pi", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
           { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
           { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
         ];
-        if (name === void 0) return namespaces.filter((ns2) => summaries.some((tool) => tool.namespace === ns2.name)).map(({ name: name2, description }) => ({ name: name2, description }));
-        const ns = namespaces.find((ns2) => ns2.name === name);
+        if (name === void 0) return namespaces2.filter((ns2) => summaries.some((tool) => tool.namespace === ns2.name)).map(({ name: name2, description }) => ({ name: name2, description }));
+        const ns = namespaces2.find((ns2) => ns2.name === name);
         return ns ? { ...ns, tools: summaries.filter((tool) => tool.namespace === name).map(({ name: name2, description }) => ({ name: name2, description })) } : null;
-      }
+      })
+    },
+    {
+      name: "getToolStat",
+      spread: true,
+      execute: (args3) => trackCall("getToolStat", () => {
+        const [options2] = args3;
+        if (options2 !== void 0 && (options2 === null || typeof options2 !== "object" || Array.isArray(options2))) throw new Error("getToolStat() options must be an object");
+        return getToolStat(options2 ?? {}, namespaces);
+      })
     }
   ];
   const sandbox = new CodemodeSandbox({

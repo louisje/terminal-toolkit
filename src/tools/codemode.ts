@@ -5,6 +5,7 @@ import type { TerminalManager } from "../terminal/index.js";
 import { getCodemodeToolDefinitions, type ToolDefinition } from "./definitions.js";
 import { dispatchTool } from "./index.js";
 import { getServerInstructions } from "../server.js";
+import { trackCall, recordSearch, recordDescribeTool, recordDescribeNamespace, getToolStat } from "./stats.js";
 
 export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
@@ -45,45 +46,53 @@ export async function runCodemodeWithDispatch(
     description: summaries.find(d => d.name === definition.name)!.description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result = await dispatch(definition.name, (value ?? {}) as Record<string, unknown>, context.signal) as ToolResult;
-      if (result.isError) throw new Error(result.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
+      const result = await trackCall(definition.name, async () => {
+        const valueResult = await dispatch(definition.name, (value ?? {}) as Record<string, unknown>, context.signal) as ToolResult;
+        if (valueResult.isError) throw new Error(valueResult.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
+        return valueResult;
+      }, context.signal);
       if (result.structuredContent !== undefined) return result.structuredContent;
       const content = result.content ?? [];
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     },
   }));
+  const namespaces = Object.fromEntries(definitions.filter(d => d.namespace).map(d => [d.name, d.namespace!]));
   const globals: CodemodeTool[] = [
     {
       name: "searchTools", spread: true,
-      execute: (args) => {
+      execute: (args) => trackCall("searchTools", () => {
         const [query, rawOptions] = args as [unknown, unknown];
         if (rawOptions !== null && rawOptions !== undefined && (typeof rawOptions !== "object" || Array.isArray(rawOptions))) throw new Error("searchTools() options must be an object");
         const options = rawOptions as {limit?: number; namespace?: string} | undefined;
         if (query !== undefined && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options?.limit !== undefined && (typeof options.limit !== "number" || !Number.isInteger(options.limit) || options.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options?.namespace !== undefined && typeof options.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options.namespace)) return [];
+        if (options?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options.namespace)) { recordSearch(query ?? "", 0); return []; }
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        return summaries.map(d => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) }))
+        const results = summaries.map(d => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) }))
           .filter(d => (!options?.namespace || d.namespace === options.namespace) && (!words.length || d.score > 0)).sort((a,b) => b.score - a.score)
           .slice(0, options?.limit ?? (words.length ? 10 : undefined)).map(({ name, namespace, description }) => ({ name, namespace, description }));
-      },
+        recordSearch(query ?? "", results.length);
+        return results;
+      }),
     },
     {
       name: "describeTool", spread: true,
-      execute: (args) => {
+      execute: (args) => trackCall("describeTool", () => {
         const [name] = args as unknown[];
         if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
+        recordDescribeTool(name);
         const tool = summaries.find(d => d.name === name);
         return tool ? { name: tool.name, namespace: tool.namespace, ...(tool.instruction ? { instruction: tool.instruction } : {}), inputSchema: tool.inputSchema } : null;
-      },
+      }),
     },
     {
       name: "describeNamespace", spread: true,
-      execute: (args) => {
+      execute: (args) => trackCall("describeNamespace", () => {
         const [name] = args as unknown[];
         if (name !== undefined && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
+        recordDescribeNamespace(name ?? "(all)");
         const namespaces = [
           { name: "tools/pi", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
           { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
@@ -92,7 +101,15 @@ export async function runCodemodeWithDispatch(
         if (name === undefined) return namespaces.filter(ns => summaries.some(tool => tool.namespace === ns.name)).map(({name,description}) => ({name,description}));
         const ns = namespaces.find(ns => ns.name === name);
         return ns ? { ...ns, tools: summaries.filter(tool => tool.namespace === name).map(({name,description}) => ({name,description})) } : null;
-      },
+      }),
+    },
+    {
+      name: "getToolStat", spread: true,
+      execute: (args) => trackCall("getToolStat", () => {
+        const [options] = args as [unknown];
+        if (options !== undefined && (options === null || typeof options !== "object" || Array.isArray(options))) throw new Error("getToolStat() options must be an object");
+        return getToolStat((options ?? {}) as Parameters<typeof getToolStat>[0], namespaces);
+      }),
     },
   ];
   const sandbox = new CodemodeSandbox({
