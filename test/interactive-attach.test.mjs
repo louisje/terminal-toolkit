@@ -517,3 +517,284 @@ test("hello negotiates socket capabilities without affecting legacy requests", a
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("socket disconnect releases subscriptions and updates client count", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-disconnect-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  const clients = [];
+  const messages = [];
+  try {
+    await initialize(owner);
+    for (let i = 0; i < 2; i++) {
+      const client = net.createConnection(socketPath);
+      clients.push(client);
+      const received = [];
+      messages.push(received);
+      let buffer = "";
+      client.on("data", chunk => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) if (line) received.push(JSON.parse(line));
+      });
+      await new Promise((resolve, reject) => {
+        client.once("connect", resolve);
+        client.once("error", reject);
+      });
+    }
+    const send = (i, id, method, params) =>
+      clients[i].write(JSON.stringify({ id, method, params }) + "\n");
+    await waitFor(() => messages[0].some(m => m.event === "client.count"));
+    const initialCount = messages[0].filter(m => m.event === "client.count").at(-1).data;
+    send(0, 800, "subscribe", { topic: "custom.cleanup" });
+    await waitFor(() => messages[0].some(m => m.id === 800));
+    clients[0].destroy();
+    await waitFor(() => messages[1].some(m => m.event === "client.count" && m.data === initialCount - 1));
+    send(1, 801, "publish", { topic: "custom.cleanup", data: "after-close" });
+    await waitFor(() => messages[1].some(m => m.id === 801));
+    assert.ok(messages[1].find(m => m.id === 801).result.accepted);
+    assert.equal(messages[1].some(m => m.event === "custom.cleanup"), false);
+    const replacement = net.createConnection(socketPath);
+    clients.push(replacement);
+    const replacementMessages = [];
+    let buffer = "";
+    replacement.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) replacementMessages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      replacement.once("connect", resolve);
+      replacement.once("error", reject);
+    });
+    await waitFor(() => messages[1].some(m => m.event === "client.count" && m.data === initialCount));
+    send(1, 802, "publish", { topic: "custom.cleanup", data: "not-inherited" });
+    await waitFor(() => messages[1].some(m => m.id === 802));
+    assert.equal(replacementMessages.some(m => m.event === "custom.cleanup"), false);
+    replacement.write(JSON.stringify({ id: 803, method: "subscribe", params: { topic: "custom.cleanup" } }) + "\n");
+    await waitFor(() => replacementMessages.some(m => m.id === 803));
+    send(1, 804, "publish", { topic: "custom.cleanup", data: "new-subscription" });
+    await waitFor(() => replacementMessages.some(m => m.event === "custom.cleanup"));
+    assert.equal(replacementMessages.find(m => m.event === "custom.cleanup").data, "new-subscription");
+  } finally {
+    for (const client of clients) client.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("disconnect during a pending tool request does not break the socket server", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-pending-close-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  const clients = [];
+  try {
+    await initialize(owner);
+    const connect = async () => {
+      const socket = net.createConnection(socketPath);
+      clients.push(socket);
+      const messages = [];
+      let buffer = "";
+      socket.on("data", chunk => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) if (line) messages.push(JSON.parse(line));
+      });
+      await new Promise((resolve, reject) => {
+        socket.once("connect", resolve);
+        socket.once("error", reject);
+      });
+      return { socket, messages };
+    };
+    const first = await connect();
+    first.socket.write(JSON.stringify({ id: 900, method: "sleep", params: { duration: 5 } }) + "\n");
+    first.socket.destroy();
+    const second = await connect();
+    second.socket.write(JSON.stringify({ id: 901, method: "hello" }) + "\n");
+    await waitFor(() => second.messages.some(m => m.id === 901));
+    assert.equal(second.messages.find(m => m.id === 901).result.protocolVersion, 1);
+    assert.equal(owner.exit, null);
+  } finally {
+    for (const socket of clients) socket.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("cancel aborts a pending sleep and leaves the connection usable", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-cancel-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const send = (id, method, params) =>
+      client.write(JSON.stringify({ id, method, params }) + "\n");
+    send(910, "sleep", { milliseconds: 5000 });
+    // A separate data event lets the asynchronous sleep start before cancellation.
+    await new Promise(resolve => setTimeout(resolve, 100));
+    send(910, "sleep", { milliseconds: 5000 });
+    await waitFor(() => messages.some(m => m.id === 910 && m.error));
+    assert.match(messages.find(m => m.id === 910 && m.error).error.message, /Duplicate in-flight/);
+    const start = Date.now();
+    send(911, "cancel", { requestId: 910 });
+    await new Promise(resolve => setTimeout(resolve, 150));
+    send(912, "hello", {});
+    await waitFor(() => messages.some(m => m.id === 912), { timeoutMs: 2000 });
+    assert.ok(Date.now() - start < 2000, "cancel should unblock the request loop promptly");
+    assert.equal(messages.find(m => m.id === 912).result.protocolVersion, 1);
+    assert.equal(messages.some(m => m.id === 910 && m.result), false);
+    // Reusing the request ID proves the aborted handler has left the in-flight map.
+    send(910, "hello", {});
+    await waitFor(() => messages.some(m => m.id === 910 && m.result?.protocolVersion === 1), { timeoutMs: 2000 });
+    assert.equal(owner.exit, null);
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("batched cancellation does not block independent requests", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-batch-cancel-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const frame = (id, method, params) => JSON.stringify({ id, method, params }) + "\n";
+    const start = Date.now();
+    client.write(
+      frame(920, "sleep", { milliseconds: 5000 }) +
+      frame(921, "sleep", { milliseconds: 250 }) +
+      frame(922, "cancel", { requestId: 920 }) +
+      frame(923, "hello", {})
+    );
+    await waitFor(() => messages.some(m => m.id === 923) && messages.some(m => m.id === 921), { timeoutMs: 2000 });
+    assert.ok(Date.now() - start < 2000);
+    assert.equal(messages.find(m => m.id === 923).result.protocolVersion, 1);
+    assert.ok(messages.find(m => m.id === 921).result);
+    assert.equal(messages.some(m => m.id === 920 && m.result), false);
+    client.write(frame(920, "hello", {}));
+    await waitFor(() => messages.some(m => m.id === 920 && m.result?.protocolVersion === 1), { timeoutMs: 2000 });
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("batched attach and detach never resurrect a stale attachment", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-attach-race-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const frame = (id, method, params) => JSON.stringify({ id, method, params }) + "\n";
+    client.write(frame(930, "attach", {}) + frame(931, "detach", {}) + frame(932, "hello", {}));
+    await waitFor(() => messages.some(m => m.id === 931) && messages.some(m => m.id === 932));
+    await new Promise(resolve => setTimeout(resolve, 200));
+    assert.equal(messages.some(m => m.id === 930 && m.result), false, "stale attach must not complete");
+    client.write(frame(933, "attach", {}));
+    await waitFor(() => messages.some(m => m.id === 933), { timeoutMs: 10000 });
+    assert.ok(messages.find(m => m.id === 933).result, "fresh attach succeeds");
+    client.write(frame(934, "detach", {}));
+    await waitFor(() => messages.some(m => m.id === 934));
+    assert.equal(owner.exit, null);
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("input and resize reject requests without a completed attachment", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-attach-input-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const frame = (id, method, params) => JSON.stringify({ id, method, params }) + "\n";
+    client.write(frame(940, "input", { data: "before" }) + frame(941, "terminalResize", { cols: 80, rows: 24 }));
+    await waitFor(() => messages.some(m => m.id === 940) && messages.some(m => m.id === 941));
+    assert.match(messages.find(m => m.id === 940).error.message, /No attached session/);
+    assert.match(messages.find(m => m.id === 941).error.message, /No attached session/);
+    client.write(frame(942, "attach", {}) + frame(943, "input", { data: "pending" }) + frame(944, "terminalResize", { cols: 81, rows: 25 }));
+    await waitFor(() => messages.some(m => m.id === 943) && messages.some(m => m.id === 944));
+    assert.match(messages.find(m => m.id === 943).error.message, /Attachment pending/);
+    assert.match(messages.find(m => m.id === 944).error.message, /Attachment pending/);
+    await waitFor(() => messages.some(m => m.id === 942 && m.result), { timeoutMs: 10000 });
+    client.write(frame(945, "detach", {}));
+    await waitFor(() => messages.some(m => m.id === 945));
+    client.write(frame(946, "input", { data: "after" }));
+    await waitFor(() => messages.some(m => m.id === 946));
+    assert.match(messages.find(m => m.id === 946).error.message, /No attached session/);
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});

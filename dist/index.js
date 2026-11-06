@@ -56290,6 +56290,11 @@ function createBrokerConnection(socket) {
     lastPublishRefill: performance.now()
   };
 }
+function disposeBrokerConnection(connection) {
+  connection.subscriptions.clear();
+  connection.systemFilterEnabled = false;
+  connection.publishTokens = 0;
+}
 var subscriptionKey = (topic, sessionId) => JSON.stringify([topic, sessionId ?? null]);
 function acceptsSystemEvent(connection, event, sessionId) {
   return !connection.systemFilterEnabled || connection.subscriptions.has(subscriptionKey(event)) || connection.subscriptions.has(subscriptionKey(event, sessionId));
@@ -56374,10 +56379,14 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
     let attached = false;
+    let attachGeneration = 0;
+    let attachPending = false;
     let attachedSessionId;
     let unsubscribeData;
     let unsubscribeExit;
     const detach = () => {
+      attachGeneration++;
+      attachPending = false;
       attached = false;
       attachedSessionId = void 0;
       connection.sessionId = void 0;
@@ -56405,8 +56414,8 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               continue;
             }
             if (request.method === "subscribe" || request.method === "unsubscribe" || request.method === "publish") {
-              const response2 = handleBrokerRequest(request.method, request.params, connectionId, connection, connections.values());
-              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, ...response2 }) + "\n");
+              const response = handleBrokerRequest(request.method, request.params, connectionId, connection, connections.values());
+              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, ...response }) + "\n");
               continue;
             }
             if (request.method === "detach") {
@@ -56415,36 +56424,64 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               continue;
             }
             if (request.method === "attach") {
-              if (attached) continue;
+              if (attached || attachPending) {
+                if (!socket.destroyed) socket.write(JSON.stringify({
+                  id: request.id,
+                  error: { message: "Session already attached or attachment pending" }
+                }) + "\n");
+                continue;
+              }
               const requestedSessionId = request.params?.sessionId;
               if (requestedSessionId !== void 0 && typeof requestedSessionId !== "string") throw new Error("sessionId must be a string");
               const sessionId = requestedSessionId || "default";
-              const session = await manager.resolveSession(sessionId === "default" ? void 0 : sessionId);
-              attachedSessionId = sessionId;
-              connection.sessionId = sessionId;
-              attached = true;
-              console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
-              const screen = session.takeScreenshot();
-              const snapshot = session.getAnsiContent(true);
-              socket.write(JSON.stringify({
-                id: request.id,
-                result: { snapshot, cursor: screen.cursor }
-              }) + "\n");
-              unsubscribeData = session.onData((output2) => {
-                if (attached && !socket.destroyed) {
-                  socket.write(JSON.stringify({ event: "output", data: output2, ...attachedSessionId !== "default" ? { sessionId: attachedSessionId } : {} }) + "\n");
+              const generation = ++attachGeneration;
+              attachPending = true;
+              void (async () => {
+                try {
+                  const session = await manager.resolveSession(sessionId === "default" ? void 0 : sessionId);
+                  if (socket.destroyed || generation !== attachGeneration) return;
+                  const screen = session.takeScreenshot();
+                  const snapshot = session.getAnsiContent(true);
+                  if (socket.destroyed || generation !== attachGeneration) return;
+                  attachedSessionId = sessionId;
+                  connection.sessionId = sessionId;
+                  attached = true;
+                  console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
+                  unsubscribeData = session.onData((output2) => {
+                    if (attached && !socket.destroyed) {
+                      socket.write(JSON.stringify({ event: "output", data: output2, ...attachedSessionId !== "default" ? { sessionId: attachedSessionId } : {} }) + "\n");
+                    }
+                  });
+                  unsubscribeExit = session.onExit(() => {
+                    if (attached && !socket.destroyed) socket.end();
+                  });
+                  if (!socket.destroyed) socket.write(JSON.stringify({
+                    id: request.id,
+                    result: { snapshot, cursor: screen.cursor }
+                  }) + "\n");
+                } catch (error2) {
+                  if (generation === attachGeneration && !socket.destroyed) socket.write(JSON.stringify({
+                    id: request.id,
+                    error: { message: error2 instanceof Error ? error2.message : String(error2) }
+                  }) + "\n");
+                } finally {
+                  if (generation === attachGeneration) attachPending = false;
                 }
-              });
-              unsubscribeExit = session.onExit(() => {
-                if (attached && !socket.destroyed) socket.end();
-              });
+              })();
               continue;
             }
-            if (attached && request.method === "input") {
-              manager.write(String(request.params?.data ?? ""), attachedSessionId === "default" ? void 0 : attachedSessionId);
-              continue;
-            }
-            if (attached && request.method === "terminalResize") {
+            if (request.method === "input" || request.method === "terminalResize") {
+              if (!attached) {
+                if (!socket.destroyed) socket.write(JSON.stringify({
+                  id: request.id,
+                  error: { message: attachPending ? "Attachment pending" : "No attached session" }
+                }) + "\n");
+                continue;
+              }
+              if (request.method === "input") {
+                manager.write(String(request.params?.data ?? ""), attachedSessionId === "default" ? void 0 : attachedSessionId);
+                continue;
+              }
               const cols = Number(request.params?.cols);
               const rows = Number(request.params?.rows);
               if (Number.isInteger(cols) && Number.isInteger(rows) && cols > 0 && rows > 0) {
@@ -56457,18 +56494,35 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               if (typeof target === "number") inflight.get(target)?.abort();
               continue;
             }
+            if (inflight.has(request.id)) {
+              if (!socket.destroyed) socket.write(JSON.stringify({
+                id: request.id,
+                error: { message: "Duplicate in-flight request id" }
+              }) + "\n");
+              continue;
+            }
             const controller = new AbortController();
             inflight.set(request.id, controller);
-            const response = await handleToolRequest(manager, request, onClientConnected, clientPiOperators, clientPiExtraOperators, (enabled) => {
-              clientPiOperators = clientPiOperators || enabled;
-            }, (enabled) => {
-              clientPiExtraOperators = clientPiExtraOperators || enabled;
-            }, controller.signal);
-            inflight.delete(request.id);
-            if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
+            void (async () => {
+              try {
+                const response = await handleToolRequest(manager, request, onClientConnected, clientPiOperators, clientPiExtraOperators, (enabled) => {
+                  clientPiOperators = clientPiOperators || enabled;
+                }, (enabled) => {
+                  clientPiExtraOperators = clientPiExtraOperators || enabled;
+                }, controller.signal);
+                if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
+              } catch (error2) {
+                if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
+                  id: request.id,
+                  error: { message: error2 instanceof Error ? error2.message : String(error2) }
+                }) + "\n");
+              } finally {
+                if (inflight.get(request.id) === controller) inflight.delete(request.id);
+              }
+            })();
           } catch (error2) {
             const errorMessage2 = error2 instanceof Error ? error2.message : String(error2);
-            socket.write(
+            if (!socket.destroyed) socket.write(
               JSON.stringify({
                 id: 0,
                 error: { message: `Parse error: ${errorMessage2}` }
@@ -56482,6 +56536,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       const wasAttached = attached;
       detach();
       connections.delete(connectionId);
+      disposeBrokerConnection(connection);
       clientCount = connections.size;
       if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
       manager.setClientCount?.(clientCount);

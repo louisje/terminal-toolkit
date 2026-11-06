@@ -23,6 +23,13 @@ export function createBrokerConnection(socket: Socket): BrokerConnection {
   };
 }
 
+/** Release connection-owned broker state on socket disconnect. */
+export function disposeBrokerConnection(connection: BrokerConnection): void {
+  connection.subscriptions.clear();
+  connection.systemFilterEnabled = false;
+  connection.publishTokens = 0;
+}
+
 export const subscriptionKey = (topic: string, sessionId?: string): string =>
   JSON.stringify([topic, sessionId ?? null]);
 

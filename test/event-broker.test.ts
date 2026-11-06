@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { Socket } from "node:net";
 import {
-  acceptsSystemEvent, createBrokerConnection, handleBrokerRequest, subscriptionKey,
+  acceptsSystemEvent, createBrokerConnection, disposeBrokerConnection, handleBrokerRequest, subscriptionKey,
 } from "../src/transport/event-broker.js";
 
 function mockSocket() {
@@ -89,4 +89,19 @@ test("subscription cap, duplicate subscription, payload cap and validation", () 
   assert.match(handleBrokerRequest("subscribe", { topic: "custom.extra" }, 1, c, [c]).error?.message ?? "", /limit/);
   assert.match(handleBrokerRequest("publish", { topic: "custom.t0", data: "x".repeat(65536) }, 1, c, [c]).error?.message ?? "", /64 KiB/);
   assert.match(handleBrokerRequest("subscribe", { topic: "custom.ok", sessionId: 42 }, 1, c, [c]).error?.message ?? "", /sessionId/);
+});
+
+
+test("disconnected clients release subscriptions and filter state", () => {
+  const c = createBrokerConnection(mockSocket().socket);
+  handleBrokerRequest("subscribe", { topic: "custom.a" }, 1, c, [c]);
+  handleBrokerRequest("subscribe", { topic: "session.created" }, 1, c, [c]);
+  assert.equal(c.subscriptions.size, 2);
+  assert.equal(c.systemFilterEnabled, true);
+  disposeBrokerConnection(c);
+  assert.equal(c.subscriptions.size, 0);
+  assert.equal(c.systemFilterEnabled, false);
+  assert.equal(c.publishTokens, 0);
+  disposeBrokerConnection(c);
+  assert.equal(c.subscriptions.size, 0);
 });
