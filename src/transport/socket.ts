@@ -5,6 +5,8 @@ import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { TerminalManager } from "../terminal/index.js";
 import { getStats } from "../utils/stats.js";
+import { negotiateSocketProtocol } from "./socket-protocol.js";
+import { acceptsSystemEvent, createBrokerConnection, handleBrokerRequest, type BrokerConnection, type EventMethod } from "./event-broker.js";
 
 // Tool handlers
 import { handleType } from "../tools/type.js";
@@ -147,25 +149,10 @@ export function createToolProxyServer(
   piOperators = false,
   piExtraOperators = false
 ): NetServer {
-  // Limits apply to the new custom-event protocol without changing legacy tool payloads.
-  const MAX_CUSTOM_EVENT_BYTES = 64 * 1024;
-  const MAX_SUBSCRIPTIONS = 128;
-  const MAX_PENDING_SOCKET_BYTES = 1024 * 1024;
-  const PUBLISH_BURST = 20;
-  const PUBLISH_REFILL_PER_SECOND = 10;
-  const PROTOCOL_VERSION = 1;
-  const PROTOCOL_CAPABILITIES = [
-    "session.attach", "session.detach", "session.lifecycle",
-    "event.custom", "event.sessionScope", "event.systemFilter",
-    "event.rateLimit",
-  ];
   let clientCount = 0;
   let nextConnectionId = 0;
-  type SocketConnection = { socket: Socket; sessionId?: string; subscriptions: Set<string>; systemFilterEnabled: boolean };
+  type SocketConnection = BrokerConnection & { sessionId?: string };
   const connections = new Map<number, SocketConnection>();
-  // A scoped subscription is distinct from its unscoped counterpart.
-  const subscriptionKey = (topic: string, sessionId?: string): string =>
-    JSON.stringify([topic, sessionId ?? null]);
   const broadcastClientCount = (): void => {
     const message = JSON.stringify({ event: "client.count", data: clientCount }) + "\n";
     for (const connection of connections.values()) {
@@ -176,21 +163,17 @@ export function createToolProxyServer(
     const message = JSON.stringify({ event, sessionId }) + "\n";
     for (const connection of connections.values()) {
       if (connection.socket.destroyed) continue;
-      if (connection.systemFilterEnabled &&
-          !connection.subscriptions.has(subscriptionKey(event)) &&
-          !connection.subscriptions.has(subscriptionKey(event, sessionId))) continue;
+      if (!acceptsSystemEvent(connection, event, sessionId)) continue;
       connection.socket.write(message);
     }
   });
   const server = new NetServer((socket) => {
     const connectionId = ++nextConnectionId;
-    const connection: SocketConnection = { socket, subscriptions: new Set<string>(), systemFilterEnabled: false };
+    const connection: SocketConnection = createBrokerConnection(socket);
     connections.set(connectionId, connection);
     clientCount = connections.size;
     manager.setClientCount?.(clientCount);
     broadcastClientCount();
-    let publishTokens = PUBLISH_BURST;
-    let lastPublishRefill = performance.now();
     let buffer = "";
     const inflight = new Map<number, AbortController>();
     let attached = false;
@@ -219,68 +202,16 @@ export function createToolProxyServer(
           try {
             const request = JSON.parse(line) as SocketRequest;
             if (request.method === "hello") {
-              const requestedVersion = request.params?.protocolVersion;
-              if (requestedVersion !== undefined && (!Number.isInteger(requestedVersion) || requestedVersion !== PROTOCOL_VERSION)) {
-                if (!socket.destroyed) socket.write(JSON.stringify({
-                  id: request.id, error: { message: "Unsupported socket protocol version" },
-                }) + "\n");
-                continue;
-              }
+              const negotiation = negotiateSocketProtocol(request.params?.protocolVersion);
               if (!socket.destroyed) socket.write(JSON.stringify({
                 id: request.id,
-                result: { protocolVersion: PROTOCOL_VERSION, capabilities: PROTOCOL_CAPABILITIES },
+                ...negotiation,
               }) + "\n");
               continue;
             }
             if (request.method === "subscribe" || request.method === "unsubscribe" || request.method === "publish") {
-              const topic = request.params?.topic;
-              const isCustomTopic = typeof topic === "string" && /^custom\.[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(topic);
-              const isSystemTopic = topic === "session.created" || topic === "session.destroyed";
-              if (!isCustomTopic && !(request.method !== "publish" && isSystemTopic)) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Invalid custom event topic" } }) + "\n");
-                continue;
-              }
-              const rawSessionId = request.params?.sessionId;
-              if (rawSessionId !== undefined && (typeof rawSessionId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(rawSessionId))) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Invalid sessionId" } }) + "\n");
-                continue;
-              }
-              const sessionId = rawSessionId as string | undefined;
-              const key = subscriptionKey(topic, sessionId);
-              if (request.method === "subscribe" && !connection.subscriptions.has(key) && connection.subscriptions.size >= MAX_SUBSCRIPTIONS) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Subscription limit reached" } }) + "\n");
-                continue;
-              }
-              if (request.method === "publish") {
-                const message = JSON.stringify({ event: topic, data: request.params?.data ?? null, source: connectionId, ...(sessionId ? { sessionId } : {}) }) + "\n";
-                if (Buffer.byteLength(message, "utf8") > MAX_CUSTOM_EVENT_BYTES) {
-                  if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Custom event exceeds 64 KiB" } }) + "\n");
-                  continue;
-                }
-                const now = performance.now();
-                publishTokens = Math.min(PUBLISH_BURST, publishTokens + (now - lastPublishRefill) * PUBLISH_REFILL_PER_SECOND / 1000);
-                lastPublishRefill = now;
-                if (publishTokens < 1) {
-                  if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Custom event publish rate exceeded" } }) + "\n");
-                  continue;
-                }
-                publishTokens -= 1;
-                for (const subscriber of connections.values()) {
-                  if (!subscriber.subscriptions.has(key) || subscriber.socket.destroyed) continue;
-                  // A slow subscriber must not grow the server's output buffer indefinitely.
-                  if (subscriber.socket.writableLength + Buffer.byteLength(message, "utf8") > MAX_PENDING_SOCKET_BYTES) {
-                    subscriber.socket.destroy();
-                    continue;
-                  }
-                  subscriber.socket.write(message);
-                }
-              }
-              if (request.method === "subscribe") {
-                connection.subscriptions.add(key);
-                if (isSystemTopic) connection.systemFilterEnabled = true;
-              }
-              if (request.method === "unsubscribe") connection.subscriptions.delete(key);
-              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, result: { accepted: true } }) + "\n");
+              const response = handleBrokerRequest(request.method as EventMethod, request.params, connectionId, connection, connections.values());
+              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, ...response }) + "\n");
               continue;
             }
             if (request.method === "detach") {

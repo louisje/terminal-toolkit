@@ -56252,6 +56252,94 @@ function getStats() {
   return globalStats;
 }
 
+// src/transport/socket-protocol.ts
+var SOCKET_PROTOCOL_VERSION = 1;
+var SOCKET_PROTOCOL_CAPABILITIES = Object.freeze([
+  "session.attach",
+  "session.detach",
+  "session.lifecycle",
+  "event.custom",
+  "event.sessionScope",
+  "event.systemFilter",
+  "event.rateLimit"
+]);
+function negotiateSocketProtocol(requestedVersion) {
+  if (requestedVersion !== void 0 && requestedVersion !== SOCKET_PROTOCOL_VERSION) {
+    return { error: { message: "Unsupported socket protocol version" } };
+  }
+  return {
+    result: {
+      protocolVersion: SOCKET_PROTOCOL_VERSION,
+      capabilities: SOCKET_PROTOCOL_CAPABILITIES
+    }
+  };
+}
+
+// src/transport/event-broker.ts
+var MAX_CUSTOM_EVENT_BYTES = 64 * 1024;
+var MAX_SUBSCRIPTIONS = 128;
+var MAX_PENDING_SOCKET_BYTES = 1024 * 1024;
+var PUBLISH_BURST = 20;
+var PUBLISH_REFILL_PER_SECOND = 10;
+function createBrokerConnection(socket) {
+  return {
+    socket,
+    subscriptions: /* @__PURE__ */ new Set(),
+    systemFilterEnabled: false,
+    publishTokens: PUBLISH_BURST,
+    lastPublishRefill: performance.now()
+  };
+}
+var subscriptionKey = (topic, sessionId) => JSON.stringify([topic, sessionId ?? null]);
+function acceptsSystemEvent(connection, event, sessionId) {
+  return !connection.systemFilterEnabled || connection.subscriptions.has(subscriptionKey(event)) || connection.subscriptions.has(subscriptionKey(event, sessionId));
+}
+function handleBrokerRequest(method, params, connectionId, connection, connections) {
+  const topic = params?.topic;
+  const isCustomTopic = typeof topic === "string" && /^custom\.[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(topic);
+  const isSystemTopic = topic === "session.created" || topic === "session.destroyed";
+  if (!isCustomTopic && !(method !== "publish" && isSystemTopic)) {
+    return { error: { message: "Invalid custom event topic" } };
+  }
+  const rawSessionId = params?.sessionId;
+  if (rawSessionId !== void 0 && (typeof rawSessionId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(rawSessionId))) {
+    return { error: { message: "Invalid sessionId" } };
+  }
+  const sessionId = rawSessionId;
+  const key = subscriptionKey(topic, sessionId);
+  if (method === "subscribe" && !connection.subscriptions.has(key) && connection.subscriptions.size >= MAX_SUBSCRIPTIONS) {
+    return { error: { message: "Subscription limit reached" } };
+  }
+  if (method === "publish") {
+    const message = JSON.stringify({ event: topic, data: params?.data ?? null, source: connectionId, ...sessionId ? { sessionId } : {} }) + "\n";
+    const messageBytes = Buffer.byteLength(message, "utf8");
+    if (messageBytes > MAX_CUSTOM_EVENT_BYTES) {
+      return { error: { message: "Custom event exceeds 64 KiB" } };
+    }
+    const now = performance.now();
+    connection.publishTokens = Math.min(PUBLISH_BURST, connection.publishTokens + (now - connection.lastPublishRefill) * PUBLISH_REFILL_PER_SECOND / 1e3);
+    connection.lastPublishRefill = now;
+    if (connection.publishTokens < 1) {
+      return { error: { message: "Custom event publish rate exceeded" } };
+    }
+    connection.publishTokens -= 1;
+    for (const subscriber of connections) {
+      if (!subscriber.subscriptions.has(key) || subscriber.socket.destroyed) continue;
+      if (subscriber.socket.writableLength + messageBytes > MAX_PENDING_SOCKET_BYTES) {
+        subscriber.socket.destroy();
+        continue;
+      }
+      subscriber.socket.write(message);
+    }
+  }
+  if (method === "subscribe") {
+    connection.subscriptions.add(key);
+    if (isSystemTopic) connection.systemFilterEnabled = true;
+  }
+  if (method === "unsubscribe") connection.subscriptions.delete(key);
+  return { result: { accepted: true } };
+}
+
 // src/transport/socket.ts
 var clientConnectedSchema = external_exports.object({
   title: external_exports.string().optional(),
@@ -56259,25 +56347,9 @@ var clientConnectedSchema = external_exports.object({
   piExtraOperators: external_exports.boolean().optional()
 });
 function createToolProxyServer(socketPath, manager, onClientConnected, piOperators = false, piExtraOperators = false) {
-  const MAX_CUSTOM_EVENT_BYTES = 64 * 1024;
-  const MAX_SUBSCRIPTIONS = 128;
-  const MAX_PENDING_SOCKET_BYTES = 1024 * 1024;
-  const PUBLISH_BURST = 20;
-  const PUBLISH_REFILL_PER_SECOND = 10;
-  const PROTOCOL_VERSION = 1;
-  const PROTOCOL_CAPABILITIES = [
-    "session.attach",
-    "session.detach",
-    "session.lifecycle",
-    "event.custom",
-    "event.sessionScope",
-    "event.systemFilter",
-    "event.rateLimit"
-  ];
   let clientCount = 0;
   let nextConnectionId = 0;
   const connections = /* @__PURE__ */ new Map();
-  const subscriptionKey = (topic, sessionId) => JSON.stringify([topic, sessionId ?? null]);
   const broadcastClientCount = () => {
     const message = JSON.stringify({ event: "client.count", data: clientCount }) + "\n";
     for (const connection of connections.values()) {
@@ -56288,19 +56360,17 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     const message = JSON.stringify({ event, sessionId }) + "\n";
     for (const connection of connections.values()) {
       if (connection.socket.destroyed) continue;
-      if (connection.systemFilterEnabled && !connection.subscriptions.has(subscriptionKey(event)) && !connection.subscriptions.has(subscriptionKey(event, sessionId))) continue;
+      if (!acceptsSystemEvent(connection, event, sessionId)) continue;
       connection.socket.write(message);
     }
   });
   const server = new NetServer((socket) => {
     const connectionId = ++nextConnectionId;
-    const connection = { socket, subscriptions: /* @__PURE__ */ new Set(), systemFilterEnabled: false };
+    const connection = createBrokerConnection(socket);
     connections.set(connectionId, connection);
     clientCount = connections.size;
     manager.setClientCount?.(clientCount);
     broadcastClientCount();
-    let publishTokens = PUBLISH_BURST;
-    let lastPublishRefill = performance.now();
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
     let attached = false;
@@ -56327,68 +56397,16 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
           try {
             const request = JSON.parse(line);
             if (request.method === "hello") {
-              const requestedVersion = request.params?.protocolVersion;
-              if (requestedVersion !== void 0 && (!Number.isInteger(requestedVersion) || requestedVersion !== PROTOCOL_VERSION)) {
-                if (!socket.destroyed) socket.write(JSON.stringify({
-                  id: request.id,
-                  error: { message: "Unsupported socket protocol version" }
-                }) + "\n");
-                continue;
-              }
+              const negotiation = negotiateSocketProtocol(request.params?.protocolVersion);
               if (!socket.destroyed) socket.write(JSON.stringify({
                 id: request.id,
-                result: { protocolVersion: PROTOCOL_VERSION, capabilities: PROTOCOL_CAPABILITIES }
+                ...negotiation
               }) + "\n");
               continue;
             }
             if (request.method === "subscribe" || request.method === "unsubscribe" || request.method === "publish") {
-              const topic = request.params?.topic;
-              const isCustomTopic = typeof topic === "string" && /^custom\.[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/.test(topic);
-              const isSystemTopic = topic === "session.created" || topic === "session.destroyed";
-              if (!isCustomTopic && !(request.method !== "publish" && isSystemTopic)) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Invalid custom event topic" } }) + "\n");
-                continue;
-              }
-              const rawSessionId = request.params?.sessionId;
-              if (rawSessionId !== void 0 && (typeof rawSessionId !== "string" || !/^[a-zA-Z0-9_-]{1,64}$/.test(rawSessionId))) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Invalid sessionId" } }) + "\n");
-                continue;
-              }
-              const sessionId = rawSessionId;
-              const key = subscriptionKey(topic, sessionId);
-              if (request.method === "subscribe" && !connection.subscriptions.has(key) && connection.subscriptions.size >= MAX_SUBSCRIPTIONS) {
-                if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Subscription limit reached" } }) + "\n");
-                continue;
-              }
-              if (request.method === "publish") {
-                const message = JSON.stringify({ event: topic, data: request.params?.data ?? null, source: connectionId, ...sessionId ? { sessionId } : {} }) + "\n";
-                if (Buffer.byteLength(message, "utf8") > MAX_CUSTOM_EVENT_BYTES) {
-                  if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Custom event exceeds 64 KiB" } }) + "\n");
-                  continue;
-                }
-                const now = performance.now();
-                publishTokens = Math.min(PUBLISH_BURST, publishTokens + (now - lastPublishRefill) * PUBLISH_REFILL_PER_SECOND / 1e3);
-                lastPublishRefill = now;
-                if (publishTokens < 1) {
-                  if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, error: { message: "Custom event publish rate exceeded" } }) + "\n");
-                  continue;
-                }
-                publishTokens -= 1;
-                for (const subscriber of connections.values()) {
-                  if (!subscriber.subscriptions.has(key) || subscriber.socket.destroyed) continue;
-                  if (subscriber.socket.writableLength + Buffer.byteLength(message, "utf8") > MAX_PENDING_SOCKET_BYTES) {
-                    subscriber.socket.destroy();
-                    continue;
-                  }
-                  subscriber.socket.write(message);
-                }
-              }
-              if (request.method === "subscribe") {
-                connection.subscriptions.add(key);
-                if (isSystemTopic) connection.systemFilterEnabled = true;
-              }
-              if (request.method === "unsubscribe") connection.subscriptions.delete(key);
-              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, result: { accepted: true } }) + "\n");
+              const response2 = handleBrokerRequest(request.method, request.params, connectionId, connection, connections.values());
+              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, ...response2 }) + "\n");
               continue;
             }
             if (request.method === "detach") {

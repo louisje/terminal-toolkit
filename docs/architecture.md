@@ -407,3 +407,26 @@ process.on("SIGINT", () => {
 ## Session visibility
 
 Only the default session may be displayed directly to the user, when Terminal Toolkit runs interactively. In headless mode the default session is not displayed directly. Each additional PTY made by `createSession()` is headless, independent of the server mode; AI tools can interact with it, but it is not attached to the user-facing terminal. This matters for passwords and direct human observation: creating a new session does not make its prompt visible to the user.
+
+
+### Interactive socket protocol negotiation
+
+The interactive socket uses newline-delimited JSON. Clients may optionally query
+capabilities without changing the behavior of existing clients:
+
+```json
+{"id":1,"method":"hello","params":{"protocolVersion":1}}
+```
+
+The response includes `result.protocolVersion` (currently `1`) and
+`result.capabilities`. Omitting `protocolVersion` requests the server's current
+version; specifying an unsupported version returns an error. The `hello` call is
+optional and does not alter the connection's behavior. This version refers to the
+**internal interactive socket protocol**, not the MCP protocol version.
+
+Custom events use `subscribe`, `unsubscribe`, and `publish` with a
+`custom.*` topic and optional `sessionId`. System lifecycle events
+(`session.created`, `session.destroyed`) can be subscribed to but not
+published by clients. Legacy clients continue receiving lifecycle broadcasts
+until they explicitly subscribe to a system event. `client.count` remains
+broadcast to all clients.

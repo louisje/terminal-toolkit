@@ -473,3 +473,47 @@ test("system event subscriptions filter lifecycle events while legacy clients re
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("hello negotiates socket capabilities without affecting legacy requests", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-hello-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  const messages = [];
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const send = (id, method, params) =>
+      client.write(JSON.stringify({ id, method, params }) + "\n");
+    send(700, "hello", {});
+    await waitFor(() => messages.some(m => m.id === 700));
+    const hello = messages.find(m => m.id === 700).result;
+    assert.equal(hello.protocolVersion, 1);
+    assert.ok(hello.capabilities.includes("event.sessionScope"));
+    send(701, "hello", { protocolVersion: 1 });
+    await waitFor(() => messages.some(m => m.id === 701));
+    assert.equal(messages.find(m => m.id === 701).result.protocolVersion, 1);
+    send(702, "hello", { protocolVersion: 2 });
+    await waitFor(() => messages.some(m => m.id === 702));
+    assert.match(messages.find(m => m.id === 702).error.message, /Unsupported/);
+    send(703, "subscribe", { topic: "custom.legacy" });
+    await waitFor(() => messages.some(m => m.id === 703));
+    assert.ok(messages.find(m => m.id === 703).result.accepted);
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
