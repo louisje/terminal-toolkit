@@ -71,6 +71,17 @@ export class TerminalManager {
   private maxSessions: number;
   private sessionIdleTimeoutMs: number;
   private clientCount = 0;
+  private sessionListeners = new Set<(event: "session.created" | "session.destroyed", sessionId: string) => void>();
+
+  onSessionEvent(listener: (event: "session.created" | "session.destroyed", sessionId: string) => void): () => void {
+    this.sessionListeners.add(listener);
+    return () => { this.sessionListeners.delete(listener); };
+  }
+
+  private emitSessionEvent(event: "session.created" | "session.destroyed", sessionId: string): void {
+    for (const listener of this.sessionListeners) listener(event, sessionId);
+  }
+
 
   getConfiguredShell(): string {
     return this.options.shell ?? getDefaultShell();
@@ -134,6 +145,7 @@ export class TerminalManager {
       if (now - entry.lastActivity > this.sessionIdleTimeoutMs) {
         entry.session.dispose();
         this.sessions.delete(sessionId);
+        this.emitSessionEvent("session.destroyed", sessionId);
       }
     }
   }
@@ -308,6 +320,7 @@ export class TerminalManager {
       isDefault: false,
     });
     this.wireRecording(session);
+    this.emitSessionEvent("session.created", id);
     return metadata;
   }
 
@@ -324,6 +337,7 @@ export class TerminalManager {
     }
     entry.session.dispose();
     this.sessions.delete(sessionId);
+    this.emitSessionEvent("session.destroyed", sessionId);
     return { success: true, message: `Session '${sessionId}' destroyed` };
   }
 

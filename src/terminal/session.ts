@@ -332,15 +332,23 @@ ${bannerCmd}
   /**
    * Subscribe to PTY output data
    */
-  onData(listener: (data: string) => void): void {
+  onData(listener: (data: string) => void): () => void {
     this.dataListeners.push(listener);
+    return () => {
+      const index = this.dataListeners.indexOf(listener);
+      if (index !== -1) this.dataListeners.splice(index, 1);
+    };
   }
 
   /**
    * Subscribe to PTY exit
    */
-  onExit(listener: (code: number) => void): void {
+  onExit(listener: (code: number) => void): () => void {
     this.exitListeners.push(listener);
+    return () => {
+      const index = this.exitListeners.indexOf(listener);
+      if (index !== -1) this.exitListeners.splice(index, 1);
+    };
   }
 
   /**

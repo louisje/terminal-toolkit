@@ -164,3 +164,77 @@ test("client.count broadcasts on connect and disconnect", async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("detach and reattach reuse one socket without closing the PTY", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-detach-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    const send = (id, method, params) => client.write(JSON.stringify({ id, method, params }) + "\n");
+    send(10, "attach");
+    await waitFor(() => messages.some(m => m.id === 10));
+    send(11, "detach");
+    await waitFor(() => messages.some(m => m.id === 11 && m.result?.detached === true));
+    assert.equal(client.destroyed, false);
+    send(12, "attach");
+    await waitFor(() => messages.some(m => m.id === 12));
+    send(0, "input", { data: "echo reattached-ok\r" });
+    await waitFor(() => messages.some(m => m.event === "output" && m.data.includes("reattached-ok")));
+    assert.equal(owner.exit, null);
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("session lifecycle events reach connected socket clients", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-session-events-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  let client;
+  try {
+    await initialize(owner);
+    client = net.createConnection(socketPath);
+    const messages = [];
+    let buffer = "";
+    client.on("data", chunk => {
+      buffer += chunk.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      for (const line of lines) if (line) messages.push(JSON.parse(line));
+    });
+    await new Promise((resolve, reject) => {
+      client.once("connect", resolve);
+      client.once("error", reject);
+    });
+    client.write(JSON.stringify({ id: 30, method: "createSession", params: {} }) + "\n");
+    await waitFor(() => messages.some(m => m.id === 30));
+    await waitFor(() => messages.some(m => m.event === "session.created"));
+    const sessionId = messages.find(m => m.event === "session.created").sessionId;
+    assert.ok(sessionId);
+    client.write(JSON.stringify({ id: 31, method: "destroySession", params: { sessionId } }) + "\n");
+    await waitFor(() => messages.some(m => m.event === "session.destroyed" && m.sessionId === sessionId));
+  } finally {
+    client?.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});

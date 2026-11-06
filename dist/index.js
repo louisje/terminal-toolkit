@@ -44000,12 +44000,20 @@ ${bannerCmd}
    */
   onData(listener) {
     this.dataListeners.push(listener);
+    return () => {
+      const index = this.dataListeners.indexOf(listener);
+      if (index !== -1) this.dataListeners.splice(index, 1);
+    };
   }
   /**
    * Subscribe to PTY exit
    */
   onExit(listener) {
     this.exitListeners.push(listener);
+    return () => {
+      const index = this.exitListeners.indexOf(listener);
+      if (index !== -1) this.exitListeners.splice(index, 1);
+    };
   }
   /**
    * Subscribe to terminal resize events
@@ -44678,6 +44686,16 @@ var TerminalManager = class {
   maxSessions;
   sessionIdleTimeoutMs;
   clientCount = 0;
+  sessionListeners = /* @__PURE__ */ new Set();
+  onSessionEvent(listener) {
+    this.sessionListeners.add(listener);
+    return () => {
+      this.sessionListeners.delete(listener);
+    };
+  }
+  emitSessionEvent(event, sessionId) {
+    for (const listener of this.sessionListeners) listener(event, sessionId);
+  }
   getConfiguredShell() {
     return this.options.shell ?? getDefaultShell();
   }
@@ -44731,6 +44749,7 @@ var TerminalManager = class {
       if (now - entry.lastActivity > this.sessionIdleTimeoutMs) {
         entry.session.dispose();
         this.sessions.delete(sessionId);
+        this.emitSessionEvent("session.destroyed", sessionId);
       }
     }
   }
@@ -44890,6 +44909,7 @@ var TerminalManager = class {
       isDefault: false
     });
     this.wireRecording(session);
+    this.emitSessionEvent("session.created", id);
     return metadata;
   }
   destroySession(sessionId) {
@@ -44905,6 +44925,7 @@ var TerminalManager = class {
     }
     entry.session.dispose();
     this.sessions.delete(sessionId);
+    this.emitSessionEvent("session.destroyed", sessionId);
     return { success: true, message: `Session '${sessionId}' destroyed` };
   }
   setClientCount(count2) {
@@ -56247,6 +56268,12 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       if (!connection.socket.destroyed) connection.socket.write(message);
     }
   };
+  const unsubscribeSessionEvents = manager.onSessionEvent((event, sessionId) => {
+    const message = JSON.stringify({ event, sessionId }) + "\n";
+    for (const connection of connections.values()) {
+      if (!connection.socket.destroyed) connection.socket.write(message);
+    }
+  });
   const server = new NetServer((socket) => {
     const connectionId = ++nextConnectionId;
     const connection = { socket };
@@ -56258,6 +56285,17 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     const inflight = /* @__PURE__ */ new Map();
     let attached = false;
     let attachedSessionId;
+    let unsubscribeData;
+    let unsubscribeExit;
+    const detach = () => {
+      attached = false;
+      attachedSessionId = void 0;
+      connection.sessionId = void 0;
+      unsubscribeData?.();
+      unsubscribeExit?.();
+      unsubscribeData = void 0;
+      unsubscribeExit = void 0;
+    };
     let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
     socket.on("data", async (data) => {
@@ -56268,6 +56306,11 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
         if (line.trim()) {
           try {
             const request = JSON.parse(line);
+            if (request.method === "detach") {
+              detach();
+              if (!socket.destroyed) socket.write(JSON.stringify({ id: request.id, result: { detached: true } }) + "\n");
+              continue;
+            }
             if (request.method === "attach") {
               if (attached) continue;
               const requestedSessionId = request.params?.sessionId;
@@ -56284,13 +56327,13 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
                 id: request.id,
                 result: { snapshot, cursor: screen.cursor }
               }) + "\n");
-              session.onData((output2) => {
+              unsubscribeData = session.onData((output2) => {
                 if (attached && !socket.destroyed) {
                   socket.write(JSON.stringify({ event: "output", data: output2, ...attachedSessionId !== "default" ? { sessionId: attachedSessionId } : {} }) + "\n");
                 }
               });
-              session.onExit(() => {
-                if (!socket.destroyed) socket.end();
+              unsubscribeExit = session.onExit(() => {
+                if (attached && !socket.destroyed) socket.end();
               });
               continue;
             }
@@ -56334,8 +56377,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     });
     socket.on("close", () => {
       const wasAttached = attached;
-      attached = false;
-      connection.sessionId = void 0;
+      detach();
       connections.delete(connectionId);
       clientCount = connections.size;
       if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
@@ -56347,6 +56389,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     socket.on("error", () => {
     });
   });
+  server.on("close", unsubscribeSessionEvents);
   server.listen(socketPath);
   return server;
 }
