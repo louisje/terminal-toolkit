@@ -56245,6 +56245,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
     let attached = false;
+    let attachedSessionId;
     let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
     socket.on("data", async (data) => {
@@ -56257,7 +56258,11 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
             const request = JSON.parse(line);
             if (request.method === "attach") {
               if (attached) continue;
-              const session = await manager.getSessionAsync();
+              const requestedSessionId = request.params?.sessionId;
+              if (requestedSessionId !== void 0 && typeof requestedSessionId !== "string") throw new Error("sessionId must be a string");
+              const sessionId = requestedSessionId || "default";
+              const session = await manager.resolveSession(sessionId === "default" ? void 0 : sessionId);
+              attachedSessionId = sessionId;
               attached = true;
               console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               const screen = session.takeScreenshot();
@@ -56268,7 +56273,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               }) + "\n");
               session.onData((output2) => {
                 if (attached && !socket.destroyed) {
-                  socket.write(JSON.stringify({ event: "output", data: output2 }) + "\n");
+                  socket.write(JSON.stringify({ event: "output", data: output2, ...attachedSessionId !== "default" ? { sessionId: attachedSessionId } : {} }) + "\n");
                 }
               });
               session.onExit(() => {
@@ -56277,14 +56282,14 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               continue;
             }
             if (attached && request.method === "input") {
-              manager.getSession().write(String(request.params?.data ?? ""));
+              manager.write(String(request.params?.data ?? ""), attachedSessionId === "default" ? void 0 : attachedSessionId);
               continue;
             }
             if (attached && request.method === "terminalResize") {
               const cols = Number(request.params?.cols);
               const rows = Number(request.params?.rows);
               if (Number.isInteger(cols) && Number.isInteger(rows) && cols > 0 && rows > 0) {
-                manager.getSession().resize(cols, rows);
+                manager.resize(cols, rows, attachedSessionId === "default" ? void 0 : attachedSessionId);
               }
               continue;
             }

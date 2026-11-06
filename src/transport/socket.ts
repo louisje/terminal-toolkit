@@ -154,6 +154,7 @@ export function createToolProxyServer(
     let buffer = "";
     const inflight = new Map<number, AbortController>();
     let attached = false;
+    let attachedSessionId: string | undefined;
     let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
 
@@ -168,7 +169,11 @@ export function createToolProxyServer(
             const request = JSON.parse(line) as SocketRequest;
             if (request.method === "attach") {
               if (attached) continue;
-              const session = await manager.getSessionAsync();
+              const requestedSessionId = request.params?.sessionId;
+              if (requestedSessionId !== undefined && typeof requestedSessionId !== "string") throw new Error("sessionId must be a string");
+              const sessionId = requestedSessionId || "default";
+              const session = await manager.resolveSession(sessionId === "default" ? undefined : sessionId);
+              attachedSessionId = sessionId;
               attached = true;
               console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               // A snapshot lets a newly attached terminal see the existing prompt.
@@ -180,7 +185,7 @@ export function createToolProxyServer(
               }) + "\n");
               session.onData((output) => {
                 if (attached && !socket.destroyed) {
-                  socket.write(JSON.stringify({ event: "output", data: output }) + "\n");
+                  socket.write(JSON.stringify({ event: "output", data: output, ...(attachedSessionId !== "default" ? { sessionId: attachedSessionId } : {}) }) + "\n");
                 }
               });
               session.onExit(() => {
@@ -189,14 +194,14 @@ export function createToolProxyServer(
               continue;
             }
             if (attached && request.method === "input") {
-              manager.getSession().write(String(request.params?.data ?? ""));
+              manager.write(String(request.params?.data ?? ""), attachedSessionId === "default" ? undefined : attachedSessionId);
               continue;
             }
             if (attached && request.method === "terminalResize") {
               const cols = Number(request.params?.cols);
               const rows = Number(request.params?.rows);
               if (Number.isInteger(cols) && Number.isInteger(rows) && cols > 0 && rows > 0) {
-                manager.getSession().resize(cols, rows);
+                manager.resize(cols, rows, attachedSessionId === "default" ? undefined : attachedSessionId);
               }
               continue;
             }
