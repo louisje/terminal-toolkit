@@ -34,8 +34,11 @@ test("createToolProxyServer forwards clientConnected notifications to the intera
         buffer += chunk.toString();
         const lines = buffer.split("\n");
         buffer = lines.pop() || "";
-        if (lines[0]) {
-          resolve(lines[0]);
+        for (const line of lines) {
+          if (line && JSON.parse(line).id === 1) {
+            resolve(line);
+            break;
+          }
         }
       });
       client.on("error", reject);
