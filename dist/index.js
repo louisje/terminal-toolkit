@@ -18412,7 +18412,7 @@ var require_utils3 = __commonJS({
     var url = __require("url");
     var os14 = __require("os");
     var fs25 = __require("fs");
-    var net2 = __require("net");
+    var net3 = __require("net");
     var BUFFER_SIZE = 1024;
     function clone2(obj) {
       return JSON.parse(JSON.stringify(obj));
@@ -18827,7 +18827,7 @@ var require_utils3 = __commonJS({
     module2.exports.createNamedPipe = (server) => {
       const buf = Buffer.alloc(BUFFER_SIZE);
       return new Promise((resolve6) => {
-        server.instance = net2.createServer((stream) => {
+        server.instance = net3.createServer((stream) => {
           stream.on("data", (c3) => {
             buf.write(c3.toString());
           });
@@ -18927,7 +18927,7 @@ var require_notifysend = __commonJS({
 // node_modules/node-notifier/lib/checkGrowl.js
 var require_checkGrowl = __commonJS({
   "node_modules/node-notifier/lib/checkGrowl.js"(exports2, module2) {
-    var net2 = __require("net");
+    var net3 = __require("net");
     var hasGrowl = false;
     module2.exports = function(growlConfig, cb) {
       if (typeof cb === "undefined") {
@@ -18937,7 +18937,7 @@ var require_checkGrowl = __commonJS({
       if (hasGrowl) return cb(null, hasGrowl);
       const port = growlConfig.port || 23053;
       const host = growlConfig.host || "localhost";
-      const socket = net2.connect(port, host);
+      const socket = net3.connect(port, host);
       socket.setTimeout(100);
       socket.once("connect", function() {
         socket.end();
@@ -18954,7 +18954,7 @@ var require_checkGrowl = __commonJS({
 // node_modules/growly/lib/gntp.js
 var require_gntp = __commonJS({
   "node_modules/growly/lib/gntp.js"(exports2, module2) {
-    var net2 = __require("net");
+    var net3 = __require("net");
     var crypto8 = __require("crypto");
     var format3 = __require("util").format;
     var fs25 = __require("fs");
@@ -19007,7 +19007,7 @@ var require_gntp = __commonJS({
       this.request += nl;
     };
     GNTP.prototype.send = function(callback) {
-      var self2 = this, socket = net2.connect(this.port, this.host), resp = "";
+      var self2 = this, socket = net3.connect(this.port, this.host), resp = "";
       callback = callback || function() {
       };
       this.attempts += 1;
@@ -29230,6 +29230,7 @@ var init_setup = __esm({
 
 // src/index.ts
 import * as fs24 from "fs";
+import * as net2 from "net";
 import { createRequire as createRequire4 } from "module";
 
 // node_modules/update-notifier/update-notifier.js
@@ -56243,6 +56244,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     manager.setClientCount?.(clientCount);
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
+    let attached = false;
     let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
     socket.on("data", async (data) => {
@@ -56253,6 +56255,38 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
         if (line.trim()) {
           try {
             const request = JSON.parse(line);
+            if (request.method === "attach") {
+              if (attached) continue;
+              const session = await manager.getSessionAsync();
+              attached = true;
+              const screen = session.takeScreenshot();
+              const snapshot = session.getAnsiContent(true);
+              socket.write(JSON.stringify({
+                id: request.id,
+                result: { snapshot, cursor: screen.cursor }
+              }) + "\n");
+              session.onData((output2) => {
+                if (attached && !socket.destroyed) {
+                  socket.write(JSON.stringify({ event: "output", data: output2 }) + "\n");
+                }
+              });
+              session.onExit(() => {
+                if (!socket.destroyed) socket.end();
+              });
+              continue;
+            }
+            if (attached && request.method === "input") {
+              manager.getSession().write(String(request.params?.data ?? ""));
+              continue;
+            }
+            if (attached && request.method === "terminalResize") {
+              const cols = Number(request.params?.cols);
+              const rows = Number(request.params?.rows);
+              if (Number.isInteger(cols) && Number.isInteger(rows) && cols > 0 && rows > 0) {
+                manager.getSession().resize(cols, rows);
+              }
+              continue;
+            }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
               if (typeof target === "number") inflight.get(target)?.abort();
@@ -56280,6 +56314,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       }
     });
     socket.on("close", () => {
+      attached = false;
       clientCount = Math.max(0, clientCount - 1);
       manager.setClientCount?.(clientCount);
       for (const controller of inflight.values()) controller.abort();
@@ -56939,12 +56974,12 @@ function validateConfig(config3) {
     }
   }
   if (obj.network && typeof obj.network === "object") {
-    const net2 = obj.network;
-    if (net2.mode === "all" || net2.mode === "none" || net2.mode === "allowlist") {
-      result2.network.mode = net2.mode;
+    const net3 = obj.network;
+    if (net3.mode === "all" || net3.mode === "none" || net3.mode === "allowlist") {
+      result2.network.mode = net3.mode;
     }
-    if (Array.isArray(net2.allowedDomains)) {
-      result2.network.allowedDomains = net2.allowedDomains.filter(
+    if (Array.isArray(net3.allowedDomains)) {
+      result2.network.allowedDomains = net3.allowedDomains.filter(
         (d) => typeof d === "string"
       );
     }
@@ -61284,7 +61319,7 @@ async function main() {
       codemode: options.codemode
     });
   } else if (isInteractive) {
-    await startInteractiveMode(socketPath);
+    if (!await tryAttachInteractive(socketPath)) await startInteractiveMode(socketPath);
   } else {
     await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
@@ -61461,6 +61496,83 @@ main().catch((error2) => {
   console.error("Failed to start:", error2);
   process.exit(1);
 });
+async function tryAttachInteractive(socketPath) {
+  const socket = net2.createConnection(socketPath);
+  try {
+    await new Promise((resolve6, reject) => {
+      socket.once("connect", resolve6);
+      socket.once("error", reject);
+    });
+  } catch (error2) {
+    socket.destroy();
+    const code = error2.code;
+    if (code === "ENOENT" || code === "ECONNREFUSED") return false;
+    throw error2;
+  }
+  let buffer = "";
+  let attached = false;
+  let closed = false;
+  const detach = () => {
+    if (closed) return;
+    restore();
+    socket.end();
+    process.stdout.write("\r\n[terminal-toolkit] Detached\r\n");
+  };
+  const restore = () => {
+    if (closed) return;
+    closed = true;
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    process.stdin.pause();
+  };
+  socket.on("data", (chunk) => {
+    buffer += chunk.toString();
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line) continue;
+      try {
+        const message = JSON.parse(line);
+        if (message.id === 1 && message.result) {
+          attached = true;
+          const { snapshot, cursor } = message.result;
+          process.stdout.write("\x1B[2J\x1B[H" + snapshot + "\x1B[0m");
+          if (cursor) process.stdout.write(`\x1B[${cursor.y + 1};${cursor.x + 1}H`);
+        } else if (message.event === "output") {
+          process.stdout.write(message.data);
+        }
+      } catch {
+      }
+    }
+  });
+  socket.on("close", () => {
+    restore();
+    if (attached) process.stdout.write("\n[terminal-toolkit] Detached (server disconnected)\n");
+  });
+  socket.on("error", (error2) => {
+    restore();
+    console.error("[terminal-toolkit] Interactive socket error:", error2.message);
+  });
+  socket.write(JSON.stringify({ id: 1, method: "attach" }) + "\n");
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.on("data", (data) => {
+    const detachAt = data.indexOf(29);
+    const input = detachAt === -1 ? data : data.subarray(0, detachAt);
+    if (input.length && !socket.destroyed) {
+      socket.write(JSON.stringify({ id: 0, method: "input", params: { data: input.toString() } }) + "\n");
+    }
+    if (detachAt !== -1) detach();
+  });
+  process.stdout.on("resize", () => {
+    if (!socket.destroyed) socket.write(JSON.stringify({ id: 0, method: "terminalResize", params: { cols: process.stdout.columns, rows: process.stdout.rows } }) + "\n");
+  });
+  process.once("SIGTERM", () => {
+    restore();
+    socket.destroy();
+  });
+  process.once("exit", restore);
+  return true;
+}
 /*! Bundled license information:
 
 deep-extend/lib/deep-extend.js:

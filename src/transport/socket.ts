@@ -153,6 +153,7 @@ export function createToolProxyServer(
     manager.setClientCount?.(clientCount);
     let buffer = "";
     const inflight = new Map<number, AbortController>();
+    let attached = false;
     let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
 
@@ -165,6 +166,39 @@ export function createToolProxyServer(
         if (line.trim()) {
           try {
             const request = JSON.parse(line) as SocketRequest;
+            if (request.method === "attach") {
+              if (attached) continue;
+              const session = await manager.getSessionAsync();
+              attached = true;
+              // A snapshot lets a newly attached terminal see the existing prompt.
+              const screen = session.takeScreenshot();
+              const snapshot = session.getAnsiContent(true);
+              socket.write(JSON.stringify({
+                id: request.id,
+                result: { snapshot, cursor: screen.cursor },
+              }) + "\n");
+              session.onData((output) => {
+                if (attached && !socket.destroyed) {
+                  socket.write(JSON.stringify({ event: "output", data: output }) + "\n");
+                }
+              });
+              session.onExit(() => {
+                if (!socket.destroyed) socket.end();
+              });
+              continue;
+            }
+            if (attached && request.method === "input") {
+              manager.getSession().write(String(request.params?.data ?? ""));
+              continue;
+            }
+            if (attached && request.method === "terminalResize") {
+              const cols = Number(request.params?.cols);
+              const rows = Number(request.params?.rows);
+              if (Number.isInteger(cols) && Number.isInteger(rows) && cols > 0 && rows > 0) {
+                manager.getSession().resize(cols, rows);
+              }
+              continue;
+            }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
               if (typeof target === "number") inflight.get(target)?.abort();
@@ -192,6 +226,7 @@ export function createToolProxyServer(
     });
 
     socket.on("close", () => {
+      attached = false;
       clientCount = Math.max(0, clientCount - 1);
       manager.setClientCount?.(clientCount);
       for (const controller of inflight.values()) controller.abort();

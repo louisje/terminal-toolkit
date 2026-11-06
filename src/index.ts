@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import * as fs from "fs";
+import * as net from "net";
 import { createRequire } from "module";
 import updateNotifier from "update-notifier";
 import { startServer } from "./server.js";
@@ -387,7 +388,7 @@ async function main() {
     });
   } else if (isInteractive) {
     // Interactive mode: Shell on stdin/stdout, tool proxy on Unix socket
-      await startInteractiveMode(socketPath);
+      if (!(await tryAttachInteractive(socketPath))) await startInteractiveMode(socketPath);
   } else {
     // MCP client mode: Connect to socket, serve MCP over stdio
       await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
@@ -629,3 +630,84 @@ main().catch((error) => {
   console.error("Failed to start:", error);
   process.exit(1);
 });
+
+/**
+ * Attach a TTY to an existing interactive server. The original server keeps
+ * its existing stdin/stdout wiring and lifecycle; closing this client only
+ * closes its own socket.
+ */
+async function tryAttachInteractive(socketPath: string): Promise<boolean> {
+  const socket = net.createConnection(socketPath);
+  try {
+    await new Promise<void>((resolve, reject) => {
+      socket.once("connect", resolve);
+      socket.once("error", reject);
+    });
+  } catch (error) {
+    socket.destroy();
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ECONNREFUSED") return false;
+    throw error;
+  }
+
+  let buffer = "";
+  let attached = false;
+  let closed = false;
+  const detach = () => {
+    if (closed) return;
+    restore();
+    socket.end();
+    process.stdout.write("\r\n[terminal-toolkit] Detached\r\n");
+  };
+  const restore = () => {
+    if (closed) return;
+    closed = true;
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    process.stdin.pause();
+  };
+  socket.on("data", (chunk) => {
+    buffer += chunk.toString();
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line) continue;
+      try {
+        const message = JSON.parse(line);
+        if (message.id === 1 && message.result) {
+          attached = true;
+          const { snapshot, cursor } = message.result;
+          process.stdout.write("\x1b[2J\x1b[H" + snapshot + "\x1b[0m");
+          if (cursor) process.stdout.write(`\x1b[${cursor.y + 1};${cursor.x + 1}H`);
+        } else if (message.event === "output") {
+          process.stdout.write(message.data);
+        }
+      } catch { /* Ignore malformed frames. */ }
+    }
+  });
+  socket.on("close", () => {
+    restore();
+    if (attached) process.stdout.write("\n[terminal-toolkit] Detached (server disconnected)\n");
+  });
+  socket.on("error", (error) => {
+    restore();
+    console.error("[terminal-toolkit] Interactive socket error:", error.message);
+  });
+  socket.write(JSON.stringify({ id: 1, method: "attach" }) + "\n");
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  process.stdin.on("data", (data: Buffer) => {
+    // Ctrl-] (0x1d) detaches only this client, never the server shell.
+    const detachAt = data.indexOf(0x1d);
+    const input = detachAt === -1 ? data : data.subarray(0, detachAt);
+    if (input.length && !socket.destroyed) {
+      socket.write(JSON.stringify({ id: 0, method: "input", params: { data: input.toString() } }) + "\n");
+    }
+    if (detachAt !== -1) detach();
+  });
+  process.stdout.on("resize", () => {
+    if (!socket.destroyed) socket.write(JSON.stringify({ id: 0, method: "terminalResize", params: { cols: process.stdout.columns, rows: process.stdout.rows } }) + "\n");
+  });
+  process.once("SIGTERM", () => { restore(); socket.destroy(); });
+  process.once("exit", restore);
+  return true;
+}
