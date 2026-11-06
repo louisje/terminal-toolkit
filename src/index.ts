@@ -580,34 +580,54 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
     process.stdout.write(data);
   });
 
-  // Start tool proxy socket server
-    const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
+  // Start tool proxy socket server. Listening can fail asynchronously if
+  // another instance claims the path between the attach probe and listen().
+  const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
     setClientTitle(title);
-    if (title) {
-      manager.setTitle(title);
-    }
-    }, options.piOperators, options.piExtraOperators);
+    if (title) manager.setTitle(title);
+  }, options.piOperators, options.piExtraOperators);
 
-  // Cleanup function (sync version for exit handler)
-  function cleanup() {
-    manager.dispose();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      if (socketServer.listening) return resolve();
+      socketServer.once("listening", resolve);
+      socketServer.once("error", reject);
+    });
+  } catch (error) {
     socketServer.close();
-    try {
-      fs.unlinkSync(socketPath);
-    } catch {
-      // Ignore
+    await manager.disposeAsync();
+    if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+      if (await tryAttachInteractive(socketPath)) return;
+      throw new Error(`Socket ${socketPath} is already bound but cannot be reached; the owning server may have lost its socket path. Restart that server before retrying.`, { cause: error });
     }
+    throw error;
   }
 
-  // Async cleanup that also cleans up sandbox resources
+  // Only the server that successfully bound the socket may remove its path.
+  // Checking inode prevents deleting a replacement socket owned by another process.
+  const ownedSocket = fs.statSync(socketPath);
+  let cleaned = false;
+  function unlinkOwnedSocket() {
+    try {
+      const current = fs.statSync(socketPath);
+      if (current.dev === ownedSocket.dev && current.ino === ownedSocket.ino) {
+        fs.unlinkSync(socketPath);
+      }
+    } catch { /* Already gone or replaced. */ }
+  }
+  function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
+    manager.dispose();
+    socketServer.close();
+    unlinkOwnedSocket();
+  }
   async function cleanupAsync() {
+    if (cleaned) return;
+    cleaned = true;
     await manager.disposeAsync();
     socketServer.close();
-    try {
-      fs.unlinkSync(socketPath);
-    } catch {
-      // Ignore
-    }
+    unlinkOwnedSocket();
   }
 
   // Handle signals

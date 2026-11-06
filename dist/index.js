@@ -56259,6 +56259,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               if (attached) continue;
               const session = await manager.getSessionAsync();
               attached = true;
+              console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               const screen = session.takeScreenshot();
               const snapshot = session.getAnsiContent(true);
               socket.write(JSON.stringify({
@@ -56314,8 +56315,10 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       }
     });
     socket.on("close", () => {
+      const wasAttached = attached;
       attached = false;
       clientCount = Math.max(0, clientCount - 1);
+      if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
       manager.setClientCount?.(clientCount);
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
@@ -61462,25 +61465,47 @@ async function startInteractiveMode(socketPath) {
   });
   const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
     setClientTitle(title);
-    if (title) {
-      manager.setTitle(title);
-    }
+    if (title) manager.setTitle(title);
   }, options.piOperators, options.piExtraOperators);
-  function cleanup() {
-    manager.dispose();
+  try {
+    await new Promise((resolve6, reject) => {
+      if (socketServer.listening) return resolve6();
+      socketServer.once("listening", resolve6);
+      socketServer.once("error", reject);
+    });
+  } catch (error2) {
     socketServer.close();
+    await manager.disposeAsync();
+    if (error2.code === "EADDRINUSE") {
+      if (await tryAttachInteractive(socketPath)) return;
+      throw new Error(`Socket ${socketPath} is already bound but cannot be reached; the owning server may have lost its socket path. Restart that server before retrying.`, { cause: error2 });
+    }
+    throw error2;
+  }
+  const ownedSocket = fs24.statSync(socketPath);
+  let cleaned = false;
+  function unlinkOwnedSocket() {
     try {
-      fs24.unlinkSync(socketPath);
+      const current = fs24.statSync(socketPath);
+      if (current.dev === ownedSocket.dev && current.ino === ownedSocket.ino) {
+        fs24.unlinkSync(socketPath);
+      }
     } catch {
     }
   }
+  function cleanup() {
+    if (cleaned) return;
+    cleaned = true;
+    manager.dispose();
+    socketServer.close();
+    unlinkOwnedSocket();
+  }
   async function cleanupAsync() {
+    if (cleaned) return;
+    cleaned = true;
     await manager.disposeAsync();
     socketServer.close();
-    try {
-      fs24.unlinkSync(socketPath);
-    } catch {
-    }
+    unlinkOwnedSocket();
   }
   process.on("SIGINT", () => {
     session.write("");

@@ -170,6 +170,7 @@ export function createToolProxyServer(
               if (attached) continue;
               const session = await manager.getSessionAsync();
               attached = true;
+              console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               // A snapshot lets a newly attached terminal see the existing prompt.
               const screen = session.takeScreenshot();
               const snapshot = session.getAnsiContent(true);
@@ -226,8 +227,10 @@ export function createToolProxyServer(
     });
 
     socket.on("close", () => {
+      const wasAttached = attached;
       attached = false;
       clientCount = Math.max(0, clientCount - 1);
+      if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
       manager.setClientCount?.(clientCount);
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();

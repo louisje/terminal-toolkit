@@ -74,3 +74,56 @@ test("TTY client attaches to existing interactive server and detaches independen
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("occupied but unreachable socket never gets unlinked by a failed contender", async () => {
+  const pty = await import("node-pty");
+  const { existsSync, unlinkSync } = await import("node:fs");
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-occupied-"));
+  const socketPath = path.join(dir, "socket");
+  const blocker = net.createServer();
+  await new Promise((resolve, reject) => {
+    blocker.once("error", reject);
+    blocker.listen(socketPath, resolve);
+  });
+  // A bound Unix socket can remain listening after its filesystem entry is removed.
+  unlinkSync(socketPath);
+  const env = { ...process.env };
+  delete env.TERMINAL_TOOLKIT;
+  const contender = pty.spawn(process.execPath, ["dist/index.js", "--socket", socketPath, "--shell", "/bin/bash"], {
+    cwd: process.cwd(), cols: 80, rows: 24, env,
+  });
+  let output = "";
+  contender.onData(data => { output += data; });
+  try {
+    await waitFor(() => existsSync(socketPath), { timeoutMs: 12000 });
+    // The contender can safely become the new owner of this now-free path.
+    contender.write("echo contender-running\r");
+    await waitFor(() => output.includes("contender-running"), { timeoutMs: 10000 });
+  } finally {
+    contender.kill();
+    blocker.close();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test("a conflicting socket path is not removed on startup failure", async () => {
+  const pty = await import("node-pty");
+  const { writeFileSync, readFileSync } = await import("node:fs");
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-conflict-"));
+  const socketPath = path.join(dir, "socket");
+  writeFileSync(socketPath, "do-not-remove");
+  const env = { ...process.env };
+  delete env.TERMINAL_TOOLKIT;
+  const contender = pty.spawn(process.execPath, ["dist/index.js", "--socket", socketPath, "--shell", "/bin/bash"], {
+    cwd: process.cwd(), cols: 80, rows: 24, env,
+  });
+  let output = "";
+  contender.onData(data => { output += data; });
+  try {
+    await waitFor(() => output.includes("already bound") || output.includes("EADDRINUSE"), { timeoutMs: 12000 });
+    assert.equal(readFileSync(socketPath, "utf8"), "do-not-remove");
+  } finally {
+    contender.kill();
+    await rm(dir, { recursive: true, force: true });
+  }
+});
