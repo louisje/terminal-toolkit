@@ -430,3 +430,21 @@ Custom events use `subscribe`, `unsubscribe`, and `publish` with a
 published by clients. Legacy clients continue receiving lifecycle broadcasts
 until they explicitly subscribe to a system event. `client.count` remains
 broadcast to all clients.
+
+#### Socket request concurrency and PTY attachment lifecycle
+
+Tool requests are processed concurrently on each socket connection. Each
+in-flight request has its own numeric `id`; a duplicate in-flight ID is rejected.
+Clients can send `{"method":"cancel","params":{"requestId":42}}` to abort a
+cancellable request, including in the same NDJSON batch. Cancellation does not
+roll back completed side effects and tools that do not honor `AbortSignal` may
+continue running; aborted responses are suppressed. Closing the socket aborts
+its outstanding requests and releases event subscriptions.
+
+`attach` resolves a PTY asynchronously. Only one attachment (including a pending
+attachment) is allowed per connection. A `detach` or socket disconnect invalidates
+pending attachment work, preventing stale completion from reattaching a session.
+`input` and `terminalResize` are accepted only after attachment completes;
+otherwise the server returns `Attachment pending` or `No attached session`.
+These commands are rejected rather than queued to avoid replaying input into
+an unintended session. After detaching, the client can attach again.

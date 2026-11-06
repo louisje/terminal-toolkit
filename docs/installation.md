@@ -6,7 +6,7 @@ This guide covers how to install and set up Terminal Toolkit.
 
 ### Node.js
 
-Terminal Toolkit requires Node.js 18.0.0 or later. Check your version:
+Terminal Toolkit requires Node.js 22.19.0 or later. Check your version:
 
 ```bash
 node --version
@@ -56,7 +56,7 @@ Or install Visual Studio Build Tools manually from [visualstudio.microsoft.com](
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/elleryfamilia/terminal-toolkit.git
+git clone https://github.com/louisje/terminal-toolkit.git
 cd terminal-toolkit
 ```
 

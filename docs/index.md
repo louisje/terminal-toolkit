@@ -93,7 +93,7 @@ Terminal Toolkit Server (Node.js)
 
 ## Requirements
 
-- Node.js 18.0.0 or later
+- Node.js 22.19.0 or later
 - npm or yarn
 - Build tools for native module compilation (node-pty)
   - macOS: Xcode Command Line Tools
