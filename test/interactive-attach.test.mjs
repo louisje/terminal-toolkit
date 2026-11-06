@@ -127,3 +127,40 @@ test("a conflicting socket path is not removed on startup failure", async () => 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test("client.count broadcasts on connect and disconnect", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-count-"));
+  const socketPath = path.join(dir, "socket");
+  const owner = spawnNode(["dist/index.js", "--mcp", "--socket", socketPath]);
+  const clients = [];
+  const messages = [];
+  try {
+    await initialize(owner);
+    for (let i = 0; i < 2; i++) {
+      const client = net.createConnection(socketPath);
+      clients.push(client);
+      let buffer = "";
+      const received = [];
+      messages.push(received);
+      client.on("data", chunk => {
+        buffer += chunk.toString();
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) if (line) received.push(JSON.parse(line));
+      });
+      await new Promise((resolve, reject) => {
+        client.once("connect", resolve);
+        client.once("error", reject);
+      });
+      await waitFor(() => received.some(m => m.event === "client.count" && m.data === i + 2));
+    }
+    await waitFor(() => messages[0].some(m => m.event === "client.count" && m.data === 3));
+    clients[1].destroy();
+    await waitFor(() => messages[0].some(m => m.event === "client.count" && m.data === 2));
+  } finally {
+    for (const client of clients) client.destroy();
+    owner.child.stdin.end();
+    await waitFor(() => owner.exit, { timeoutMs: 5000 }).catch(() => owner.child.kill());
+    await rm(dir, { recursive: true, force: true });
+  }
+});

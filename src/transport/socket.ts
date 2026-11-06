@@ -148,9 +148,21 @@ export function createToolProxyServer(
   piExtraOperators = false
 ): NetServer {
   let clientCount = 0;
+  let nextConnectionId = 0;
+  const connections = new Map<number, { socket: Socket; sessionId?: string }>();
+  const broadcastClientCount = (): void => {
+    const message = JSON.stringify({ event: "client.count", data: clientCount }) + "\n";
+    for (const connection of connections.values()) {
+      if (!connection.socket.destroyed) connection.socket.write(message);
+    }
+  };
   const server = new NetServer((socket) => {
-    clientCount++;
+    const connectionId = ++nextConnectionId;
+    const connection: { socket: Socket; sessionId?: string } = { socket };
+    connections.set(connectionId, connection);
+    clientCount = connections.size;
     manager.setClientCount?.(clientCount);
+    broadcastClientCount();
     let buffer = "";
     const inflight = new Map<number, AbortController>();
     let attached = false;
@@ -174,6 +186,7 @@ export function createToolProxyServer(
               const sessionId = requestedSessionId || "default";
               const session = await manager.resolveSession(sessionId === "default" ? undefined : sessionId);
               attachedSessionId = sessionId;
+              connection.sessionId = sessionId;
               attached = true;
               console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               // A snapshot lets a newly attached terminal see the existing prompt.
@@ -234,9 +247,12 @@ export function createToolProxyServer(
     socket.on("close", () => {
       const wasAttached = attached;
       attached = false;
-      clientCount = Math.max(0, clientCount - 1);
+      connection.sessionId = undefined;
+      connections.delete(connectionId);
+      clientCount = connections.size;
       if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
       manager.setClientCount?.(clientCount);
+      broadcastClientCount();
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
     });

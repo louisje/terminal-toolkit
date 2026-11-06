@@ -56239,9 +56239,21 @@ var clientConnectedSchema = external_exports.object({
 });
 function createToolProxyServer(socketPath, manager, onClientConnected, piOperators = false, piExtraOperators = false) {
   let clientCount = 0;
+  let nextConnectionId = 0;
+  const connections = /* @__PURE__ */ new Map();
+  const broadcastClientCount = () => {
+    const message = JSON.stringify({ event: "client.count", data: clientCount }) + "\n";
+    for (const connection of connections.values()) {
+      if (!connection.socket.destroyed) connection.socket.write(message);
+    }
+  };
   const server = new NetServer((socket) => {
-    clientCount++;
+    const connectionId = ++nextConnectionId;
+    const connection = { socket };
+    connections.set(connectionId, connection);
+    clientCount = connections.size;
     manager.setClientCount?.(clientCount);
+    broadcastClientCount();
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
     let attached = false;
@@ -56263,6 +56275,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
               const sessionId = requestedSessionId || "default";
               const session = await manager.resolveSession(sessionId === "default" ? void 0 : sessionId);
               attachedSessionId = sessionId;
+              connection.sessionId = sessionId;
               attached = true;
               console.error(`[terminal-toolkit] Interactive client attached (clients: ${clientCount})`);
               const screen = session.takeScreenshot();
@@ -56322,9 +56335,12 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
     socket.on("close", () => {
       const wasAttached = attached;
       attached = false;
-      clientCount = Math.max(0, clientCount - 1);
+      connection.sessionId = void 0;
+      connections.delete(connectionId);
+      clientCount = connections.size;
       if (wasAttached) console.error(`[terminal-toolkit] Interactive client detached (clients: ${clientCount})`);
       manager.setClientCount?.(clientCount);
+      broadcastClientCount();
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
     });
