@@ -44676,6 +44676,7 @@ var TerminalManager = class {
   autoRecordingId = null;
   maxSessions;
   sessionIdleTimeoutMs;
+  clientCount = 0;
   getConfiguredShell() {
     return this.options.shell ?? getDefaultShell();
   }
@@ -44779,7 +44780,10 @@ var TerminalManager = class {
           rows: dims.rows,
           createdAt: now,
           lastActivityAt: now,
-          isDefault: true
+          isDefault: true,
+          mode: this.options.mode ?? "headless",
+          role: this.options.role ?? null,
+          clientCount: this.clientCount
         },
         lastActivity: Date.now(),
         isDefault: true
@@ -44873,7 +44877,10 @@ var TerminalManager = class {
       rows: dims.rows,
       createdAt: now,
       lastActivityAt: now,
-      isDefault: false
+      isDefault: false,
+      mode: "headless",
+      role: null,
+      clientCount: this.clientCount
     };
     this.sessions.set(id, {
       session,
@@ -44899,11 +44906,28 @@ var TerminalManager = class {
     this.sessions.delete(sessionId);
     return { success: true, message: `Session '${sessionId}' destroyed` };
   }
+  setClientCount(count2) {
+    this.clientCount = count2;
+  }
   listSessions() {
     const sessions = [];
+    if (!this.defaultSessionId) {
+      sessions.push({
+        sessionId: "default",
+        shell: this.options.shell ?? getDefaultShell(),
+        cols: this.options.cols ?? 80,
+        rows: this.options.rows ?? 25,
+        createdAt: "",
+        lastActivityAt: "",
+        isDefault: true,
+        mode: "uninitialized",
+        role: this.options.role ?? null,
+        clientCount: this.clientCount
+      });
+    }
     for (const [sessionId, entry] of Array.from(this.sessions.entries())) {
       if (entry.session.isActive()) {
-        sessions.push({ ...entry.metadata });
+        sessions.push({ ...entry.metadata, clientCount: this.clientCount });
       } else {
         this.sessions.delete(sessionId);
       }
@@ -56073,6 +56097,8 @@ function createServerWithManager(manager, piOperators = false, piExtraOperators 
 }
 function createServer(options2 = {}) {
   const manager = new TerminalManager({
+    mode: "headless",
+    role: "server",
     cols: options2.cols,
     rows: options2.rows,
     shell: options2.shell,
@@ -56124,167 +56150,9 @@ async function startServer(options2 = {}) {
 
 // src/client.ts
 import * as net from "net";
-async function notifyClientConnected(sendRequest, options2) {
-  const params = options2.title === void 0 && options2.piOperators === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
-    ...options2.title === void 0 ? {} : { title: options2.title },
-    ...options2.piOperators === void 0 ? {} : { piOperators: options2.piOperators },
-    ...options2.piExtraOperators === void 0 ? {} : { piExtraOperators: options2.piExtraOperators }
-  };
-  await sendRequest("clientConnected", params);
-}
-async function startMcpClientMode(socketPath, options2 = {}) {
-  const SOCKET_CLOSE_GRACE_MS = 100;
-  const socket = await connectToSocket(socketPath);
-  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
-  } });
-  const server = new Server(
-    {
-      name: "terminal-toolkit",
-      version: VERSION
-    },
-    {
-      capabilities: {
-        tools: {},
-        resources: {},
-        extensions: { "io.modelcontextprotocol/skills": {} }
-      },
-      instructions: getServerInstructions(options2)
-    }
-  );
-  let requestId = 0;
-  const pendingRequests = /* @__PURE__ */ new Map();
-  let buffer = "";
-  socket.on("data", (data) => {
-    buffer += data.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) {
-      if (line.trim()) {
-        try {
-          const response = JSON.parse(line);
-          const pending = pendingRequests.get(response.id);
-          if (pending) {
-            pendingRequests.delete(response.id);
-            if (response.error) {
-              pending.reject(new Error(response.error.message));
-            } else {
-              pending.resolve(response.result);
-            }
-          }
-        } catch {
-        }
-      }
-    }
-  });
-  socket.on("error", (error2) => {
-    console.error("Socket error:", error2.message);
-    process.exit(1);
-  });
-  socket.on("close", () => {
-    if (shutdownState.isShuttingDown()) return;
-    const graceTimer = setTimeout(() => {
-      if (shutdownState.isShuttingDown()) return;
-      console.error("Socket closed");
-      process.exit(1);
-    }, SOCKET_CLOSE_GRACE_MS);
-    graceTimer.unref();
-  });
-  async function sendRequest(method, params, signal) {
-    const id = ++requestId;
-    const request = { id, method, params };
-    return new Promise((resolve6, reject) => {
-      if (signal?.aborted) {
-        reject(new Error("Tool call aborted"));
-        return;
-      }
-      const cleanup = () => signal?.removeEventListener("abort", abort);
-      const abort = () => {
-        if (!pendingRequests.delete(id)) return;
-        socket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
-        cleanup();
-        reject(new Error("Tool call aborted"));
-      };
-      signal?.addEventListener("abort", abort, { once: true });
-      pendingRequests.set(id, { resolve: (value) => {
-        cleanup();
-        resolve6(value);
-      }, reject: (error2) => {
-        cleanup();
-        reject(error2);
-      } });
-      socket.write(JSON.stringify(request) + "\n", (error2) => {
-        if (error2) {
-          pendingRequests.delete(id);
-          reject(error2);
-        }
-      });
-    });
-  }
-  registerSkills(server);
-  server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options2.codemode ? [codemodeDefinition] : getToolDefinitions(options2.piOperators, options2.piExtraOperators)
-  }));
-  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
-    const { name, arguments: args2 } = request.params;
-    try {
-      const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
-        args2,
-        getCodemodeToolDefinitions(options2.piOperators, options2.piExtraOperators),
-        (tool, params, signal) => sendRequest(tool, params, signal),
-        extra.signal,
-        getServerInstructions({ piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators })
-      ) : (() => {
-        throw new Error(`Unknown tool: ${name}`);
-      })() : await sendRequest(name, args2, extra.signal);
-      return result2;
-    } catch (error2) {
-      const message = error2 instanceof Error ? error2.message : String(error2);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${message}`
-          }
-        ],
-        isError: true
-      };
-    }
-  });
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  void notifyClientConnected(sendRequest, { title: options2.title, piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators }).catch((error2) => {
-    console.error("Warning: Failed to notify interactive terminal about client connection:", error2);
-  });
-}
-function connectToSocket(socketPath) {
-  return new Promise((resolve6, reject) => {
-    const socket = net.createConnection(socketPath, () => {
-      resolve6(socket);
-    });
-    socket.on("error", (error2) => {
-      if (error2.code === "ENOENT") {
-        reject(
-          new Error(
-            `No tmcp session found at ${socketPath}.
-Start an interactive session first by running: tmcp`
-          )
-        );
-      } else if (error2.code === "ECONNREFUSED") {
-        reject(
-          new Error(
-            `Connection refused to ${socketPath}.
-The tmcp session may have crashed. Try restarting it.`
-          )
-        );
-      } else {
-        reject(error2);
-      }
-    });
-  });
-}
+import * as fs15 from "fs";
 
 // src/transport/socket.ts
-import * as fs15 from "fs";
 import { Server as NetServer } from "net";
 
 // src/utils/stats.ts
@@ -56369,11 +56237,10 @@ var clientConnectedSchema = external_exports.object({
   piExtraOperators: external_exports.boolean().optional()
 });
 function createToolProxyServer(socketPath, manager, onClientConnected, piOperators = false, piExtraOperators = false) {
-  try {
-    fs15.unlinkSync(socketPath);
-  } catch {
-  }
+  let clientCount = 0;
   const server = new NetServer((socket) => {
+    clientCount++;
+    manager.setClientCount?.(clientCount);
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
     let clientPiOperators = piOperators;
@@ -56413,6 +56280,8 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       }
     });
     socket.on("close", () => {
+      clientCount = Math.max(0, clientCount - 1);
+      manager.setClientCount?.(clientCount);
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
     });
@@ -56427,6 +56296,19 @@ async function handleToolRequest(manager, request, onClientConnected, piOperator
   const stats = getStats();
   try {
     let result2;
+    const ptyMethods = /* @__PURE__ */ new Set([
+      "type",
+      "sendKey",
+      "getContent",
+      "getBufferInfo",
+      "takeScreenshot",
+      "startRecording",
+      "stopRecording",
+      "resize"
+    ]);
+    if (ptyMethods.has(method) && (params?.sessionId === void 0 || params?.sessionId === "default")) {
+      await manager.getSessionAsync();
+    }
     switch (method) {
       case "ls":
       case "grep":
@@ -56523,6 +56405,207 @@ async function handleToolRequest(manager, request, onClientConnected, piOperator
       error: { message }
     };
   }
+}
+
+// src/client.ts
+async function notifyClientConnected(sendRequest, options2) {
+  const params = options2.title === void 0 && options2.piOperators === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
+    ...options2.title === void 0 ? {} : { title: options2.title },
+    ...options2.piOperators === void 0 ? {} : { piOperators: options2.piOperators },
+    ...options2.piExtraOperators === void 0 ? {} : { piExtraOperators: options2.piExtraOperators }
+  };
+  await sendRequest("clientConnected", params);
+}
+async function startMcpClientMode(socketPath, options2 = {}) {
+  const SOCKET_CLOSE_GRACE_MS = 100;
+  let socket;
+  let ownedManager;
+  let ownedServer;
+  const isRemoteClient = () => !ownedServer;
+  try {
+    socket = await connectToSocket(socketPath);
+  } catch (error2) {
+    const code = error2.code;
+    if (code !== "ENOENT" && code !== "ECONNREFUSED") throw error2;
+    if (code === "ECONNREFUSED") fs15.unlinkSync(socketPath);
+    ownedManager = new TerminalManager({
+      mode: "interactive",
+      role: "server",
+      shell: options2.shell,
+      cols: options2.cols,
+      rows: options2.rows,
+      login: options2.login,
+      maxSessions: options2.maxSessions,
+      sessionIdleTimeout: options2.sessionIdleTimeout
+    });
+    ownedServer = createToolProxyServer(socketPath, ownedManager, void 0, options2.piOperators, options2.piExtraOperators);
+    try {
+      if (!ownedServer.listening) {
+        await new Promise((resolve6, reject) => {
+          ownedServer.once("listening", resolve6);
+          ownedServer.once("error", reject);
+        });
+      }
+      socket = await connectToSocket(socketPath);
+    } catch (startupError) {
+      ownedServer.close();
+      ownedManager.dispose();
+      throw startupError;
+    }
+  }
+  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
+    socket.destroy();
+    ownedServer?.close();
+    ownedManager?.dispose();
+    if (ownedServer) {
+      try {
+        fs15.unlinkSync(socketPath);
+      } catch {
+      }
+    }
+  } });
+  const server = new Server(
+    {
+      name: "terminal-toolkit",
+      version: VERSION
+    },
+    {
+      capabilities: {
+        tools: {},
+        resources: {},
+        extensions: { "io.modelcontextprotocol/skills": {} }
+      },
+      instructions: getServerInstructions(options2)
+    }
+  );
+  let requestId = 0;
+  const pendingRequests = /* @__PURE__ */ new Map();
+  let buffer = "";
+  socket.on("data", (data) => {
+    buffer += data.toString();
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    for (const line of lines) {
+      if (line.trim()) {
+        try {
+          const response = JSON.parse(line);
+          const pending = pendingRequests.get(response.id);
+          if (pending) {
+            pendingRequests.delete(response.id);
+            if (response.error) {
+              pending.reject(new Error(response.error.message));
+            } else {
+              pending.resolve(response.result);
+            }
+          }
+        } catch {
+        }
+      }
+    }
+  });
+  socket.on("error", (error2) => {
+    console.error("Socket error:", error2.message);
+    process.exit(1);
+  });
+  socket.on("close", () => {
+    if (shutdownState.isShuttingDown()) return;
+    const graceTimer = setTimeout(() => {
+      if (shutdownState.isShuttingDown()) return;
+      console.error("Socket closed");
+      process.exit(1);
+    }, SOCKET_CLOSE_GRACE_MS);
+    graceTimer.unref();
+  });
+  async function sendRequest(method, params, signal) {
+    const id = ++requestId;
+    const request = { id, method, params };
+    return new Promise((resolve6, reject) => {
+      if (signal?.aborted) {
+        reject(new Error("Tool call aborted"));
+        return;
+      }
+      const cleanup = () => signal?.removeEventListener("abort", abort);
+      const abort = () => {
+        if (!pendingRequests.delete(id)) return;
+        socket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
+        cleanup();
+        reject(new Error("Tool call aborted"));
+      };
+      signal?.addEventListener("abort", abort, { once: true });
+      pendingRequests.set(id, { resolve: (value) => {
+        cleanup();
+        resolve6(value);
+      }, reject: (error2) => {
+        cleanup();
+        reject(error2);
+      } });
+      socket.write(JSON.stringify(request) + "\n", (error2) => {
+        if (error2) {
+          pendingRequests.delete(id);
+          reject(error2);
+        }
+      });
+    });
+  }
+  async function dispatchTool2(method, params, signal) {
+    const result2 = await sendRequest(method, params, signal);
+    if (method !== "listSessions" || !isRemoteClient()) return result2;
+    const response = result2;
+    return { ...response, content: response.content?.map((item) => {
+      if (item.type !== "text" || !item.text) return item;
+      try {
+        const listing = JSON.parse(item.text);
+        for (const session of listing.sessions ?? []) {
+          if (session.isDefault) session.role = "client";
+        }
+        return { ...item, text: JSON.stringify(listing, null, 2) };
+      } catch {
+        return item;
+      }
+    }) };
+  }
+  registerSkills(server);
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({
+    tools: options2.codemode ? [codemodeDefinition] : getToolDefinitions(options2.piOperators, options2.piExtraOperators)
+  }));
+  server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    const { name, arguments: args2 } = request.params;
+    try {
+      const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
+        args2,
+        getCodemodeToolDefinitions(options2.piOperators, options2.piExtraOperators),
+        (tool, params, signal) => dispatchTool2(tool, params, signal),
+        extra.signal,
+        getServerInstructions({ piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators })
+      ) : (() => {
+        throw new Error(`Unknown tool: ${name}`);
+      })() : await dispatchTool2(name, args2, extra.signal);
+      return result2;
+    } catch (error2) {
+      const message = error2 instanceof Error ? error2.message : String(error2);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error: ${message}`
+          }
+        ],
+        isError: true
+      };
+    }
+  });
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  void notifyClientConnected(sendRequest, { title: options2.title, piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators }).catch((error2) => {
+    console.error("Warning: Failed to notify interactive terminal about client connection:", error2);
+  });
+}
+function connectToSocket(socketPath) {
+  return new Promise((resolve6, reject) => {
+    const socket = net.createConnection(socketPath);
+    socket.once("connect", () => resolve6(socket));
+    socket.once("error", reject);
+  });
 }
 
 // node_modules/string-width/index.js
@@ -61176,33 +61259,7 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
-    console.error("[terminal-toolkit] Starting in MCP mode...");
-    const fs25 = await import("fs");
-    if (fs25.existsSync(socketPath)) {
-      try {
-        console.error("[terminal-toolkit] Found existing session, connecting as client...");
-        if (options.tmux) {
-          console.error("[terminal-toolkit] Note: --tmux ignored when connecting to existing session.");
-        }
-        await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
-        return;
-      } catch {
-        console.error("[terminal-toolkit] Failed to connect to existing session, creating new PTY...");
-      }
-    } else {
-      console.error("[terminal-toolkit] No existing session found, creating new PTY...");
-    }
-    await startServer({
-      cols: options.cols ?? getDefaultCols(),
-      rows: options.rows ?? getDefaultRows(),
-      shell: options.shell,
-      login: options.login,
-      tmux: options.tmux,
-      title: options.title,
-      piOperators: options.piOperators,
-      piExtraOperators: options.piExtraOperators,
-      codemode: options.codemode
-    });
+    await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -61306,6 +61363,8 @@ async function startInteractiveMode(socketPath) {
     sandboxEnabled
   });
   const manager = new TerminalManager({
+    mode: "interactive",
+    role: "server",
     cols,
     rows,
     shell: options.shell,

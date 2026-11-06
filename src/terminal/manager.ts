@@ -16,6 +16,8 @@ export interface TerminalManagerOptions extends TerminalSessionOptions {
   // Multi-session options
   maxSessions?: number;
   sessionIdleTimeout?: number; // seconds; non-default sessions are evicted after this
+  mode?: "interactive" | "headless";
+  role?: "server" | "client" | null;
 }
 
 export interface CreateSessionOptions {
@@ -32,6 +34,9 @@ export interface SessionMetadata {
   createdAt: string;
   lastActivityAt: string;
   isDefault: boolean;
+  mode: "uninitialized" | "interactive" | "headless";
+  role: "server" | "client" | null;
+  clientCount: number;
 }
 
 interface SessionEntry {
@@ -65,6 +70,7 @@ export class TerminalManager {
   private autoRecordingId: string | null = null;
   private maxSessions: number;
   private sessionIdleTimeoutMs: number;
+  private clientCount = 0;
 
   getConfiguredShell(): string {
     return this.options.shell ?? getDefaultShell();
@@ -186,6 +192,9 @@ export class TerminalManager {
           createdAt: now,
           lastActivityAt: now,
           isDefault: true,
+          mode: this.options.mode ?? "headless",
+          role: this.options.role ?? null,
+          clientCount: this.clientCount,
         },
         lastActivity: Date.now(),
         isDefault: true,
@@ -288,6 +297,9 @@ export class TerminalManager {
       createdAt: now,
       lastActivityAt: now,
       isDefault: false,
+      mode: "headless",
+      role: null,
+      clientCount: this.clientCount,
     };
     this.sessions.set(id, {
       session,
@@ -315,15 +327,33 @@ export class TerminalManager {
     return { success: true, message: `Session '${sessionId}' destroyed` };
   }
 
+  setClientCount(count: number): void {
+    this.clientCount = count;
+  }
+
   listSessions(): {
     sessions: SessionMetadata[];
     maxSessions: number;
     sessionIdleTimeout: number;
   } {
     const sessions: SessionMetadata[] = [];
+    if (!this.defaultSessionId) {
+      sessions.push({
+        sessionId: "default",
+        shell: this.options.shell ?? getDefaultShell(),
+        cols: this.options.cols ?? 80,
+        rows: this.options.rows ?? 25,
+        createdAt: "",
+        lastActivityAt: "",
+        isDefault: true,
+        mode: "uninitialized",
+        role: this.options.role ?? null,
+        clientCount: this.clientCount,
+      });
+    }
     for (const [sessionId, entry] of Array.from(this.sessions.entries())) {
       if (entry.session.isActive()) {
-        sessions.push({ ...entry.metadata });
+        sessions.push({ ...entry.metadata, clientCount: this.clientCount });
       } else {
         this.sessions.delete(sessionId);
       }

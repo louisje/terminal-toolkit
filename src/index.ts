@@ -353,38 +353,10 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
 
-  // Check if --mcp flag is set to use direct MCP mode
+  // --mcp uses the lazy socket-backed MCP mode: it claims the socket and
+  // starts its PTY only when the first terminal tool is called.
   if (options.useMcp) {
-    console.error('[terminal-toolkit] Starting in MCP mode...');
-    
-    // Try to connect to existing interactive session first
-    const fs = await import('fs');
-    if (fs.existsSync(socketPath)) {
-      try {
-        console.error('[terminal-toolkit] Found existing session, connecting as client...');
-        if (options.tmux) {
-          console.error('[terminal-toolkit] Note: --tmux ignored when connecting to existing session.');
-        }
-          await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
-        return;
-      } catch {
-        // If connection fails, fall through to create new PTY
-        console.error('[terminal-toolkit] Failed to connect to existing session, creating new PTY...');
-      }
-    } else {
-      console.error('[terminal-toolkit] No existing session found, creating new PTY...');
-    }
-    
-    // No existing session, create our own PTY
-    await startServer({
-      cols: options.cols ?? getDefaultCols(),
-      rows: options.rows ?? getDefaultRows(),
-      shell: options.shell,
-      login: options.login,
-        tmux: options.tmux,
-        title: options.title,
-        piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode,
-    });
+    await startMcpClientMode(socketPath, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -520,6 +492,8 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
 
   // Create terminal manager (prompt customization handled in session.ts)
   const manager = new TerminalManager({
+    mode: "interactive",
+    role: "server",
     cols,
     rows,
     shell: options.shell,

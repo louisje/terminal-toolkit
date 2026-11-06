@@ -147,14 +147,10 @@ export function createToolProxyServer(
   piOperators = false,
   piExtraOperators = false
 ): NetServer {
-  // Remove existing socket file if it exists
-  try {
-    fs.unlinkSync(socketPath);
-  } catch {
-    // Ignore if doesn't exist
-  }
-
+  let clientCount = 0;
   const server = new NetServer((socket) => {
+    clientCount++;
+    manager.setClientCount?.(clientCount);
     let buffer = "";
     const inflight = new Map<number, AbortController>();
     let clientPiOperators = piOperators;
@@ -195,7 +191,12 @@ export function createToolProxyServer(
       }
     });
 
-    socket.on("close", () => { for (const controller of inflight.values()) controller.abort(); inflight.clear(); });
+    socket.on("close", () => {
+      clientCount = Math.max(0, clientCount - 1);
+      manager.setClientCount?.(clientCount);
+      for (const controller of inflight.values()) controller.abort();
+      inflight.clear();
+    });
     socket.on("error", () => {
       // Client disconnected, ignore
     });
@@ -224,6 +225,15 @@ async function handleToolRequest(
 
   try {
     let result: unknown;
+
+    // Lazily create the default PTY only for operations that need it.
+    const ptyMethods = new Set([
+      "type", "sendKey", "getContent", "getBufferInfo", "takeScreenshot",
+      "startRecording", "stopRecording", "resize",
+    ]);
+    if (ptyMethods.has(method) && (params?.sessionId === undefined || params?.sessionId === "default")) {
+      await manager.getSessionAsync();
+    }
 
     switch (method) {
       case "ls":

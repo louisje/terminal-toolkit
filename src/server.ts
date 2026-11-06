@@ -122,6 +122,8 @@ export function createServer(options: ServerOptions = {}): {
   manager: TerminalManager;
 } {
   const manager = new TerminalManager({
+    mode: "headless",
+    role: "server",
     cols: options.cols,
     rows: options.rows,
     shell: options.shell,

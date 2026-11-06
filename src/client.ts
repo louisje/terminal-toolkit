@@ -1,4 +1,7 @@
 import * as net from "net";
+import * as fs from "fs";
+import { TerminalManager } from "./terminal/index.js";
+import { createToolProxyServer } from "./transport/index.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "./utils/version.js";
@@ -29,6 +32,12 @@ interface McpClientModeOptions {
   piOperators?: boolean;
   piExtraOperators?: boolean;
   codemode?: boolean;
+  shell?: string;
+  cols?: number;
+  rows?: number;
+  login?: boolean;
+  maxSessions?: number;
+  sessionIdleTimeout?: number;
 }
 
 type SocketRequestSender = (
@@ -60,12 +69,46 @@ export async function startMcpClientMode(
   // clean mutual shutdown rather than the interactive session dying alone.
   const SOCKET_CLOSE_GRACE_MS = 100;
 
-  // Connect to the interactive terminal's socket
-  const socket = await connectToSocket(socketPath);
+  // Attach to an existing socket or own a new lazy socket-backed manager.
+  let socket: net.Socket;
+  let ownedManager: TerminalManager | undefined;
+  let ownedServer: net.Server | undefined;
+  const isRemoteClient = () => !ownedServer;
+  try {
+    socket = await connectToSocket(socketPath);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code !== "ENOENT" && code !== "ECONNREFUSED") throw error;
+    if (code === "ECONNREFUSED") fs.unlinkSync(socketPath);
+    ownedManager = new TerminalManager({
+      mode: "interactive", role: "server", shell: options.shell,
+      cols: options.cols, rows: options.rows, login: options.login,
+      maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
+    });
+    ownedServer = createToolProxyServer(socketPath, ownedManager, undefined, options.piOperators, options.piExtraOperators);
+    try {
+      if (!ownedServer.listening) {
+        await new Promise<void>((resolve, reject) => {
+          ownedServer!.once("listening", resolve);
+          ownedServer!.once("error", reject);
+        });
+      }
+      socket = await connectToSocket(socketPath);
+    } catch (startupError) {
+      ownedServer.close();
+      ownedManager.dispose();
+      throw startupError;
+    }
+  }
 
-  // Nothing to release — the OS reclaims the socket fd on exit. We install this
-  // only for the stdin-EOF -> exit wiring (the socket keeps the loop alive).
-  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {} });
+  // Close our socket on MCP shutdown; release the manager and pathname only
+  // when this process owns the server, never when attached to another owner.
+  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
+    socket.destroy();
+    ownedServer?.close();
+    ownedManager?.dispose();
+    if (ownedServer) { try { fs.unlinkSync(socketPath); } catch { /* already removed */ } }
+  } });
 
   // Create MCP server
   const server = new Server(
@@ -171,6 +214,23 @@ export async function startMcpClientMode(
     });
   }
 
+  // Adapt session metadata for this MCP endpoint, including codemode dispatch.
+  async function dispatchTool(method: string, params?: Record<string, unknown>, signal?: AbortSignal): Promise<unknown> {
+    const result = await sendRequest(method, params, signal);
+    if (method !== "listSessions" || !isRemoteClient()) return result;
+    const response = result as { content?: Array<{ type: string; text?: string }> };
+    return { ...response, content: response.content?.map(item => {
+      if (item.type !== "text" || !item.text) return item;
+      try {
+        const listing = JSON.parse(item.text);
+        for (const session of listing.sessions ?? []) {
+          if (session.isDefault) session.role = "client";
+        }
+        return { ...item, text: JSON.stringify(listing, null, 2) };
+      } catch { return item; }
+    }) };
+  }
+
   registerSkills(server);
 
   // Register list tools handler
@@ -186,10 +246,10 @@ export async function startMcpClientMode(
       const result = options.codemode
         ? name === "codemode"
           ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piOperators, options.piExtraOperators),
-              (tool, params, signal) => sendRequest(tool, params, signal), extra.signal,
+              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal,
               getServerInstructions({piOperators: options.piOperators, piExtraOperators: options.piExtraOperators}))
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : await sendRequest(name, args as Record<string, unknown>, extra.signal);
+        : await dispatchTool(name, args as Record<string, unknown>, extra.signal);
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;
@@ -223,28 +283,8 @@ export async function startMcpClientMode(
  */
 function connectToSocket(socketPath: string): Promise<net.Socket> {
   return new Promise((resolve, reject) => {
-    const socket = net.createConnection(socketPath, () => {
-      resolve(socket);
-    });
-
-    socket.on("error", (error: NodeJS.ErrnoException) => {
-      if (error.code === "ENOENT") {
-        reject(
-          new Error(
-            `No tmcp session found at ${socketPath}.\n` +
-              `Start an interactive session first by running: tmcp`
-          )
-        );
-      } else if (error.code === "ECONNREFUSED") {
-        reject(
-          new Error(
-            `Connection refused to ${socketPath}.\n` +
-              `The tmcp session may have crashed. Try restarting it.`
-          )
-        );
-      } else {
-        reject(error);
-      }
-    });
+    const socket = net.createConnection(socketPath);
+    socket.once("connect", () => resolve(socket));
+    socket.once("error", reject);
   });
 }
