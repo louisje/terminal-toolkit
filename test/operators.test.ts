@@ -3,13 +3,26 @@ import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { getToolDefinitions } from "../src/tools/definitions.ts";
+import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, namespaceRegistry } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
 test("tool definitions expose 19 core operators by default", () => {
   assert.equal(getToolDefinitions().length, 19);
   assert.equal(getToolDefinitions(true).length, 19);
   assert.deepEqual(getToolDefinitions().slice(-4).map((tool) => tool.name), ["read", "write", "edit", "shell"]);
+});
+
+test("namespace registry covers every tool and preserves enabled defaults", () => {
+  const namespaces = Object.keys(namespaceRegistry);
+  assert.deepEqual(namespaces, ["tools/core", "tools/pty", "tools/misc"]);
+  assert.ok(Object.values(namespaceRegistry).every(config => config.defaultEnabled));
+  const names = Object.values(namespaceRegistry).flatMap(config => [...config.toolNames]);
+  assert.equal(new Set(names).size, names.length);
+  assert.deepEqual(new Set(names), new Set(getToolDefinitions(true, true).map(tool => tool.name)));
+  for (const tool of getCodemodeToolDefinitions(true, true)) {
+    assert.equal(tool.namespace, getToolNamespace(tool.name));
+    assert.ok(namespaceRegistry[tool.namespace!].toolNames.some(name => name === tool.name));
+  }
 });
 
 test("read, write, and edit implement the basic operator semantics", async () => {

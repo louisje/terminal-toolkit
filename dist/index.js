@@ -55312,10 +55312,37 @@ async function handleExtraOperatorTool(name, args2) {
 }
 
 // src/tools/definitions.ts
+var namespaceRegistry = {
+  "tools/core": {
+    defaultEnabled: true,
+    toolNames: ["read", "write", "edit", "shell", "ls", "grep", "find"]
+  },
+  "tools/pty": {
+    defaultEnabled: true,
+    toolNames: [
+      "type",
+      "sendKey",
+      "getContent",
+      "getBufferInfo",
+      "takeScreenshot",
+      "startRecording",
+      "stopRecording",
+      "createSession",
+      "listSessions",
+      "destroySession",
+      "resize"
+    ]
+  },
+  "tools/misc": {
+    defaultEnabled: true,
+    toolNames: ["getClipboard", "setClipboard", "notify", "sleep"]
+  }
+};
+var namespaceByTool = new Map(
+  Object.entries(namespaceRegistry).flatMap(([namespace, config3]) => config3.toolNames.map((name) => [name, namespace]))
+);
 function getToolNamespace(name) {
-  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/core";
-  if (["getClipboard", "setClipboard", "notify", "sleep"].includes(name)) return "tools/misc";
-  return "tools/pty";
+  return namespaceByTool.get(name) ?? "tools/pty";
 }
 var toolDefinitions = [
   typeTool,

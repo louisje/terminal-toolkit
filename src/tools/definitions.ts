@@ -21,12 +21,39 @@ import { notifyTool } from "./notify.js";
 import { operatorToolDefinitions } from "./operators.js";
 import { extraOperatorToolDefinitions } from "./extra-operators.js";
 
-export type ToolNamespace = "tools/core" | "tools/pty" | "tools/misc";
+/** Namespace metadata is centralized here so future per-namespace enablement
+ * can be implemented without changing tool ownership or discovery semantics.
+ * All namespaces remain enabled; this registry is not an access-control layer.
+ */
+export const namespaceRegistry = {
+  "tools/core": {
+    defaultEnabled: true,
+    toolNames: ["read", "write", "edit", "shell", "ls", "grep", "find"],
+  },
+  "tools/pty": {
+    defaultEnabled: true,
+    toolNames: [
+      "type", "sendKey", "getContent", "getBufferInfo", "takeScreenshot",
+      "startRecording", "stopRecording", "createSession", "listSessions",
+      "destroySession", "resize",
+    ],
+  },
+  "tools/misc": {
+    defaultEnabled: true,
+    toolNames: ["getClipboard", "setClipboard", "notify", "sleep"],
+  },
+} as const;
+
+export type ToolNamespace = keyof typeof namespaceRegistry;
+
+const namespaceByTool = new Map<string, ToolNamespace>(
+  (Object.entries(namespaceRegistry) as [ToolNamespace, (typeof namespaceRegistry)[ToolNamespace]][])
+    .flatMap(([namespace, config]) => config.toolNames.map(name => [name, namespace] as const)),
+);
 
 export function getToolNamespace(name: string): ToolNamespace {
-  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/core";
-  if (["getClipboard", "setClipboard", "notify", "sleep"].includes(name)) return "tools/misc";
-  return "tools/pty";
+  // Preserve the previous fallback for unknown names.
+  return namespaceByTool.get(name) ?? "tools/pty";
 }
 
 export interface ToolDefinition {
