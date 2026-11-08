@@ -17906,9 +17906,9 @@ var require_get_stream = __commonJS({
     "use strict";
     var { constants: BufferConstants } = __require("buffer");
     var stream = __require("stream");
-    var { promisify: promisify7 } = __require("util");
+    var { promisify: promisify8 } = __require("util");
     var bufferStream = require_buffer_stream();
-    var streamPipelinePromisified = promisify7(stream.pipeline);
+    var streamPipelinePromisified = promisify8(stream.pipeline);
     var MaxBufferError2 = class extends Error {
       constructor() {
         super("maxBuffer exceeded");
@@ -54130,7 +54130,7 @@ var TOOL_DESCRIPTIONS = {
     text: "The text to write to the clipboard"
   },
   notify: {
-    main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. Silently degrades to a text-only response (no error thrown) in headless/CI environments without a desktop notification service.",
+    main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. On Termux, automatically sends both an Android notification and a toast using Termux:API. Delivery failures are reported as tool errors.",
     message: "The notification body text (e.g. 'Build finished' or 'Need your input: which option do you want?')",
     title: "The notification title (default: 'Terminal Toolkit')",
     sound: "Whether to play the OS notification sound (default: true). Set to false for quieter, less intrusive notifications."
@@ -55011,6 +55011,8 @@ async function handleSetClipboard(_manager, args2) {
 
 // src/tools/notify.ts
 var import_node_notifier = __toESM(require_node_notifier(), 1);
+import { execFile as execFile2 } from "node:child_process";
+import { promisify as promisify7 } from "node:util";
 var notifySchema = external_exports.object({
   message: external_exports.string().min(1).describe(TOOL_DESCRIPTIONS.notify.message),
   title: external_exports.string().optional().default("Terminal Toolkit").describe(TOOL_DESCRIPTIONS.notify.title),
@@ -55040,8 +55042,39 @@ var notifyTool = {
     required: ["message"]
   }
 };
+var execFileAsync = promisify7(execFile2);
+function isTermuxEnvironment(platform2 = process.platform, env5 = process.env) {
+  return platform2 === "android" && (Boolean(env5.TERMUX_VERSION) || Boolean(env5.PREFIX?.includes("com.termux")));
+}
+function termuxNotificationCommands(args2) {
+  const parsed = notifySchema.parse(args2);
+  return [
+    {
+      command: "termux-notification",
+      args: ["--title", parsed.title, "--content", parsed.message, ...parsed.sound ? ["--sound"] : []]
+    },
+    { command: "termux-toast", args: [parsed.message] }
+  ];
+}
 async function handleNotify(_manager, args2) {
   const parsed = notifySchema.parse(args2);
+  if (isTermuxEnvironment()) {
+    const failures = [];
+    for (const { command, args: args3 } of termuxNotificationCommands(parsed)) {
+      try {
+        await execFileAsync(command, args3, { timeout: 15e3 });
+      } catch (error2) {
+        failures.push(`${command}: ${error2 instanceof Error ? error2.message : String(error2)}`);
+      }
+    }
+    if (failures.length) {
+      return {
+        content: [{ type: "text", text: `Termux notification delivery failed: ${failures.join("; ")}` }],
+        isError: true
+      };
+    }
+    return { content: [{ type: "text", text: `Notification and toast sent: "${parsed.message}"` }] };
+  }
   try {
     await new Promise((resolve6, reject) => {
       import_node_notifier.default.notify(
@@ -55052,31 +55085,22 @@ async function handleNotify(_manager, args2) {
           wait: false
         },
         (error2) => {
-          if (error2) {
-            reject(error2);
-          } else {
-            resolve6();
-          }
+          if (error2) reject(error2);
+          else resolve6();
         }
       );
     });
     return {
-      content: [
-        {
-          type: "text",
-          text: `Notification sent: "${parsed.message}"`
-        }
-      ]
+      content: [{ type: "text", text: `Notification sent: "${parsed.message}"` }]
     };
   } catch (error2) {
     const reason = error2 instanceof Error ? error2.message : String(error2);
     return {
-      content: [
-        {
-          type: "text",
-          text: `Could not deliver desktop notification (this is expected in headless/CI environments without a desktop session): ${reason}. The message was: "${parsed.message}"`
-        }
-      ]
+      content: [{
+        type: "text",
+        text: `Could not deliver desktop notification: ${reason}. The message was: "${parsed.message}"`
+      }],
+      isError: true
     };
   }
 }
@@ -59826,11 +59850,11 @@ import { tmpdir as tmpdir4 } from "node:os";
 import path24, { join as join9 } from "node:path";
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/utils/ripgrep.js
-import { execFile as execFile2 } from "child_process";
+import { execFile as execFile3 } from "child_process";
 async function ripGrep(args2, target, abortSignal, config3 = { command: "rg" }) {
   const { command, args: commandArgs = [] } = config3;
   return new Promise((resolve6, reject) => {
-    execFile2(command, [...commandArgs, ...args2, target], {
+    execFile3(command, [...commandArgs, ...args2, target], {
       maxBuffer: 2e7,
       // 20MB
       signal: abortSignal,
