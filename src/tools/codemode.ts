@@ -11,7 +11,7 @@ export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
-- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/pi, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
+- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
@@ -68,7 +68,7 @@ export async function runCodemodeWithDispatch(
         if (query !== undefined && typeof query !== "string") throw new Error("searchTools() expects a query string");
         if (options?.limit !== undefined && (typeof options.limit !== "number" || !Number.isInteger(options.limit) || options.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
         if (options?.namespace !== undefined && typeof options.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options?.namespace && !["tools/pi", "tools/pty", "tools/misc"].includes(options.namespace)) { recordSearch(query ?? "", 0); return []; }
+        if (options?.namespace && !["tools/core", "tools/pty", "tools/misc"].includes(options.namespace)) { recordSearch(query ?? "", 0); return []; }
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         const results = summaries.map(d => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) }))
           .filter(d => (!options?.namespace || d.namespace === options.namespace) && (!words.length || d.score > 0)).sort((a,b) => b.score - a.score)
@@ -94,7 +94,7 @@ export async function runCodemodeWithDispatch(
         if (name !== undefined && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
         recordDescribeNamespace(name ?? "(all)");
         const namespaces = [
-          { name: "tools/pi", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
+          { name: "tools/core", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
           { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
           { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." },
         ];

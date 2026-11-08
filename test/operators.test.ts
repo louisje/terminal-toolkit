@@ -6,10 +6,10 @@ import { join } from "node:path";
 import { getToolDefinitions } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
-test("tool definitions keep 15 by default and expose 19 with pi operators", () => {
-  assert.equal(getToolDefinitions().length, 15);
+test("tool definitions expose 19 core operators by default", () => {
+  assert.equal(getToolDefinitions().length, 19);
   assert.equal(getToolDefinitions(true).length, 19);
-  assert.deepEqual(getToolDefinitions(true).slice(-4).map((tool) => tool.name), ["read", "write", "edit", "shell"]);
+  assert.deepEqual(getToolDefinitions().slice(-4).map((tool) => tool.name), ["read", "write", "edit", "shell"]);
 });
 
 test("read, write, and edit implement the basic operator semantics", async () => {

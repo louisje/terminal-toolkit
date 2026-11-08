@@ -10,7 +10,7 @@ async function connect(args) {
 }
 
 test('codemode exposes only one tool and invokes opted-in operators', { timeout: 20000 }, async () => {
-  const client = await connect(['--codemode', '--pi-operators']);
+  const client = await connect(['--codemode']);
   try {
     assert.deepEqual((await client.listTools()).tools.map(t => t.name), ['codemode']);
     const result = await client.callTool({ name: 'codemode', arguments: { code: 'text(await tools.shell({command:"printf codemode-ok"}))' } });
@@ -23,11 +23,11 @@ test('codemode exposes only one tool and invokes opted-in operators', { timeout:
   } finally { await client.close(); }
 });
 
-test('codemode does not grant disabled operators', { timeout: 20000 }, async () => {
+test('codemode exposes core operators by default', { timeout: 20000 }, async () => {
   const client = await connect(['--codemode']);
   try {
     const result = await client.callTool({ name: 'codemode', arguments: { code: 'text(ALL_TOOLS.some(x=>x.name==="shell"))' } });
-    assert.equal(result.content[0].text, 'false');
+    assert.equal(result.content[0].text, 'true');
   } finally { await client.close(); }
 });
 
@@ -44,7 +44,7 @@ test('codemode works through a real socket-connected MCP client', { timeout: 250
   await new Promise((resolve, reject) => server.listening ? resolve() : server.once('listening', resolve).once('error', reject));
   const client = new Client({ name: 'codemode-socket-test', version: '1.0.0' });
   try {
-    await client.connect(new StdioClientTransport({ command: process.execPath, args: ['dist/index.js', '--socket', socketPath, '--codemode', '--pi-operators'], stderr: 'pipe' }));
+    await client.connect(new StdioClientTransport({ command: process.execPath, args: ['dist/index.js', '--socket', socketPath, '--codemode'], stderr: 'pipe' }));
     assert.deepEqual((await client.listTools()).tools.map(x => x.name), ['codemode']);
     const value = await client.callTool({ name: 'codemode', arguments: { code: 'text(await tools.shell({command:"printf socket-ok"}))' } });
     assert.equal(value.isError, false, JSON.stringify(value));

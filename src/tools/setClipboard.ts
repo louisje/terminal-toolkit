@@ -1,5 +1,4 @@
 import { z } from "zod";
-import clipboardy from "clipboardy";
 import { TerminalManager } from "../terminal/index.js";
 import { TOOL_DESCRIPTIONS } from "./descriptions.js";
 
@@ -29,6 +28,7 @@ export async function handleSetClipboard(
   args: unknown
 ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
   const parsed = setClipboardSchema.parse(args);
+  const { default: clipboardy } = await import("clipboardy");
   await clipboardy.write(parsed.text);
 
   const preview =

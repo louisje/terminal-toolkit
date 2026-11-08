@@ -44,7 +44,7 @@ interfere with MCP JSON-RPC on stdout.
 - Invalid URIs, unknown skills and path traversal are rejected. Files are
   hashed directly from raw bytes each time they are listed.
 - This protocol capability is independent of `--codemode`,
-  `--pi-operators`, `--pi-extra-operators`, and terminal transport mode.
+  `--pi-operators`, `--extra-core-operators`, and terminal transport mode.
   Existing MCP tools and instructions are unaffected.
 
 The server's participation in SEP-2640 does **not** imply a particular host
@@ -66,7 +66,7 @@ Specification: https://skills.extensions.modelcontextprotocol.io/specification/s
 This repository includes a portable Agent Plugins `plugin.json`, a local
 stdio `mcp.json`, and the shared `skills/terminal-toolkit/SKILL.md`.
 
-The Plugin starts `node bootstrap.cjs --mcp --codemode --pi-operators`.
+The Plugin starts `node bootstrap.cjs --mcp --codemode`.
 The bootstrap validates and installs the required native `node-pty` dependency,
 then launches the existing `dist/index.js`. Node.js >=22.19 and npm are required
 for a fresh installation. Local stdio execution requires a client that supports
@@ -201,8 +201,8 @@ terminal-toolkit [OPTIONS]
 
 Options:
   --mcp                  Use MCP mode (connects to existing session or creates new PTY)
-  --pi-operators         Also expose read, write, edit, and shell (19 tools total; default is 15)
-  --pi-extra-operators   Also expose ls, grep, and find (18 tools total; 22 with both flags)
+  --pi-operators         Deprecated; core operators are already enabled
+  --extra-core-operators Expose optional ls, grep, and find (22 tools total)
   --title <label>        Set the interactive terminal title when connecting as a client
   --cols <number>        Terminal width in columns (default: $TERMINAL_TOOLKIT_COLS or 120)
   --rows <number>        Terminal height in rows (default: $TERMINAL_TOOLKIT_ROWS or 40)
@@ -234,7 +234,7 @@ Multi-Session Options:
 ### Pi operators
 
 The default tool surface is unchanged: Terminal Toolkit exposes its existing 15 terminal tools. Add
-`--pi-operators` when you also want the Pi Coding Agent-style `read`, `write`, `edit`, and `shell`
+The Pi Coding Agent-style `read`, `write`, `edit`, and `shell` tools are enabled by default
 tools. These file tools operate relative to the process startup directory; `write` creates parent
 directories, and `edit` requires exact unique non-overlapping replacements from the original file.
 `shell` runs one independent, stateless subprocess using Terminal Toolkit's configured shell (`--shell`, then `TERMINAL_TOOLKIT_SHELL`, then the platform-native shell/default) in that same startup directory,
@@ -256,7 +256,7 @@ Long-running builds and tests should use PTY even when no interaction is expecte
 
 ### Pi extra operators
 
-The optional --pi-extra-operators flag independently exposes ls, grep, and find. It does not enable read, write, edit, or shell. The two flags may be combined for 22 tools. ls uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
+The optional --extra-core-operators flag independently exposes ls, grep, and find. It does not enable read, write, edit, or shell. The two flags may be combined for 22 tools. ls uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
 
 
 Environment variables:
@@ -793,10 +793,10 @@ MIT
 
 ### Experimental codemode (opt-in)
 
-Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `describeNamespace()` to list namespaces (`tools/pi`, `tools/pty`, `tools/misc`), then `searchTools(query)`, `describeTool(name)`, and `describeNamespace("tools/pty")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
+Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `describeNamespace()` to list namespaces (`tools/core`, `tools/pty`, `tools/misc`), then `searchTools(query)`, `describeTool(name)`, and `describeNamespace("tools/pty")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
 
 ```sh
-terminal-toolkit --headless --codemode --pi-operators
+terminal-toolkit --headless --codemode
 ```
 
 Codemode accepts an optional `timeoutMs` (integer 1–60000, default 60000) to bound one execution. Timeouts cancel pending cancellable operators, but cannot roll back writes already made to files or persistent PTY sessions.
@@ -809,4 +809,4 @@ Example `codemode` input:
 
 The Claude Code plugin bootstrap does not automatically download optional resvg at startup; set `TERMINAL_TOOLKIT_INSTALL_OPTIONAL_RESVG=1` when launching it to request installation for PNG screenshot support. The required native `node-pty` remains auto-installed if unavailable.
 
-The flag works with both headless servers and socket-connected MCP clients. `--pi-operators` and `--pi-extra-operators` still control which tools can be called; they are not implicitly enabled. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).
+The flag works with both headless servers and socket-connected MCP clients. Core operators are enabled by default; `--extra-core-operators` enables ls, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).

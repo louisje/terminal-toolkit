@@ -21,10 +21,10 @@ import { notifyTool } from "./notify.js";
 import { operatorToolDefinitions } from "./operators.js";
 import { extraOperatorToolDefinitions } from "./extra-operators.js";
 
-export type ToolNamespace = "tools/pi" | "tools/pty" | "tools/misc";
+export type ToolNamespace = "tools/core" | "tools/pty" | "tools/misc";
 
 export function getToolNamespace(name: string): ToolNamespace {
-  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/pi";
+  if (["read", "write", "edit", "shell", "ls", "grep", "find"].includes(name)) return "tools/core";
   if (["getClipboard", "setClipboard", "notify", "sleep"].includes(name)) return "tools/misc";
   return "tools/pty";
 }
@@ -88,7 +88,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
 
 /** Canonical split fields for codemode. Legacy MCP descriptions are retained
  * unchanged as instruction text, avoiding a second copy of usage guidance. */
-export function getCodemodeToolDefinitions(piOperators = false, piExtraOperators = false): ToolDefinition[] {
+export function getCodemodeToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
   return getToolDefinitions(piOperators, piExtraOperators).map(tool => ({
     ...tool,
     namespace: getToolNamespace(tool.name),
@@ -97,7 +97,7 @@ export function getCodemodeToolDefinitions(piOperators = false, piExtraOperators
   }));
 }
 
-export function getToolDefinitions(piOperators = false, piExtraOperators = false): ToolDefinition[] {
+export function getToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
   return [...toolDefinitions, ...(piOperators ? operatorToolDefinitions : []), ...(piExtraOperators ? extraOperatorToolDefinitions : [])];
 }
 

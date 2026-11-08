@@ -27,7 +27,7 @@ test('Claude plugin bootstrap runs the bundled codemode without project node_mod
     try {
       await client.connect(new StdioClientTransport({
         command: process.execPath,
-        args: [join(dir, 'bootstrap.cjs'), '--headless', '--codemode', '--pi-operators'],
+        args: [join(dir, 'bootstrap.cjs'), '--headless', '--codemode'],
         cwd: dir,
         env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'TERMINAL_TOOLKIT')),
         stderr: 'pipe',

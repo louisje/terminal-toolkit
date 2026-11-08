@@ -146,7 +146,7 @@ export function createToolProxyServer(
   socketPath: string,
   manager: TerminalManager,
   onClientConnected?: (params: ClientConnectedParams) => void,
-  piOperators = false,
+  piOperators = true,
   piExtraOperators = false
 ): NetServer {
   let clientCount = 0;
@@ -360,7 +360,7 @@ async function handleToolRequest(
   manager: TerminalManager,
   request: SocketRequest,
   onClientConnected?: (params: ClientConnectedParams) => void,
-  piOperators = false,
+  piOperators = true,
   piExtraOperators = false,
   setClientPiOperators?: (enabled: boolean) => void,
   setClientPiExtraOperators?: (enabled: boolean) => void,
@@ -472,7 +472,7 @@ async function handleToolRequest(
 
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
-        setClientPiOperators?.(parsed.piOperators === true);
+        setClientPiOperators?.(parsed.piOperators !== false);
         setClientPiExtraOperators?.(parsed.piExtraOperators === true);
         onClientConnected?.(parsed);
         result = { ok: true };

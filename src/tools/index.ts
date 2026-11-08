@@ -25,7 +25,7 @@ import { handleGetClipboard } from "./getClipboard.js";
 import { handleSetClipboard } from "./setClipboard.js";
 import { handleNotify } from "./notify.js";
 
-export function registerTools(server: Server, manager: TerminalManager, piOperators = false, piExtraOperators = false, codemode = false): void {
+export function registerTools(server: Server, manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: codemode ? [codemodeDefinition] : getToolDefinitions(piOperators, piExtraOperators),
@@ -56,7 +56,7 @@ export function registerTools(server: Server, manager: TerminalManager, piOperat
   });
 }
 
-export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piOperators = false, piExtraOperators = false, signal?: AbortSignal) {
+export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piOperators = true, piExtraOperators = false, signal?: AbortSignal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "ls":

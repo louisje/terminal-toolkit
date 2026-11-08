@@ -1,4 +1,3 @@
-import clipboardy from "clipboardy";
 import { TerminalManager } from "../terminal/index.js";
 import { TOOL_DESCRIPTIONS } from "./descriptions.js";
 
@@ -16,6 +15,7 @@ export async function handleGetClipboard(
   _manager: TerminalManager,
   _args: unknown
 ): Promise<{ content: Array<{ type: "text"; text: string }> }> {
+  const { default: clipboardy } = await import("clipboardy");
   const text = await clipboardy.read();
 
   return {

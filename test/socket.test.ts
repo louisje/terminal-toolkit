@@ -97,9 +97,9 @@ test("socket extra operators require independent per-connection opt-in", async (
     assert.match((await a(1, "ls", { path: dir })).error.message, /Unknown tool/);
     assert.deepEqual((await a(2, "clientConnected", { piExtraOperators: true })).result, { ok: true });
     assert.ok((await a(3, "ls", { path: dir })).result);
-    assert.match((await a(4, "read", { path: socketPath })).error.message, /Unknown tool/);
+    assert.ok((await a(4, "read", { path: socketPath })).error);
     assert.match((await b(5, "ls", { path: dir })).error.message, /Unknown tool/);
-    await b(6, "clientConnected", { piOperators: true });
+    await b(6, "clientConnected", {});
     assert.match((await b(7, "ls", { path: dir })).error.message, /Unknown tool/);
     assert.ok((await b(8, "read", { path: path.join(dir, "missing") })).error);
     await b(9, "clientConnected", { piExtraOperators: true });

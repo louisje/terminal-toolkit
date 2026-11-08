@@ -68,7 +68,7 @@ Prefer the persistent PTY for lengthy `npm run build`, `cargo build`, `make`, in
 
 ## Pi operators
 
-When `--pi-operators` is enabled, four additional tools are exposed:
+Four core operators are enabled by default:
 
 - `read`: read text files directly; `offset` is a 1-indexed line number.
 - `write`: overwrite a text file and create missing parent directories.
@@ -107,7 +107,7 @@ Default PTY/tool list: `type`, `sendKey`, `sleep`, `getContent`, `getBufferInfo`
 `takeScreenshot`, `startRecording`, `stopRecording`, `createSession`,
 `listSessions`, `destroySession`, `resize`, `getClipboard`, `setClipboard`,
 `notify` (OS-level desktop notification — useful to alert the user when a
-long-running command finishes while they're not watching). With `--pi-operators`,
+long-running command finishes while they're not watching). With core operators,
 `read`, `write`, `edit`, and `shell` are additionally available.
 
 ## Anti-patterns
@@ -124,7 +124,7 @@ long-running command finishes while they're not watching). With `--pi-operators`
 
 This opt-in mode exposes **only one MCP function**, `codemode`. The other Terminal
 MCP operators remain available *inside* its QuickJS script as `tools.<name>(args)`;
-`--pi-operators` and `--pi-extra-operators` still independently govern which tools
+Core operators are enabled by default; `--extra-core-operators` governs which optional tools
 exist. The server instructions continue to explain safe PTY/session selection.
 
 Example (`code` argument to `codemode`):
@@ -132,10 +132,10 @@ Example (`code` argument to `codemode`):
 ```javascript
 const all = await searchTools(); // all tools, with descriptions
 text(all);
-const matches = await searchTools("shell", { namespace: "tools/pi", limit: 5 });
+const matches = await searchTools("shell", { namespace: "tools/core", limit: 5 });
 text(matches);
 text(await describeNamespace("tools/pty")); // instructions and tool descriptions
-const shell = await describeTool("shell"); // null unless --pi-operators is enabled
+const shell = await describeTool("shell"); // enabled by default
 text(shell?.inputSchema);
 // In an operator-enabled connection:
 // text(await tools.shell({ command: "git status --short" }));
@@ -165,14 +165,14 @@ text(await getToolStat({ category: "discovery" })); // search/describe usage
 text(await getToolStat({ category: "tool" })); // actual tools.* calls
 text(await getToolStat({
   category: "tool",
-  namespace: "tools/pi",
+  namespace: "tools/core",
   sortBy: "calls",
   limit: 10
 }));
 ```
 
 Optional filters: `category` (`"discovery"` or `"tool"`), `namespace`
-(e.g. `"tools/pi"`), `sortBy` (`"calls"`, `"name"`, or
+(e.g. `"tools/core"`), `sortBy` (`"calls"`, `"name"`, or
 `"totalDurationMs"`), and positive integer `limit`. With no arguments,
 the function returns all available statistics, sorted by call count.
 

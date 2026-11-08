@@ -77,20 +77,20 @@ const PI_EXTRA_OPERATOR_INSTRUCTIONS = `\n\nPi extra operators are enabled: ls l
 
 const CODEMODE_INSTRUCTIONS = `
 
-Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/pi, tools/pty, tools/misc).
+Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/core, tools/pty, tools/misc).
 Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
 Read await describeNamespace("tools/pty") for PTY operational and safety instructions before working with terminal tools.`;
 
 export interface InstructionOptions { codemode?: boolean; piOperators?: boolean; piExtraOperators?: boolean; }
 
-export function getServerInstructions({ codemode = false, piOperators = false, piExtraOperators = false }: InstructionOptions = {}): string {
+export function getServerInstructions({ codemode = false, piOperators = true, piExtraOperators = false }: InstructionOptions = {}): string {
   if (codemode) return CODEMODE_INSTRUCTIONS.trim();
   return SERVER_INSTRUCTIONS
     + (piOperators ? PI_OPERATOR_INSTRUCTIONS : "")
     + (piExtraOperators ? PI_EXTRA_OPERATOR_INSTRUCTIONS : "");
 }
 
-export function createServerWithManager(manager: TerminalManager, piOperators = false, piExtraOperators = false, codemode = false): Server {
+export function createServerWithManager(manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): Server {
   const server = new Server(
     {
       name: "terminal-toolkit",

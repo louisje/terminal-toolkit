@@ -8,7 +8,9 @@ import { StringDecoder } from "node:string_decoder";
  * everything received so far on every poll.
  */
 export function spawnNode(args, opts = {}) {
-  const child = spawn(process.execPath, args, { stdio: ["pipe", "pipe", "pipe"], ...opts });
+  const env = { ...process.env, ...opts.env };
+  delete env.TERMINAL_TOOLKIT;
+  const child = spawn(process.execPath, args, { stdio: ["pipe", "pipe", "pipe"], ...opts, env });
   const state = { child, stdout: "", stderr: "", exit: null };
   const outDecoder = new StringDecoder("utf8");
   const errDecoder = new StringDecoder("utf8");

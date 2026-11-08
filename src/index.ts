@@ -93,7 +93,7 @@ const options: {
   piOperators?: boolean;
   piExtraOperators?: boolean;
   codemode?: boolean;
-} = {};
+} = { piOperators: true };
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -103,13 +103,18 @@ for (let i = 0; i < args.length; i++) {
     case "--mcp":
       options.useMcp = true;
       break;
+    case "--extra-core-operators":
+      options.piExtraOperators = true;
+      break;
     case "--pi-extra-operators":
+      console.error("[Terminal Toolkit] Deprecated --pi-extra-operators; use --extra-core-operators.");
       options.piExtraOperators = true;
       break;
     case "--codemode":
       options.codemode = true;
       break;
     case "--pi-operators":
+      console.error("[Terminal Toolkit] Deprecated --pi-operators; core operators are enabled by default.");
       options.piOperators = true;
       break;
     case "--cols":
@@ -243,8 +248,9 @@ Options:
   --socket <path>        IPC socket/pipe path for MCP (default: ${DEFAULT_SOCKET_PATH})
   --mcp                  Use direct MCP mode (no socket, standard MCP mode)
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
-  --pi-operators         Expose Pi-style read, write, edit, and shell tools (19 total)
-  --pi-extra-operators   Expose ls, grep, and find independently (18 total; 22 with both)
+  --pi-operators         Deprecated (core operators are enabled by default)
+  --extra-core-operators Expose optional ls, grep, and find tools
+  --pi-extra-operators   Deprecated alias for --extra-core-operators
   --title <label>        Set the interactive terminal title when connecting as a client
   --headless             Run in headless mode (MCP server with embedded terminal, no TTY needed)
   --tmux [session]       Auto-connect to tmux (implies --headless; default target session: 0)
