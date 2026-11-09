@@ -54081,7 +54081,7 @@ function getAvailableKeys() {
 }
 
 // src/tools/descriptions.ts
-var SESSION_ID_DESCRIPTION = "Target session ID. Omit to use the default session, which is already running \u2014 no need to call createSession first.";
+var SESSION_ID_DESCRIPTION = `Target session ID. For the Primary Session (formerly default session), omit sessionId entirely. Never pass "primary", "default", or an empty string. For additional sessions, pass the actual ID returned by createSession().`;
 var TOOL_DESCRIPTIONS = {
   type: {
     main: `Send text input to the terminal. Use autoSubmit=true to execute commands in one call (recommended). Alternative: type text without autoSubmit, then use sendKey('Enter') for manual control. IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo "Hello!").`,
@@ -54824,7 +54824,7 @@ var createSessionSchema = external_exports.object({
 });
 var createSessionTool = {
   name: "createSession",
-  description: "Creates an additional headless PTY, never directly displayed in the user's terminal. It remains interactive through MCP tools, but cannot serve as a user-visible password prompt or terminal. Only the default session may be user-visible, depending on mode. First call getContent() without sessionId to inspect the default terminal. Reuse it only when clearly idle and available. Create an isolated terminal if someone is using it, a command/TUI is running, availability is unclear, or you need parallel work or a different shell/size. Do not send input or interrupt work in an occupied terminal. Returns session metadata; use the returned sessionId in subsequent type/sendKey/getContent/takeScreenshot calls to address this extra session.",
+  description: "Creates an additional headless PTY, never directly displayed in the user's terminal. It remains interactive through MCP tools, but cannot serve as a user-visible password prompt or terminal. Only the Primary Session may be user-visible, depending on mode. First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it only when clearly idle and available. Create an isolated terminal if someone is using it, a command/TUI is running, availability is unclear, or you need parallel work or a different shell/size. Do not send input or interrupt work in an occupied terminal. Returns session metadata; use the returned sessionId in subsequent type/sendKey/getContent/takeScreenshot calls to address this extra session.",
   inputSchema: {
     type: "object",
     properties: {
@@ -54861,7 +54861,7 @@ async function handleCreateSession(manager, args2) {
 var listSessionsSchema = external_exports.object({});
 var listSessionsTool = {
   name: "listSessions",
-  description: "List all active terminal sessions, including the default session. Returns session metadata and the configured limits.",
+  description: "List all active terminal sessions, including the Primary Session. Returns session metadata and the configured limits.",
   inputSchema: {
     type: "object",
     properties: {},
@@ -54886,7 +54886,7 @@ var destroySessionSchema = external_exports.object({
 });
 var destroySessionTool = {
   name: "destroySession",
-  description: "Destroy a terminal session by ID. The default session cannot be destroyed.",
+  description: "Destroy a terminal session by ID. The Primary Session cannot be destroyed.",
   inputSchema: {
     type: "object",
     properties: {
@@ -55137,10 +55137,10 @@ var editSchema = external_exports.object({ path: external_exports.string(), edit
 var shellSchema = external_exports.object({ command: external_exports.string(), timeout: external_exports.number().positive().optional() });
 var result = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
 var operatorToolDefinitions = [
-  { name: "read", description: "Read a text file directly without using the PTY or shell. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
-  { name: "write", description: "Write a text file directly, creating parent directories and overwriting the file. Prefer this over shell redirection for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
-  { name: "edit", description: "Apply exact unique non-overlapping string replacements against a file's original content. This is replacement-only, not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
-  { name: "shell", description: "Execute a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
+  { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+  { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
+  { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
+  { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
 ];
 var localPath = (path28) => resolve(operatorCwd, path28);
 async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal) {
@@ -56614,6 +56614,8 @@ var codemodeDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
+- tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
+- tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
 - Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
@@ -56692,7 +56694,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
         if (name !== void 0 && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
         recordDescribeNamespace(name ?? "(all)");
         const namespaces2 = [
-          { name: "tools/core", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
+          { name: "tools/core", description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Use read to inspect text files, write to create or replace whole files (overwrites existing content), and edit for exact unique replacements in existing files. Prefer these dedicated tools over shell cat, echo/redirection, sed -i, or heredocs for routine file work. edit cannot append/prepend without a matching replacement. Use shell for actual command execution, pipelines, and external programs; use tools/pty for long-running builds, tests, and interactive work. Extra search tools require installed rg and fd/fdfind." },
           { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
           { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
         ];
@@ -56822,7 +56824,7 @@ This MCP server provides tools to interact with a terminal emulator. Use these t
 
 The terminal session is automatically initialized when the server starts - you can immediately start using tools (type, sendKey, getContent, etc.) without any setup step.
 
-**First call getContent() without sessionId** to inspect whether the default terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
+**First call getContent() without sessionId** to inspect whether the Primary Session terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
 
 ## When to prefer this server
 Prefer terminal-toolkit over plain non-interactive shell tools whenever the command:
@@ -57174,14 +57176,16 @@ Prefer this server over plain non-interactive shell tools whenever the command:
 - performs a long-running compile, build, or test run: prefer a PTY even when non-interactive, so progress, failures, and partial output can be inspected without blocking on completion
 - needs to be observed while still running (server, REPL, or any command with live progress)
 
-Only the default session may be directly visible to the user (in interactive mode);
-under headless mode even the default session is not directly visible. Sessions created
+Primary Session means omit sessionId entirely; never pass "primary", "default", or an empty string.
+
+Only the Primary Session may be directly visible to the user (in interactive mode);
+under headless mode even the Primary Session is not directly visible. Sessions created
 by createSession() are always headless PTYs: AI can interact with them through tools,
 but the user cannot see them directly. For user-observed commands or password prompts,
-use the default session only when it is visibly available; do not assume that creating
+use the Primary Session only when it is visibly available; do not assume that creating
 another session will let the user see a prompt or type a password.
 
-First call getContent() without sessionId to inspect the default terminal. Reuse it
+First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it
 only when clearly idle and available. If someone is using it, a command/TUI is
 running, or availability is unclear, call createSession() and use the returned
 sessionId for subsequent terminal calls, provided direct human interaction is not
@@ -57191,13 +57195,12 @@ Workflow in the chosen session: type(<command>), sendKey('Enter'), then getConte
 For long-running interactive programs, sendKey for navigation and takeScreenshot to
 inspect cursor position and TUI state.
 
-Multi-session: omit sessionId to drive the default session, or call createSession to
+Multi-session: omit sessionId to drive the Primary Session, or call createSession to
 get a new isolated PTY for parallel work (e.g. a build in one session, diagnostics in
-another). The default session cannot be destroyed.`;
+another). The Primary Session cannot be destroyed.`;
 var PI_OPERATOR_INSTRUCTIONS = `
 
-Pi operators are enabled. Prefer read, write, and edit for direct text-file operations instead of
-constructing shell commands for them. edit performs exact, unique, non-overlapping string
+Pi operators are enabled under tools/core. Use read for inspection, write for whole-file creation/replacement, and edit for exact replacements. Prefer these dedicated tools over shell cat, redirection, heredocs, sed -i, or custom file-editing scripts. edit performs exact, unique, non-overlapping string
 replacements against the original file; it is not an append/prepend primitive.
 
 For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless

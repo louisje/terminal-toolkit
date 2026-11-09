@@ -11,7 +11,7 @@ This MCP server provides tools to interact with a terminal emulator. Use these t
 
 The terminal session is automatically initialized when the server starts - you can immediately start using tools (type, sendKey, getContent, etc.) without any setup step.
 
-**First call getContent() without sessionId** to inspect whether the default terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
+**First call getContent() without sessionId** to inspect whether the Primary Session terminal is already in use. Reuse it only when it is clearly idle and available. If someone is using it, a command/TUI is running, or its availability is unclear, call createSession() for an isolated PTY and pass the returned sessionId to subsequent terminal calls. Do not send input or interrupt work in an occupied terminal. Also use createSession() when you need parallel work or a different shell/size.
 
 ## When to prefer this server
 Prefer terminal-toolkit over plain non-interactive shell tools whenever the command:

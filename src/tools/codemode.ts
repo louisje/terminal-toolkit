@@ -11,6 +11,8 @@ export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
+- tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
+- tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
 - Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
@@ -94,7 +96,7 @@ export async function runCodemodeWithDispatch(
         if (name !== undefined && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
         recordDescribeNamespace(name ?? "(all)");
         const namespaces = [
-          { name: "tools/core", description: "File operations, search, and one-shot shell execution.", instruction: "Prefer dedicated read/write/edit and ls/grep/find tools when enabled; use shell for quick commands and pipelines. For long-running builds, tests, or interactive work, use tools/pty. Extra search tools require installed rg and fd/fdfind." },
+          { name: "tools/core", description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Use read to inspect text files, write to create or replace whole files (overwrites existing content), and edit for exact unique replacements in existing files. Prefer these dedicated tools over shell cat, echo/redirection, sed -i, or heredocs for routine file work. edit cannot append/prepend without a matching replacement. Use shell for actual command execution, pipelines, and external programs; use tools/pty for long-running builds, tests, and interactive work. Extra search tools require installed rg and fd/fdfind." },
           { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
           { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." },
         ];

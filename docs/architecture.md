@@ -406,7 +406,7 @@ process.on("SIGINT", () => {
 
 ## Session visibility
 
-Only the default session may be displayed directly to the user, when Terminal Toolkit runs interactively. In headless mode the default session is not displayed directly. Each additional PTY made by `createSession()` is headless, independent of the server mode; AI tools can interact with it, but it is not attached to the user-facing terminal. This matters for passwords and direct human observation: creating a new session does not make its prompt visible to the user.
+Only the Primary Session may be displayed directly to the user, when Terminal Toolkit runs interactively. In headless mode the Primary Session is not displayed directly. Each additional PTY made by `createSession()` is headless, independent of the server mode; AI tools can interact with it, but it is not attached to the user-facing terminal. This matters for passwords and direct human observation: creating a new session does not make its prompt visible to the user.
 
 
 ### Interactive socket protocol negotiation

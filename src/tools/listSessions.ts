@@ -5,7 +5,7 @@ export const listSessionsSchema = z.object({});
 
 export const listSessionsTool = {
   name: "listSessions",
-  description: "List all active terminal sessions, including the default session. Returns session metadata and the configured limits.",
+  description: "List all active terminal sessions, including the Primary Session. Returns session metadata and the configured limits.",
   inputSchema: {
     type: "object" as const,
     properties: {},

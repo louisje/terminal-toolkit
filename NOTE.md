@@ -10,5 +10,5 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 
 ## Codemode 探索體驗
 
-- [ ] 評估在頂層 `codemode()` description 直接簡短揭露常用工具（`read`、`write`、`edit`、`shell`、PTY 操作），避免 Agent 僅搜尋到 `shell` 就停止探索。現已支援 `tools/core`、`tools/pty`、`tools/misc` namespace；仍須驗證初始引導是否足夠。
+- [x] 頂層 `codemode()` description 已揭露 `tools/core` 的 `read`、`write`、`edit`、`shell` 與 PTY/Misc 分工；namespace 與工具描述也加入檔案操作優先規則。後續仍可觀察 Agent 實際選擇行為。
 - [ ] P2：工具數量增加或搜尋品質不足時，評估將 `searchTools()` 的字串比對升級為 BM25；目前非必要。

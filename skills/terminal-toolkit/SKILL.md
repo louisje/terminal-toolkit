@@ -11,7 +11,7 @@ description: |
 
 ## Default rule
 
-When Pi operators are enabled, use `read`, `write`, and `edit` for direct text-file
+When core operators are enabled, discover `read`, `write`, and `edit` under `tools/core` before choosing `shell`. Use these for direct text-file
 operations and `shell` for short one-shot, non-interactive commands. These avoid
 unnecessary PTY interaction and return their result directly.
 
@@ -83,13 +83,17 @@ Four core operators are enabled by default:
 Prefer these operators for routine file work and quick one-shot commands. Do not use the
 PTY `type` → `getContent` loop merely to emulate what an operator can do directly.
 
+## Session terminology for AI agents
+
+Primary Session (legacy: default session) is a role, not a literal ID. When requested, omit the sessionId property entirely; never pass "primary", "default", or an empty string. Use the actual ID returned by createSession() for additional sessions. PTY is the underlying mechanism, not a synonym for Session.
+
 ## Session visibility
 
-Only the default session can be directly visible to the user, and only in interactive mode. In headless mode, the default session is not directly visible either. Every additional session created by `createSession()` is a headless PTY: tools can drive its stdin and read its output, but it is never displayed directly in the user's terminal. For commands requiring a human to watch or type a password, use an available user-visible default session. Do not assume an extra session lets the user respond to prompts. A headless PTY is still suitable for long-running builds and tests when only the AI needs to inspect partial output.
+Only the Primary Session can be directly visible to the user, and only in interactive mode. In headless mode, the Primary Session is not directly visible either. Every additional session created by `createSession()` is a headless PTY: tools can drive its stdin and read its output, but it is never displayed directly in the user's terminal. For commands requiring a human to watch or type a password, use an available user-visible Primary Session. Do not assume an extra session lets the user respond to prompts. A headless PTY is still suitable for long-running builds and tests when only the AI needs to inspect partial output.
 
 ## PTY tool workflow
 
-First call `getContent()` without `sessionId` to check whether the default terminal
+First call `getContent()` without `sessionId` to check whether the Primary Session terminal
 is already in use. Reuse it only when clearly idle and available. If someone is
 using it, a command/TUI is running, or availability is unclear, call
 `createSession()` and pass the returned `sessionId` to subsequent terminal calls.
@@ -99,9 +103,9 @@ Basic loop in the chosen session: `type(<command>)` → `sendKey('Enter')` → `
 result. For TUI programs, use `sendKey` for navigation and `takeScreenshot` to
 inspect cursor position and on-screen state.
 
-Multi-session: omit `sessionId` to drive the default session, or call
+Multi-session: omit `sessionId` to drive the Primary Session, or call
 `createSession` for an isolated PTY to run parallel work (e.g. a build in one
-session, diagnostics in another). The default session cannot be destroyed.
+session, diagnostics in another). The Primary Session cannot be destroyed.
 
 Default PTY/tool list: `type`, `sendKey`, `sleep`, `getContent`, `getBufferInfo`,
 `takeScreenshot`, `startRecording`, `stopRecording`, `createSession`,

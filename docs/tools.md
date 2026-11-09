@@ -17,9 +17,13 @@ Terminal Toolkit exposes PTY tools and optional Pi-style operators. This documen
 
 ---
 
+## Session terminology
+
+Primary Session (legacy: default session) is selected by omitting sessionId, never by passing "primary", "default", or an empty string. Additional sessions use IDs returned by createSession(). PTY is the underlying mechanism. Active Session is reserved for a future client-selection concept.
+
 ## Session visibility
 
-The default session may be directly visible to the human in interactive mode, but not in headless mode. Sessions created with `createSession()` are always headless PTYs. They support interactive terminal tools but do not display output or prompts directly to the user. Use a free user-visible default session for direct human interaction, and extra headless sessions for isolated/parallel work and AI-observed builds.
+The Primary Session may be directly visible to the human in interactive mode, but not in headless mode. Sessions created with `createSession()` are always headless PTYs. They support interactive terminal tools but do not display output or prompts directly to the user. Use a free user-visible Primary Session for direct human interaction, and extra headless sessions for isolated/parallel work and AI-observed builds.
 
 ## shell (optional: `--pi-operators`)
 

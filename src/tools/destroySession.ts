@@ -7,7 +7,7 @@ export const destroySessionSchema = z.object({
 
 export const destroySessionTool = {
   name: "destroySession",
-  description: "Destroy a terminal session by ID. The default session cannot be destroyed.",
+  description: "Destroy a terminal session by ID. The Primary Session cannot be destroyed.",
   inputSchema: {
     type: "object" as const,
     properties: {

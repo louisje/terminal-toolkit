@@ -3,7 +3,7 @@
  */
 
 export const SESSION_ID_DESCRIPTION =
-  "Target session ID. Omit to use the default session, which is already running — no need to call createSession first.";
+  `Target session ID. For the Primary Session (formerly default session), omit sessionId entirely. Never pass "primary", "default", or an empty string. For additional sessions, pass the actual ID returned by createSession().`;
 
 export const TOOL_DESCRIPTIONS = {
   type: {

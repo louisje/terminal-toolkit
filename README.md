@@ -227,7 +227,7 @@ Recording Options:
 
 Multi-Session Options:
   --max-sessions <n>           Max concurrent sessions (default: 5)
-  --session-idle-timeout <sec> Idle non-default sessions are auto-destroyed
+  --session-idle-timeout <sec> Idle non-Primary Sessions are auto-destroyed
                                after this period (default: 600s)
 ```
 
@@ -261,8 +261,8 @@ The optional --extra-core-operators flag independently exposes ls, grep, and fin
 
 Environment variables:
 
-- `TERMINAL_TOOLKIT_COLS`: default terminal width, overridden by `--cols`
-- `TERMINAL_TOOLKIT_ROWS`: default terminal height, overridden by `--rows`
+- `TERMINAL_TOOLKIT_COLS`: Primary Session terminal width, overridden by `--cols`
+- `TERMINAL_TOOLKIT_ROWS`: Primary Session terminal height, overridden by `--rows`
 - `TERMINAL_TOOLKIT_SOCKET`: default socket/pipe path, overridden by `--socket`
 - `TERMINAL_TOOLKIT_RECORD_DIR`: default recording output directory, overridden by `--record-dir`
 
@@ -311,7 +311,9 @@ In headless mode, the terminal session is initialized eagerly at startup, so all
 
 ## MCP Tools
 
-All input/output tools (`type`, `sendKey`, `getContent`, `takeScreenshot`) accept an optional `sessionId` argument. Omit it to target the default session; pass the ID returned by `createSession` to drive a specific session.
+Primary Session (formerly default session) is the implicit session selected by omitting sessionId entirely. Never pass "primary", "default", or an empty string as an ID. PTY is the underlying mechanism.
+
+All input/output tools (`type`, `sendKey`, `getContent`, `takeScreenshot`) accept an optional `sessionId` argument. Omit it to target the Primary Session; pass the ID returned by `createSession` to drive a specific session.
 
 ### `type`
 Send text input to the terminal.
@@ -498,7 +500,7 @@ Stop a recording and finalize the asciicast file.
 ```
 
 ### `createSession`
-Create a new **headless PTY** session and return its metadata. Additional sessions are never displayed directly in the user's terminal, though MCP tools can interact with them. Only the default session may be user-visible, in interactive mode; in headless mode even the default is not directly visible. Use the returned `sessionId` to target this session in subsequent tool calls.
+Create a new **headless PTY** session and return its metadata. Additional sessions are never displayed directly in the user's terminal, though MCP tools can interact with them. Only the Primary Session may be user-visible, in interactive mode; in headless mode even the default is not directly visible. Use the returned `sessionId` to target this session in subsequent tool calls.
 
 ```json
 {
@@ -533,7 +535,7 @@ List all active sessions including the default. Reports configured limits.
 ```
 
 ### `destroySession`
-Destroy a session by ID. The default session cannot be destroyed.
+Destroy a session by ID. The Primary Session cannot be destroyed.
 
 ```json
 {
@@ -544,14 +546,14 @@ Destroy a session by ID. The default session cannot be destroyed.
 
 ## Multi-Session
 
-By default, every tool call without a `sessionId` targets a single auto-created **default session** — the same behavior the project has always had. Pass `sessionId` to drive multiple isolated PTYs from one process.
+By default, every tool call without a `sessionId` targets a single auto-created **Primary Session** — the same behavior the project has always had. Pass `sessionId` to drive multiple isolated PTYs from one process.
 
-- The default session is created on first use and cannot be destroyed.
+- The Primary Session is created on first use and cannot be destroyed.
 - Additional sessions are created by `createSession` and tracked until they're destroyed or idle-evicted (`--session-idle-timeout`, default 600s).
 - Concurrent sessions are capped at `--max-sessions` (default 5).
 - An active recording captures output from all sessions in the process.
 
-For password prompts or tasks the human needs to watch directly, prefer an idle user-visible default session; an additional headless PTY cannot display prompts to the user. For long-running builds or tests where only the AI needs to monitor progress, extra headless sessions work well.
+For password prompts or tasks the human needs to watch directly, prefer an idle user-visible Primary Session; an additional headless PTY cannot display prompts to the user. For long-running builds or tests where only the AI needs to monitor progress, extra headless sessions work well.
 
 Typical use case: an AI agent driving a long-running build in one session while running diagnostics in another, without command interleaving.
 

@@ -36,14 +36,16 @@ Prefer this server over plain non-interactive shell tools whenever the command:
 - performs a long-running compile, build, or test run: prefer a PTY even when non-interactive, so progress, failures, and partial output can be inspected without blocking on completion
 - needs to be observed while still running (server, REPL, or any command with live progress)
 
-Only the default session may be directly visible to the user (in interactive mode);
-under headless mode even the default session is not directly visible. Sessions created
+Primary Session means omit sessionId entirely; never pass "primary", "default", or an empty string.
+
+Only the Primary Session may be directly visible to the user (in interactive mode);
+under headless mode even the Primary Session is not directly visible. Sessions created
 by createSession() are always headless PTYs: AI can interact with them through tools,
 but the user cannot see them directly. For user-observed commands or password prompts,
-use the default session only when it is visibly available; do not assume that creating
+use the Primary Session only when it is visibly available; do not assume that creating
 another session will let the user see a prompt or type a password.
 
-First call getContent() without sessionId to inspect the default terminal. Reuse it
+First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it
 only when clearly idle and available. If someone is using it, a command/TUI is
 running, or availability is unclear, call createSession() and use the returned
 sessionId for subsequent terminal calls, provided direct human interaction is not
@@ -53,14 +55,13 @@ Workflow in the chosen session: type(<command>), sendKey('Enter'), then getConte
 For long-running interactive programs, sendKey for navigation and takeScreenshot to
 inspect cursor position and TUI state.
 
-Multi-session: omit sessionId to drive the default session, or call createSession to
+Multi-session: omit sessionId to drive the Primary Session, or call createSession to
 get a new isolated PTY for parallel work (e.g. a build in one session, diagnostics in
-another). The default session cannot be destroyed.`;
+another). The Primary Session cannot be destroyed.`;
 
 const PI_OPERATOR_INSTRUCTIONS = `
 
-Pi operators are enabled. Prefer read, write, and edit for direct text-file operations instead of
-constructing shell commands for them. edit performs exact, unique, non-overlapping string
+Pi operators are enabled under tools/core. Use read for inspection, write for whole-file creation/replacement, and edit for exact replacements. Prefer these dedicated tools over shell cat, redirection, heredocs, sed -i, or custom file-editing scripts. edit performs exact, unique, non-overlapping string
 replacements against the original file; it is not an append/prepend primitive.
 
 For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless
