@@ -23,6 +23,20 @@ test('codemode exposes only one tool and invokes opted-in operators', { timeout:
   } finally { await client.close(); }
 });
 
+test('codemode suppresses output exceeding 8 KiB', { timeout: 20000 }, async () => {
+  const client = await connect(['--codemode']);
+  try {
+    const small = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8192))' } });
+    assert.equal(small.content[0].text.length, 8192);
+    const large = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8193))' } });
+    assert.match(large.content[0].text, /exceeded the 8 KiB limit/);
+    const cumulative = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(5000)); text("y".repeat(5000))' } });
+    assert.match(cumulative.content[0].text, /exceeded the 8 KiB limit/);
+    const returned = await client.callTool({ name: 'codemode', arguments: { code: 'return "x".repeat(8193)' } });
+    assert.match(returned.content[0].text, /exceeded the 8 KiB limit/);
+  } finally { await client.close(); }
+});
+
 test('codemode exposes core operators by default', { timeout: 20000 }, async () => {
   const client = await connect(['--codemode']);
   try {

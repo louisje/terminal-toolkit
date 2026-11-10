@@ -56610,6 +56610,8 @@ function getToolStat(options2 = {}, namespaces = {}) {
 }
 
 // src/tools/codemode.ts
+var MAX_CODEMODE_OUTPUT_BYTES = 8 * 1024;
+var OUTPUT_LIMIT_WARNING = "Codemode output exceeded the 8 KiB limit. Output was suppressed to protect the context window. Please filter, summarize, or select only relevant data before calling text(). Do not repeat operations that may have side effects.";
 var codemodeDefinition = {
   name: "codemode",
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
@@ -56619,6 +56621,7 @@ var codemodeDefinition = {
 - Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
+- Total text output is limited to 8 KiB (UTF-8); filter or summarize large results before calling text().
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
@@ -56725,6 +56728,10 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
     const content = result2.output.map((item) => item.type === "text" ? { type: "text", text: item.text } : { type: "image", data: item.data, mimeType: item.mimeType });
     if (result2.ok && result2.value !== void 0) content.push({ type: "text", text: JSON.stringify(result2.value) });
     if (!result2.ok) content.push({ type: "text", text: result2.error.stack ?? result2.error.message });
+    const outputBytes = content.reduce((sum, item) => sum + (item.type === "text" ? Buffer.byteLength(item.text, "utf8") : 0), 0);
+    if (outputBytes > MAX_CODEMODE_OUTPUT_BYTES) {
+      return { content: [{ type: "text", text: OUTPUT_LIMIT_WARNING }], isError: !result2.ok };
+    }
     return { content, isError: !result2.ok };
   } finally {
     await sandbox.close();
