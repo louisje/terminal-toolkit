@@ -23,23 +23,23 @@ test('codemode exposes only one tool and invokes opted-in operators', { timeout:
   } finally { await client.close(); }
 });
 
-test('codemode suppresses output exceeding 8 KiB', { timeout: 20000 }, async () => {
+test('codemode suppresses output exceeding 16 KiB', { timeout: 20000 }, async () => {
   const client = await connect(['--codemode']);
   try {
-    const small = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8192))' } });
-    assert.equal(small.content[0].text.length, 8192);
-    const large = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8193))' } });
-    assert.match(large.content[0].text, /exceeded the 8 KiB text block limit/);
+    const small = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(16384))' } });
+    assert.equal(small.content[0].text.length, 16384);
+    const large = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(16385))' } });
+    assert.match(large.content[0].text, /exceeded the 16 KiB text block limit/);
     const cumulative = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(5000)); text("y".repeat(5000))' } });
     assert.equal(cumulative.content.length, 2);
     assert.equal(cumulative.content[0].text.length, 5000);
     assert.equal(cumulative.content[1].text.length, 5000);
-    const mixed = await client.callTool({ name: "codemode", arguments: { code: `text("ok"); text("x".repeat(8193)); text("still ok")` } });
+    const mixed = await client.callTool({ name: "codemode", arguments: { code: `text("ok"); text("x".repeat(16385)); text("still ok")` } });
     assert.equal(mixed.content[0].text, "ok");
-    assert.match(mixed.content[1].text, /exceeded the 8 KiB/);
+    assert.match(mixed.content[1].text, /exceeded the 16 KiB/);
     assert.equal(mixed.content[2].text, "still ok");
-    const returned = await client.callTool({ name: 'codemode', arguments: { code: 'return "x".repeat(8193)' } });
-    assert.equal(returned.content[0].text.length, 8195);
+    const returned = await client.callTool({ name: 'codemode', arguments: { code: 'return "x".repeat(16385)' } });
+    assert.equal(returned.content[0].text.length, 16387);
   } finally { await client.close(); }
 });
 
