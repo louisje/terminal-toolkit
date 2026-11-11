@@ -56,11 +56,19 @@ export function getToolNamespace(name: string): ToolNamespace {
   return namespaceByTool.get(name) ?? "tools/pty";
 }
 
+export interface ToolAnnotations {
+  readOnlyHint: boolean;
+  destructiveHint: boolean;
+  idempotentHint: boolean;
+  openWorldHint: boolean;
+}
+
 export interface ToolDefinition {
   namespace?: ToolNamespace;
   name: string;
   description: string;
   instruction?: string;
+  annotations?: ToolAnnotations;
   inputSchema: {
     type: "object";
     properties: Record<string, unknown>;
@@ -124,8 +132,22 @@ export function getCodemodeToolDefinitions(piOperators = true, piExtraOperators 
   }));
 }
 
+// MCP safety hints for each tool.
+const READ_ONLY_TOOLS = new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
+const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
+const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
+const OPEN_WORLD_TOOLS = new Set(["shell", "type", "sendKey"]);
+
 export function getToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
-  return [...toolDefinitions, ...(piOperators ? operatorToolDefinitions : []), ...(piExtraOperators ? extraOperatorToolDefinitions : [])];
+  return [...toolDefinitions, ...(piOperators ? operatorToolDefinitions : []), ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
+    ...tool,
+    annotations: {
+      readOnlyHint: READ_ONLY_TOOLS.has(tool.name),
+      destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name),
+      idempotentHint: IDEMPOTENT_TOOLS.has(tool.name),
+      openWorldHint: OPEN_WORLD_TOOLS.has(tool.name),
+    },
+  }));
 }
 
 /**

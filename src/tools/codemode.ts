@@ -11,6 +11,7 @@ import { limitTextBlock } from "./outputLimit.js";
 
 export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
@@ -45,6 +46,7 @@ export async function runCodemodeWithDispatch(
     description: definition.description,
     instruction: definition.instruction,
     inputSchema: definition.inputSchema,
+    annotations: definition.annotations,
   }));
   const tools: CodemodeTool[] = definitions.map((definition) => ({
     name: definition.name,
@@ -89,7 +91,7 @@ export async function runCodemodeWithDispatch(
         if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
         recordDescribeTool(name);
         const tool = summaries.find(d => d.name === name);
-        return tool ? { name: tool.name, namespace: tool.namespace, ...(tool.instruction ? { instruction: tool.instruction } : {}), inputSchema: tool.inputSchema } : null;
+        return tool ? { name: tool.name, namespace: tool.namespace, ...(tool.instruction ? { instruction: tool.instruction } : {}), inputSchema: tool.inputSchema, annotations: tool.annotations } : null;
       }),
     },
     {

@@ -55417,8 +55417,20 @@ function getCodemodeToolDefinitions(piOperators = true, piExtraOperators = false
     instruction: tool.description
   }));
 }
+var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
+var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
+var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
+var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
 function getToolDefinitions(piOperators = true, piExtraOperators = false) {
-  return [...toolDefinitions, ...piOperators ? operatorToolDefinitions : [], ...piExtraOperators ? extraOperatorToolDefinitions : []];
+  return [...toolDefinitions, ...piOperators ? operatorToolDefinitions : [], ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
+    ...tool,
+    annotations: {
+      readOnlyHint: READ_ONLY_TOOLS.has(tool.name),
+      destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name),
+      idempotentHint: IDEMPOTENT_TOOLS.has(tool.name),
+      openWorldHint: OPEN_WORLD_TOOLS.has(tool.name)
+    }
+  }));
 }
 function getToolNames() {
   return toolDefinitions.map((t) => t.name);
@@ -56623,6 +56635,7 @@ function limitToolResponse(result2) {
 // src/tools/codemode.ts
 var codemodeDefinition = {
   name: "codemode",
+  annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
@@ -56647,7 +56660,8 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
     namespace: definition.namespace,
     description: definition.description,
     instruction: definition.instruction,
-    inputSchema: definition.inputSchema
+    inputSchema: definition.inputSchema,
+    annotations: definition.annotations
   }));
   const tools = definitions.map((definition) => ({
     name: definition.name,
@@ -56695,7 +56709,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
         if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
         recordDescribeTool(name);
         const tool = summaries.find((d) => d.name === name);
-        return tool ? { name: tool.name, namespace: tool.namespace, ...tool.instruction ? { instruction: tool.instruction } : {}, inputSchema: tool.inputSchema } : null;
+        return tool ? { name: tool.name, namespace: tool.namespace, ...tool.instruction ? { instruction: tool.instruction } : {}, inputSchema: tool.inputSchema, annotations: tool.annotations } : null;
       })
     },
     {
