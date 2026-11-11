@@ -29,11 +29,17 @@ test('codemode suppresses output exceeding 8 KiB', { timeout: 20000 }, async () 
     const small = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8192))' } });
     assert.equal(small.content[0].text.length, 8192);
     const large = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(8193))' } });
-    assert.match(large.content[0].text, /exceeded the 8 KiB limit/);
+    assert.match(large.content[0].text, /exceeded the 8 KiB text block limit/);
     const cumulative = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(5000)); text("y".repeat(5000))' } });
-    assert.match(cumulative.content[0].text, /exceeded the 8 KiB limit/);
+    assert.equal(cumulative.content.length, 2);
+    assert.equal(cumulative.content[0].text.length, 5000);
+    assert.equal(cumulative.content[1].text.length, 5000);
+    const mixed = await client.callTool({ name: "codemode", arguments: { code: `text("ok"); text("x".repeat(8193)); text("still ok")` } });
+    assert.equal(mixed.content[0].text, "ok");
+    assert.match(mixed.content[1].text, /exceeded the 8 KiB/);
+    assert.equal(mixed.content[2].text, "still ok");
     const returned = await client.callTool({ name: 'codemode', arguments: { code: 'return "x".repeat(8193)' } });
-    assert.match(returned.content[0].text, /exceeded the 8 KiB limit/);
+    assert.equal(returned.content[0].text.length, 8195);
   } finally { await client.close(); }
 });
 

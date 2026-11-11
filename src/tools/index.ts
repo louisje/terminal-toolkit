@@ -25,6 +25,8 @@ import { handleGetClipboard } from "./getClipboard.js";
 import { handleSetClipboard } from "./setClipboard.js";
 import { handleNotify } from "./notify.js";
 
+import { limitToolResponse } from "./outputLimit.js";
+
 export function registerTools(server: Server, manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -40,7 +42,7 @@ export function registerTools(server: Server, manager: TerminalManager, piOperat
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
         return await runCodemode(manager, args, piOperators, piExtraOperators, extra.signal);
       }
-      return await dispatchTool(manager, name, args, piOperators, piExtraOperators, extra.signal);
+      return limitToolResponse(await dispatchTool(manager, name, args, piOperators, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return {

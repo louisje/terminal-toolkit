@@ -7,8 +7,7 @@ import { dispatchTool } from "./index.js";
 import { getServerInstructions } from "../server.js";
 import { trackCall, recordSearch, recordDescribeTool, recordDescribeNamespace, getToolStat } from "./stats.js";
 
-const MAX_CODEMODE_OUTPUT_BYTES = 8 * 1024;
-const OUTPUT_LIMIT_WARNING = "Codemode output exceeded the 8 KiB limit. Output was suppressed to protect the context window. Please filter, summarize, or select only relevant data before calling text(). Do not repeat operations that may have side effects.";
+import { limitTextBlock } from "./outputLimit.js";
 
 export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
@@ -19,7 +18,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
-- Total text output is limited to 8 KiB (UTF-8); filter or summarize large results before calling text().
+- Each text() block is limited to 8 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 60000, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] },
 };
@@ -128,14 +127,10 @@ export async function runCodemodeWithDispatch(
   try {
     const result = await sandbox.execute(code, { signal });
     const content = result.output.map(item => item.type === "text"
-      ? { type: "text" as const, text: item.text }
+      ? { type: "text" as const, text: limitTextBlock(item.text, "Codemode text() output") }
       : { type: "image" as const, data: item.data, mimeType: item.mimeType });
     if (result.ok && result.value !== undefined) content.push({ type: "text", text: JSON.stringify(result.value) });
     if (!result.ok) content.push({ type: "text", text: result.error.stack ?? result.error.message });
-    const outputBytes = content.reduce((sum, item) => sum + (item.type === "text" ? Buffer.byteLength(item.text, "utf8") : 0), 0);
-    if (outputBytes > MAX_CODEMODE_OUTPUT_BYTES) {
-      return { content: [{ type: "text" as const, text: OUTPUT_LIMIT_WARNING }], isError: !result.ok };
-    }
     return { content, isError: !result.ok };
   } finally {
     await sandbox.close();

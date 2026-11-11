@@ -13,6 +13,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { getToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
 import { runCodemodeWithDispatch, codemodeDefinition } from "./tools/codemode.js";
+import { limitToolResponse } from "./tools/outputLimit.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
 
 interface SocketRequest {
@@ -249,7 +250,7 @@ export async function startMcpClientMode(
               (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal,
               getServerInstructions({piOperators: options.piOperators, piExtraOperators: options.piExtraOperators}))
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : await dispatchTool(name, args as Record<string, unknown>, extra.signal);
+        : limitToolResponse(await dispatchTool(name, args as Record<string, unknown>, extra.signal) as { content?: Array<{ type: string; text?: string }> });
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;
