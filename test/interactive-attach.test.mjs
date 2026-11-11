@@ -55,12 +55,12 @@ test("TTY client attaches to existing interactive server and detaches independen
   owner.onData(data => { ownerOutput += data; });
   try {
     const { existsSync } = await import("node:fs");
-    await waitFor(() => existsSync(socketPath), { timeoutMs: 12000 });
+    await waitFor(() => existsSync(socketPath), { timeoutMs: 12000 }).catch(error => { throw new Error(`${error.message}; owner output: ${ownerOutput.slice(-1500)}`); });
     client = pty.spawn(process.execPath, ["dist/index.js", "--socket", socketPath], {
       cwd: process.cwd(), cols: 80, rows: 24, env,
     });
     client.onData(data => { clientOutput += data; });
-    await waitFor(() => clientOutput.includes("mcp"), { timeoutMs: 12000 });
+    await waitFor(() => ownerOutput.includes("Interactive client attached"), { timeoutMs: 12000 });
     client.write("echo shared-tty-output\r");
     await waitFor(() => ownerOutput.includes("shared-tty-output") && clientOutput.includes("shared-tty-output"), { timeoutMs: 10000 });
     // The Ctrl-] shortcut must close only the attached client.
@@ -120,7 +120,7 @@ test("a conflicting socket path is not removed on startup failure", async () => 
   let output = "";
   contender.onData(data => { output += data; });
   try {
-    await waitFor(() => output.includes("already bound") || output.includes("EADDRINUSE"), { timeoutMs: 12000 });
+    await waitFor(() => output.includes("already bound") || output.includes("EADDRINUSE") || output.includes("ENOTSOCK"), { timeoutMs: 12000 }).catch(error => { throw new Error(`${error.message}; contender output: ${output.slice(-1500)}`); });
     assert.equal(readFileSync(socketPath, "utf8"), "do-not-remove");
   } finally {
     contender.kill();

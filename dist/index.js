@@ -56622,10 +56622,10 @@ function getToolStat(options2 = {}, namespaces = {}) {
 }
 
 // src/tools/outputLimit.ts
-var MAX_TEXT_BLOCK_BYTES = 8 * 1024;
+var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
 function limitTextBlock(text, context = "Tool output") {
   if (Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
-  return `${context} exceeded the 8 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.`;
+  return `${context} exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.`;
 }
 function limitToolResponse(result2) {
   if (!result2.content) return result2;
@@ -56643,7 +56643,7 @@ var codemodeDefinition = {
 - Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
-- Each text() block is limited to 8 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
+- Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
@@ -57839,8 +57839,8 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     socket = await connectToSocket(socketPath);
   } catch (error2) {
     const code = error2.code;
-    if (code !== "ENOENT" && code !== "ECONNREFUSED") throw error2;
-    if (code === "ECONNREFUSED") fs15.unlinkSync(socketPath);
+    if (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK") throw error2;
+    if (code === "ECONNREFUSED" || code === "ENOTSOCK") fs15.unlinkSync(socketPath);
     ownedManager = new TerminalManager({
       mode: "interactive",
       role: "server",

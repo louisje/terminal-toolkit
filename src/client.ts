@@ -79,8 +79,10 @@ export async function startMcpClientMode(
     socket = await connectToSocket(socketPath);
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
-    if (code !== "ENOENT" && code !== "ECONNREFUSED") throw error;
-    if (code === "ECONNREFUSED") fs.unlinkSync(socketPath);
+    if (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK") throw error;
+    // macOS reports ENOTSOCK when a stale socket pathname is a regular file.
+    // Only reclaim the path after a failed connection; never remove a live socket.
+    if (code === "ECONNREFUSED" || code === "ENOTSOCK") fs.unlinkSync(socketPath);
     ownedManager = new TerminalManager({
       mode: "interactive", role: "server", shell: options.shell,
       cols: options.cols, rows: options.rows, login: options.login,
