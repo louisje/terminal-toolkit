@@ -16,6 +16,9 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 ## ChatGPT MCP 初始化、工具快取與指示傳遞實驗
 
 - [ ] 驗證 ChatGPT 手動 Refresh Plugin 時是否呼叫 `tools/list` 並快取工具定義，以及後續新對話、同一對話多次工具呼叫時是否重新請求；以 Tunnel Client 的 MCP JSON-RPC Trace 比對 `initialize`、`notifications/initialized`、`tools/list`、`tools/call` 與連線識別。
-- [ ] 驗證 `initialize.instructions` 是否實際傳給 AI Agent，以及相較 `tools/list` 的工具 `description` 對行為的影響。實驗時分別加入暫時且不同的識別字串（例如 `TT_INIT_PROBE_001`、`TT_TOOL_PROBE_001`），手動 Refresh Plugin 後在新舊對話測試，並記錄 Trace 與模型回應；未回報識別字串不能直接證明模型未收到內容。
+- [x] 初步驗證 `initialize.instructions` 的 ChatGPT 行為：新增選用的 `--experiment-initialize`，每次 initialize 產生不同 `TT-INIT-XXXXXXXX` 暗號、加入回應 instructions 並記錄 stderr；實際 ChatGPT 對話能呼叫 Terminal Toolkit，但詢問暗號時無法回答。**觀察結論：不可依賴 ChatGPT 將 initialize.instructions 作為模型可遵循指示。** 使用者已確認 stderr 日誌出現暗號，且在全新 ChatGPT 對話重測仍無法取得；可確認 ChatGPT 對話未有效採用該指示，但仍無法單憑模型回應區分「整合層未傳遞」或「模型收到但未遵循」。其他 MCP Client 可另行重測。
+- [ ] 比較 `tools/list` 工具 `description` 的指示效果：手動 Refresh Plugin 後於新舊對話測試固定識別字串，與 initialize.instructions 結果對照。
+- [x] 重構正常模式：不再提供 `initialize.instructions`；Namespace 指引移至 `src/tools/namespaceGuidance.ts`，Codemode 經 `describeNamespace()` 取得；非 Codemode 經 `tools/list` 的 Tool description 取得精簡共通指引。`--experiment-initialize` 仍獨立提供暗號測試。後續逐項 Review Namespace／Tool 描述，必要約束仍由 Server 執行。
+- [ ] 後續評估在 `codemode()` 回傳探索提示／版本或狀態摘要，並以實際工具呼叫統計驗證 Agent 是否使用；避免每次輸出大量固定指示。
 - [ ] 研究 `tools/list` 動態揭露的可行性：ChatGPT 可能只在 Plugin 更新時快取工具定義，執行階段即使重複 `initialize` 也未必重新取得工具清單；驗證 `notifications/tools/list_changed` 的支援情況後，再決定是否採用動態清單或固定入口搭配 Codemode `searchTools()` 等執行期探索機制。
 - 區分協定規範與觀察：MCP 初始化是一般操作前的必要流程；ChatGPT 的快取、Session 生命週期與 instructions 使用方式尚待實測，不應視為已確認的實作保證。

@@ -5,14 +5,13 @@ import { createToolProxyServer } from "./transport/index.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "./utils/version.js";
-import { getServerInstructions } from "./server.js";
 import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { registerSkills } from "./skills.js";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { getToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
+import { getMcpToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
 import { runCodemodeWithDispatch, codemodeDefinition } from "./tools/codemode.js";
 import { limitToolResponse } from "./tools/outputLimit.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
@@ -127,7 +126,6 @@ export async function startMcpClientMode(
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} },
       },
-      instructions: getServerInstructions(options),
     }
   );
 
@@ -242,7 +240,7 @@ export async function startMcpClientMode(
 
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options.codemode ? [codemodeDefinition] : getToolDefinitions(options.piOperators, options.piExtraOperators),
+    tools: options.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options.piOperators, options.piExtraOperators),
   }));
 
   // Register call tool handler - proxy to socket
@@ -253,8 +251,7 @@ export async function startMcpClientMode(
       const result = options.codemode
         ? name === "codemode"
           ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piOperators, options.piExtraOperators),
-              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal,
-              getServerInstructions({piOperators: options.piOperators, piExtraOperators: options.piExtraOperators}))
+              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
         : limitToolResponse(await dispatchTool(name, args as Record<string, unknown>, extra.signal) as { content?: Array<{ type: string; text?: string }> });
       return result as {

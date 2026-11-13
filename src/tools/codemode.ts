@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { TerminalManager } from "../terminal/index.js";
 import { getCodemodeToolDefinitions, type ToolDefinition } from "./definitions.js";
 import { dispatchTool } from "./index.js";
-import { getServerInstructions } from "../server.js";
+import { namespaceRegistryGuidance } from "./namespaceGuidance.js";
 import { trackCall, recordSearch, recordDescribeTool, recordDescribeNamespace, getToolStat } from "./stats.js";
 
 import { limitTextBlock } from "./outputLimit.js";
@@ -16,7 +16,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
+- Discover tools with await searchTools() or search by keyword with await searchTools(query, {limit?, namespace?}). Before using an unfamiliar tool, call await describeTool(name) for its usage instructions and inputSchema. Use await describeNamespace() to list namespaces and await describeNamespace(name) for cross-tool guidance; read await describeNamespace("tools/pty") before PTY operations, especially Primary Session interactions.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
@@ -31,7 +31,6 @@ export async function runCodemodeWithDispatch(
   definitions: ToolDefinition[],
   dispatch: (name: string, args: Record<string, unknown>, signal?: AbortSignal) => Promise<unknown>,
   signal?: AbortSignal,
-  namespaceInstruction = getServerInstructions(),
 ) {
   const code = (args as { code?: unknown } | undefined)?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
@@ -100,11 +99,7 @@ export async function runCodemodeWithDispatch(
         const [name] = args as unknown[];
         if (name !== undefined && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
         recordDescribeNamespace(name ?? "(all)");
-        const namespaces = [
-          { name: "tools/core", description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Use read to inspect text files, write to create or replace whole files (overwrites existing content), and edit for exact unique replacements in existing files. Prefer these dedicated tools over shell cat, echo/redirection, sed -i, or heredocs for routine file work. edit cannot append/prepend without a matching replacement. Use shell for actual command execution, pipelines, and external programs; use tools/pty for long-running builds, tests, and interactive work. Extra search tools require installed rg and fd/fdfind." },
-          { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
-          { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." },
-        ];
+        const namespaces = Object.entries(namespaceRegistryGuidance).map(([name, guidance]) => ({ name, ...guidance }));
         if (name === undefined) return namespaces.filter(ns => summaries.some(tool => tool.namespace === ns.name)).map(({name,description}) => ({name,description}));
         const ns = namespaces.find(ns => ns.name === name);
         return ns ? { ...ns, tools: summaries.filter(tool => tool.namespace === name).map(({name,description}) => ({name,description})) } : null;
@@ -141,6 +136,5 @@ export async function runCodemodeWithDispatch(
 
 export function runCodemode(manager: TerminalManager, args: unknown, piOperators: boolean, piExtraOperators: boolean, signal?: AbortSignal) {
   return runCodemodeWithDispatch(args, getCodemodeToolDefinitions(piOperators, piExtraOperators),
-    (name, params, callSignal) => dispatchTool(manager, name, params, piOperators, piExtraOperators, callSignal), signal,
-    getServerInstructions({piOperators, piExtraOperators}));
+    (name, params, callSignal) => dispatchTool(manager, name, params, piOperators, piExtraOperators, callSignal), signal);
 }

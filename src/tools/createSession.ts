@@ -9,7 +9,7 @@ export const createSessionSchema = z.object({
 
 export const createSessionTool = {
   name: "createSession",
-  description: "Creates an additional headless PTY, never directly displayed in the user's terminal. It remains interactive through MCP tools, but cannot serve as a user-visible password prompt or terminal. Only the Primary Session may be user-visible, depending on mode. First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it only when clearly idle and available. Create an isolated terminal if someone is using it, a command/TUI is running, availability is unclear, or you need parallel work or a different shell/size. Do not send input or interrupt work in an occupied terminal. Returns session metadata; use the returned sessionId in subsequent type/sendKey/getContent/takeScreenshot calls to address this extra session.",
+  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. Returns a sessionId for subsequent terminal calls.",
   inputSchema: {
     type: "object" as const,
     properties: {

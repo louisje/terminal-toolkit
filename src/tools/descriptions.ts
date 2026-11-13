@@ -7,12 +7,12 @@ export const SESSION_ID_DESCRIPTION =
 
 export const TOOL_DESCRIPTIONS = {
   type: {
-    main: "Send text input to the terminal. Use autoSubmit=true to execute commands in one call (recommended). Alternative: type text without autoSubmit, then use sendKey('Enter') for manual control. IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo \"Hello!\").",
+    main: "Send input to a persistent interactive PTY shell, unlike shell() which runs a fresh non-interactive subprocess. Choose this for long-running builds/tests, interactive prompts, TUIs, live progress, or persistent shell state. Use autoSubmit=true to submit a command and read immediate viewport output; use getContent() to inspect later output. For manual input, type without autoSubmit and then sendKey('Enter'). IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo \"Hello!\").",
     text: "The text to type into the terminal",
     autoSubmit: "If true, automatically send Enter and return terminal content. Recommended for most commands.",
   },
   sendKey: {
-    main: "Send a special key to the terminal (e.g., enter, tab, ctrl+c)",
+    main: "Send a special key to an existing PTY session (e.g., Enter, Tab, Ctrl+C, navigation). Use for interactive programs, manual submission after type(autoSubmit=false), or interrupting a command in a session you own. For ordinary commands, prefer type(autoSubmit=true); never interrupt an occupied Primary Session.",
     key: "The key to send (e.g., enter, tab, escape, up, down, left, right, ctrl+c, ctrl+d)",
     repeat: "Number of times to repeat the key (default: 1). Useful for pressing arrow keys or similar multiple times in one call.",
   },
@@ -46,10 +46,10 @@ export const TOOL_DESCRIPTIONS = {
     recordingId: "The recording ID returned by startRecording",
   },
   getClipboard: {
-    main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one.",
+    main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available.",
   },
   setClipboard: {
-    main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one.",
+    main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available.",
     text: "The text to write to the clipboard",
   },
   notify: {

@@ -54105,12 +54105,12 @@ function getAvailableKeys() {
 var SESSION_ID_DESCRIPTION = `Target session ID. For the Primary Session (formerly default session), omit sessionId entirely. Never pass "primary", "default", or an empty string. For additional sessions, pass the actual ID returned by createSession().`;
 var TOOL_DESCRIPTIONS = {
   type: {
-    main: `Send text input to the terminal. Use autoSubmit=true to execute commands in one call (recommended). Alternative: type text without autoSubmit, then use sendKey('Enter') for manual control. IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo "Hello!").`,
+    main: `Send input to a persistent interactive PTY shell, unlike shell() which runs a fresh non-interactive subprocess. Choose this for long-running builds/tests, interactive prompts, TUIs, live progress, or persistent shell state. Use autoSubmit=true to submit a command and read immediate viewport output; use getContent() to inspect later output. For manual input, type without autoSubmit and then sendKey('Enter'). IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo "Hello!").`,
     text: "The text to type into the terminal",
     autoSubmit: "If true, automatically send Enter and return terminal content. Recommended for most commands."
   },
   sendKey: {
-    main: "Send a special key to the terminal (e.g., enter, tab, ctrl+c)",
+    main: "Send a special key to an existing PTY session (e.g., Enter, Tab, Ctrl+C, navigation). Use for interactive programs, manual submission after type(autoSubmit=false), or interrupting a command in a session you own. For ordinary commands, prefer type(autoSubmit=true); never interrupt an occupied Primary Session.",
     key: "The key to send (e.g., enter, tab, escape, up, down, left, right, ctrl+c, ctrl+d)",
     repeat: "Number of times to repeat the key (default: 1). Useful for pressing arrow keys or similar multiple times in one call."
   },
@@ -54144,10 +54144,10 @@ var TOOL_DESCRIPTIONS = {
     recordingId: "The recording ID returned by startRecording"
   },
   getClipboard: {
-    main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one."
+    main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available."
   },
   setClipboard: {
-    main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one.",
+    main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available.",
     text: "The text to write to the clipboard"
   },
   notify: {
@@ -54845,7 +54845,7 @@ var createSessionSchema = external_exports.object({
 });
 var createSessionTool = {
   name: "createSession",
-  description: "Creates an additional headless PTY, never directly displayed in the user's terminal. It remains interactive through MCP tools, but cannot serve as a user-visible password prompt or terminal. Only the Primary Session may be user-visible, depending on mode. First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it only when clearly idle and available. Create an isolated terminal if someone is using it, a command/TUI is running, availability is unclear, or you need parallel work or a different shell/size. Do not send input or interrupt work in an occupied terminal. Returns session metadata; use the returned sessionId in subsequent type/sendKey/getContent/takeScreenshot calls to address this extra session.",
+  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. Returns a sessionId for subsequent terminal calls.",
   inputSchema: {
     type: "object",
     properties: {
@@ -55436,6 +55436,12 @@ function getCodemodeToolDefinitions(piOperators = true, piExtraOperators = false
     namespace: getToolNamespace(tool.name),
     description: TOOL_SUMMARIES[tool.name] ?? tool.description,
     instruction: tool.description
+  }));
+}
+function getMcpToolDefinitions(piOperators = true, piExtraOperators = false) {
+  return getToolDefinitions(piOperators, piExtraOperators).map((tool) => ({
+    ...tool,
+    description: [tool.description, ...getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
 var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
@@ -56569,6 +56575,44 @@ SOURCE: /[\s\S]+/
 // src/tools/codemode.ts
 import { fileURLToPath as fileURLToPath8 } from "node:url";
 
+// src/tools/namespaceGuidance.ts
+var namespaceRegistryGuidance = {
+  "tools/core": { description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Prefer read/write/edit for routine file operations instead of shell redirection or sed -i. Use shell for short non-interactive commands; use tools/pty for interactive commands and long-running builds or tests. edit performs exact unique replacements, not arbitrary append/prepend." },
+  "tools/pty": { description: "Interactive PTY and terminal session management.", instruction: `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
+
+Prefer this server over plain non-interactive shell tools whenever the command:
+- needs sudo or otherwise prompts for a password (the human user can type it interactively)
+- prompts the user for input mid-execution (ssh login, git push over HTTPS, npm login, etc.)
+- runs a TUI program (vim, nano, less, more, htop, top, man, kubectl edit, gh pr create)
+- requires line-buffered TTY behavior (color output, progress bars, fzf, watch)
+- performs a long-running compile, build, or test run: prefer a PTY even when non-interactive, so progress, failures, and partial output can be inspected without blocking on completion
+- needs to be observed while still running (server, REPL, or any command with live progress)
+
+Primary Session means omit sessionId entirely; never pass "primary", "default", or an empty string.
+
+Only the Primary Session may be directly visible to the user (in interactive mode);
+under headless mode even the Primary Session is not directly visible. Sessions created
+by createSession() are always headless PTYs: AI can interact with them through tools,
+but the user cannot see them directly. For user-observed commands or password prompts,
+use the Primary Session only when it is visibly available; do not assume that creating
+another session will let the user see a prompt or type a password.
+
+First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it
+only when clearly idle and available. If someone is using it, a command/TUI is
+running, or availability is unclear, call createSession() and use the returned
+sessionId for subsequent terminal calls, provided direct human interaction is not
+required. Do not send input or interrupt occupied terminals.
+
+Workflow in the chosen session: prefer type({text: <command>, autoSubmit: true}) to submit and read immediate output. Use type() followed by sendKey('Enter') for manual control; use getContent() for subsequent output.
+For long-running interactive programs, sendKey for navigation and takeScreenshot to
+inspect cursor position and TUI state.
+
+Multi-session: omit sessionId to drive the Primary Session, or call createSession to
+get a new isolated PTY for parallel work (e.g. a build in one session, diagnostics in
+another). The Primary Session cannot be destroyed.` },
+  "tools/misc": { description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
+};
+
 // src/tools/stats.ts
 var startedAt = (/* @__PURE__ */ new Date()).toISOString();
 var counters = /* @__PURE__ */ new Map();
@@ -56661,14 +56705,14 @@ var codemodeDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover all tool summaries with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}). Use await describeNamespace() to discover tools/core, tools/pty, tools/misc; read await describeNamespace("tools/pty") for PTY instructions, and await describeTool(name) for tool usage guidance and inputSchema.
+- Discover tools with await searchTools() or search by keyword with await searchTools(query, {limit?, namespace?}). Before using an unfamiliar tool, call await describeTool(name) for its usage instructions and inputSchema. Use await describeNamespace() to list namespaces and await describeNamespace(name) for cross-tool guidance; read await describeNamespace("tools/pty") before PTY operations, especially Primary Session interactions.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
-async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, namespaceInstruction = getServerInstructions()) {
+async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
   const code = args2?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
   const requestedTimeout = args2.timeoutMs;
@@ -56740,11 +56784,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, nam
         const [name] = args3;
         if (name !== void 0 && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
         recordDescribeNamespace(name ?? "(all)");
-        const namespaces2 = [
-          { name: "tools/core", description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Use read to inspect text files, write to create or replace whole files (overwrites existing content), and edit for exact unique replacements in existing files. Prefer these dedicated tools over shell cat, echo/redirection, sed -i, or heredocs for routine file work. edit cannot append/prepend without a matching replacement. Use shell for actual command execution, pipelines, and external programs; use tools/pty for long-running builds, tests, and interactive work. Extra search tools require installed rg and fd/fdfind." },
-          { name: "tools/pty", description: "Interactive PTY and terminal session management.", instruction: namespaceInstruction.split("\n\nPi operators are enabled.")[0].split("\n\nPi extra operators are enabled:")[0].trim() },
-          { name: "tools/misc", description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
-        ];
+        const namespaces2 = Object.entries(namespaceRegistryGuidance).map(([name2, guidance]) => ({ name: name2, ...guidance }));
         if (name === void 0) return namespaces2.filter((ns2) => summaries.some((tool) => tool.namespace === ns2.name)).map(({ name: name2, description }) => ({ name: name2, description }));
         const ns = namespaces2.find((ns2) => ns2.name === name);
         return ns ? { ...ns, tools: summaries.filter((tool) => tool.namespace === name).map(({ name: name2, description }) => ({ name: name2, description })) } : null;
@@ -56782,15 +56822,14 @@ function runCodemode(manager, args2, piOperators, piExtraOperators, signal) {
     args2,
     getCodemodeToolDefinitions(piOperators, piExtraOperators),
     (name, params, callSignal) => dispatchTool(manager, name, params, piOperators, piExtraOperators, callSignal),
-    signal,
-    getServerInstructions({ piOperators, piExtraOperators })
+    signal
   );
 }
 
 // src/tools/index.ts
 function registerTools(server, manager, piOperators = true, piExtraOperators = false, codemode = false) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getToolDefinitions(piOperators, piExtraOperators)
+    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piOperators, piExtraOperators)
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
@@ -57213,63 +57252,6 @@ function installStdioShutdownHandlers({ cleanup }) {
 }
 
 // src/server.ts
-var SERVER_INSTRUCTIONS = `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
-
-Prefer this server over plain non-interactive shell tools whenever the command:
-- needs sudo or otherwise prompts for a password (the human user can type it interactively)
-- prompts the user for input mid-execution (ssh login, git push over HTTPS, npm login, etc.)
-- runs a TUI program (vim, nano, less, more, htop, top, man, kubectl edit, gh pr create)
-- requires line-buffered TTY behavior (color output, progress bars, fzf, watch)
-- performs a long-running compile, build, or test run: prefer a PTY even when non-interactive, so progress, failures, and partial output can be inspected without blocking on completion
-- needs to be observed while still running (server, REPL, or any command with live progress)
-
-Primary Session means omit sessionId entirely; never pass "primary", "default", or an empty string.
-
-Only the Primary Session may be directly visible to the user (in interactive mode);
-under headless mode even the Primary Session is not directly visible. Sessions created
-by createSession() are always headless PTYs: AI can interact with them through tools,
-but the user cannot see them directly. For user-observed commands or password prompts,
-use the Primary Session only when it is visibly available; do not assume that creating
-another session will let the user see a prompt or type a password.
-
-First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it
-only when clearly idle and available. If someone is using it, a command/TUI is
-running, or availability is unclear, call createSession() and use the returned
-sessionId for subsequent terminal calls, provided direct human interaction is not
-required. Do not send input or interrupt occupied terminals.
-
-Workflow in the chosen session: type(<command>), sendKey('Enter'), then getContent() to read the result.
-For long-running interactive programs, sendKey for navigation and takeScreenshot to
-inspect cursor position and TUI state.
-
-Multi-session: omit sessionId to drive the Primary Session, or call createSession to
-get a new isolated PTY for parallel work (e.g. a build in one session, diagnostics in
-another). The Primary Session cannot be destroyed.`;
-var PI_OPERATOR_INSTRUCTIONS = `
-
-Pi operators are enabled under tools/core. Use read for inspection, write for whole-file creation/replacement, and edit for exact replacements. Prefer these dedicated tools over shell cat, redirection, heredocs, sed -i, or custom file-editing scripts. edit performs exact, unique, non-overlapping string
-replacements against the original file; it is not an append/prepend primitive.
-
-For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless
-subprocess using Terminal Toolkit's configured shell (the --shell option, TERMINAL_TOOLKIT_SHELL,
-then the platform shell default) in terminal-toolkit's startup working directory and returns stdout/stderr when the
-command finishes, so it does not require the PTY type/sendKey/getContent workflow. Use the PTY
-tools instead when you need the user's existing cwd/environment/aliases/tmux state, persistent
-shell state across calls, interactive input, TTY behavior, or live observability. In particular,
-prefer PTY for lengthy compilation, builds, or test suites even if no interaction is expected;
-use shell for short checks and quick tests that finish promptly.`;
-var PI_EXTRA_OPERATOR_INSTRUCTIONS = `
-
-Pi extra operators are enabled: ls lists directory entries, grep searches file contents using installed rg, and find searches paths using installed fd/fdfind. These tools do not install dependencies. If a required executable is missing, ask the user to install it.`;
-var CODEMODE_INSTRUCTIONS = `
-
-Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/core, tools/pty, tools/misc).
-Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("tools/pty") for PTY operational and safety instructions before working with terminal tools.`;
-function getServerInstructions({ codemode = false, piOperators = true, piExtraOperators = false } = {}) {
-  if (codemode) return CODEMODE_INSTRUCTIONS.trim();
-  return SERVER_INSTRUCTIONS + (piOperators ? PI_OPERATOR_INSTRUCTIONS : "") + (piExtraOperators ? PI_EXTRA_OPERATOR_INSTRUCTIONS : "");
-}
 function createServerWithManager(manager, piOperators = true, piExtraOperators = false, codemode = false) {
   const server = new Server(
     {
@@ -57282,8 +57264,7 @@ function createServerWithManager(manager, piOperators = true, piExtraOperators =
         prompts: {},
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} }
-      },
-      instructions: getServerInstructions({ codemode, piOperators, piExtraOperators })
+      }
     }
   );
   registerTools(server, manager, piOperators, piExtraOperators, codemode);
@@ -57909,8 +57890,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
         tools: {},
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} }
-      },
-      instructions: getServerInstructions(options2)
+      }
     }
   );
   if (options2.experimentInitialize) enableInitializeExperiment(server);
@@ -58002,7 +57982,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   }
   registerSkills(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options2.codemode ? [codemodeDefinition] : getToolDefinitions(options2.piOperators, options2.piExtraOperators)
+    tools: options2.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options2.piOperators, options2.piExtraOperators)
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
@@ -58011,8 +57991,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
         args2,
         getCodemodeToolDefinitions(options2.piOperators, options2.piExtraOperators),
         (tool, params, signal) => dispatchTool2(tool, params, signal),
-        extra.signal,
-        getServerInstructions({ piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators })
+        extra.signal
       ) : (() => {
         throw new Error(`Unknown tool: ${name}`);
       })() : limitToolResponse(await dispatchTool2(name, args2, extra.signal));

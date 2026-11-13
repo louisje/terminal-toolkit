@@ -132,6 +132,14 @@ export function getCodemodeToolDefinitions(piOperators = true, piExtraOperators 
   }));
 }
 
+/** Standard MCP clients only see tools/list; include namespace guidance there. */
+export function getMcpToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
+  return getToolDefinitions(piOperators, piExtraOperators).map(tool => ({
+    ...tool,
+    description: [tool.description, ...(getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : [])].join("\n\n"),
+  }));
+}
+
 // MCP safety hints for each tool.
 const READ_ONLY_TOOLS = new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
 const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);

@@ -4,7 +4,7 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import { TerminalManager } from "../terminal/index.js";
-import { getToolDefinitions } from "./definitions.js";
+import { getMcpToolDefinitions } from "./definitions.js";
 import { runCodemode, codemodeDefinition } from "./codemode.js";
 import { handleOperatorTool } from "./operators.js";
 import { handleExtraOperatorTool } from "./extra-operators.js";
@@ -30,7 +30,7 @@ import { limitToolResponse } from "./outputLimit.js";
 export function registerTools(server: Server, manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getToolDefinitions(piOperators, piExtraOperators),
+    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piOperators, piExtraOperators),
   }));
 
   // Register call tool handler

@@ -25,74 +25,6 @@ export interface ServerOptions {
   codemode?: boolean;
 }
 
-/**
- * Create and configure the MCP server with an existing terminal manager
- */
-export const SERVER_INSTRUCTIONS = `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
-
-Prefer this server over plain non-interactive shell tools whenever the command:
-- needs sudo or otherwise prompts for a password (the human user can type it interactively)
-- prompts the user for input mid-execution (ssh login, git push over HTTPS, npm login, etc.)
-- runs a TUI program (vim, nano, less, more, htop, top, man, kubectl edit, gh pr create)
-- requires line-buffered TTY behavior (color output, progress bars, fzf, watch)
-- performs a long-running compile, build, or test run: prefer a PTY even when non-interactive, so progress, failures, and partial output can be inspected without blocking on completion
-- needs to be observed while still running (server, REPL, or any command with live progress)
-
-Primary Session means omit sessionId entirely; never pass "primary", "default", or an empty string.
-
-Only the Primary Session may be directly visible to the user (in interactive mode);
-under headless mode even the Primary Session is not directly visible. Sessions created
-by createSession() are always headless PTYs: AI can interact with them through tools,
-but the user cannot see them directly. For user-observed commands or password prompts,
-use the Primary Session only when it is visibly available; do not assume that creating
-another session will let the user see a prompt or type a password.
-
-First call getContent() without sessionId to inspect the Primary Session terminal. Reuse it
-only when clearly idle and available. If someone is using it, a command/TUI is
-running, or availability is unclear, call createSession() and use the returned
-sessionId for subsequent terminal calls, provided direct human interaction is not
-required. Do not send input or interrupt occupied terminals.
-
-Workflow in the chosen session: type(<command>), sendKey('Enter'), then getContent() to read the result.
-For long-running interactive programs, sendKey for navigation and takeScreenshot to
-inspect cursor position and TUI state.
-
-Multi-session: omit sessionId to drive the Primary Session, or call createSession to
-get a new isolated PTY for parallel work (e.g. a build in one session, diagnostics in
-another). The Primary Session cannot be destroyed.`;
-
-const PI_OPERATOR_INSTRUCTIONS = `
-
-Pi operators are enabled under tools/core. Use read for inspection, write for whole-file creation/replacement, and edit for exact replacements. Prefer these dedicated tools over shell cat, redirection, heredocs, sed -i, or custom file-editing scripts. edit performs exact, unique, non-overlapping string
-replacements against the original file; it is not an append/prepend primitive.
-
-For short, one-shot, non-interactive shell commands, prefer shell. It runs a fresh stateless
-subprocess using Terminal Toolkit's configured shell (the --shell option, TERMINAL_TOOLKIT_SHELL,
-then the platform shell default) in terminal-toolkit's startup working directory and returns stdout/stderr when the
-command finishes, so it does not require the PTY type/sendKey/getContent workflow. Use the PTY
-tools instead when you need the user's existing cwd/environment/aliases/tmux state, persistent
-shell state across calls, interactive input, TTY behavior, or live observability. In particular,
-prefer PTY for lengthy compilation, builds, or test suites even if no interaction is expected;
-use shell for short checks and quick tests that finish promptly.`;
-
-const PI_EXTRA_OPERATOR_INSTRUCTIONS = `\n\nPi extra operators are enabled: ls lists directory entries, grep searches file contents using installed rg, and find searches paths using installed fd/fdfind. These tools do not install dependencies. If a required executable is missing, ask the user to install it.`;
-
-
-const CODEMODE_INSTRUCTIONS = `
-
-Codemode exposes one MCP tool that executes JavaScript as an async function body in an isolated QuickJS VM. Use top-level await with tools.<name>(args). Discover all tools with await searchTools(), or search by keyword with await searchTools(query, {limit?, namespace?}); use await describeTool(name) to inspect the inputSchema and await describeNamespace("tools/pty") for PTY guidance; use describeNamespace() to list available namespaces (tools/core, tools/pty, tools/misc).
-Use Promise.allSettled for independent calls when failures should not cancel other results; chain dependent calls sequentially. Filter large outputs in the script and emit only relevant results with text(value). Ordinary nested tool results are not automatically returned to the model. Script globals do not include Node.js, filesystem, network, or timers; calls to injected tools retain their existing host permissions. Each execution is a fresh JavaScript environment, while the real terminal sessions persist.
-Read await describeNamespace("tools/pty") for PTY operational and safety instructions before working with terminal tools.`;
-
-export interface InstructionOptions { codemode?: boolean; piOperators?: boolean; piExtraOperators?: boolean; }
-
-export function getServerInstructions({ codemode = false, piOperators = true, piExtraOperators = false }: InstructionOptions = {}): string {
-  if (codemode) return CODEMODE_INSTRUCTIONS.trim();
-  return SERVER_INSTRUCTIONS
-    + (piOperators ? PI_OPERATOR_INSTRUCTIONS : "")
-    + (piExtraOperators ? PI_EXTRA_OPERATOR_INSTRUCTIONS : "");
-}
-
 export function createServerWithManager(manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): Server {
   const server = new Server(
     {
@@ -106,7 +38,6 @@ export function createServerWithManager(manager: TerminalManager, piOperators = 
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} },
       },
-      instructions: getServerInstructions({ codemode, piOperators, piExtraOperators }),
     }
   );
 
