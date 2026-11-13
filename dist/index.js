@@ -54017,6 +54017,25 @@ function readPackageVersion() {
 }
 var VERSION = readPackageVersion();
 
+// src/requestContext.ts
+import { createHmac, randomBytes as randomBytes4 } from "node:crypto";
+import { AsyncLocalStorage } from "node:async_hooks";
+var identityKey = process.env.TERMINAL_TOOLKIT_IDENTITY_KEY || randomBytes4(32).toString("hex");
+var requestContextStorage = new AsyncLocalStorage();
+function fingerprint(kind, value) {
+  if (typeof value !== "string" || !value) return void 0;
+  return createHmac("sha256", identityKey).update(kind).update("\0").update(value).digest("hex");
+}
+function createRequestContext(meta) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return {};
+  const fields = meta;
+  const organizationId = fingerprint("openai/organization", fields["openai/organization"]);
+  const subjectId = fingerprint("openai/subject", fields["openai/subject"]);
+  const conversationId = fingerprint("openai/session", fields["openai/session"]);
+  if (!organizationId && !subjectId && !conversationId) return {};
+  return { provider: "openai", ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {} };
+}
+
 // src/utils/keys.ts
 var KEY_SEQUENCES = {
   // Control keys
@@ -56833,24 +56852,26 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
-    try {
-      if (codemode) {
-        if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-        return await runCodemode(manager, args2, piExtraOperators, extra.signal);
+    return requestContextStorage.run(createRequestContext(request.params._meta), async () => {
+      try {
+        if (codemode) {
+          if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
+          return await runCodemode(manager, args2, piExtraOperators, extra.signal);
+        }
+        return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
+      } catch (error2) {
+        const message = error2 instanceof Error ? error2.message : String(error2);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${message}`
+            }
+          ],
+          isError: true
+        };
       }
-      return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
-    } catch (error2) {
-      const message = error2 instanceof Error ? error2.message : String(error2);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${message}`
-          }
-        ],
-        isError: true
-      };
-    }
+    });
   });
 }
 async function dispatchTool(manager, name, args2, piExtraOperators = false, signal) {
@@ -57660,9 +57681,9 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
             inflight.set(request.id, controller);
             void (async () => {
               try {
-                const response = await handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
+                const response = await requestContextStorage.run(request.requestContext ?? {}, () => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
                   clientPiExtraOperators = clientPiExtraOperators || enabled;
-                }, controller.signal);
+                }, controller.signal));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error2) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -57928,7 +57949,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   });
   async function sendRequest(method, params, signal) {
     const id = ++requestId;
-    const request = { id, method, params };
+    const request = { id, method, params, requestContext: requestContextStorage.getStore() };
     return new Promise((resolve6, reject) => {
       if (signal?.aborted) {
         reject(new Error("Tool call aborted"));
@@ -57980,28 +58001,31 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
-    try {
-      const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
-        args2,
-        getCodemodeToolDefinitions(options2.piExtraOperators),
-        (tool, params, signal) => dispatchTool2(tool, params, signal),
-        extra.signal
-      ) : (() => {
-        throw new Error(`Unknown tool: ${name}`);
-      })() : limitToolResponse(await dispatchTool2(name, args2, extra.signal));
-      return result2;
-    } catch (error2) {
-      const message = error2 instanceof Error ? error2.message : String(error2);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Error: ${message}`
-          }
-        ],
-        isError: true
-      };
-    }
+    const context = createRequestContext(request.params._meta);
+    return requestContextStorage.run(context, async () => {
+      try {
+        const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
+          args2,
+          getCodemodeToolDefinitions(options2.piExtraOperators),
+          (tool, params, signal) => dispatchTool2(tool, params, signal),
+          extra.signal
+        ) : (() => {
+          throw new Error(`Unknown tool: ${name}`);
+        })() : limitToolResponse(await dispatchTool2(name, args2, extra.signal));
+        return result2;
+      } catch (error2) {
+        const message = error2 instanceof Error ? error2.message : String(error2);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${message}`
+            }
+          ],
+          isError: true
+        };
+      }
+    });
   });
   const transport = new StdioServerTransport();
   await server.connect(transport);
@@ -59868,7 +59892,7 @@ import { spawnSync as spawnSync5 } from "child_process";
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/linux-sandbox-utils.js
 var import_shell_quote = __toESM(require_shell_quote(), 1);
-import { randomBytes as randomBytes4 } from "node:crypto";
+import { randomBytes as randomBytes5 } from "node:crypto";
 import * as fs20 from "fs";
 import { spawn as spawn5, spawnSync as spawnSync3 } from "node:child_process";
 import { tmpdir as tmpdir4 } from "node:os";
@@ -60391,7 +60415,7 @@ function checkLinuxDependencies(seccompConfig) {
   return { warnings, errors };
 }
 async function initializeLinuxNetworkBridge(httpProxyPort, socksProxyPort) {
-  const socketId = randomBytes4(8).toString("hex");
+  const socketId = randomBytes5(8).toString("hex");
   const httpSocketPath = join9(tmpdir4(), `claude-http-${socketId}.sock`);
   const socksSocketPath = join9(tmpdir4(), `claude-socks-${socketId}.sock`);
   const httpSocatArgs = [

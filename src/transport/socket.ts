@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import { requestContextStorage, type RequestContext } from "../requestContext.js";
 import { Server as NetServer, Socket } from "net";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
@@ -31,6 +32,7 @@ interface SocketRequest {
   id: number;
   method: string;
   params?: Record<string, unknown>;
+  requestContext?: RequestContext;
 }
 
 interface SocketResponse {
@@ -302,7 +304,7 @@ export function createToolProxyServer(
             // In particular, cancel must work even in the same data chunk.
             void (async () => {
               try {
-                const response = await handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, controller.signal);
+                const response = await requestContextStorage.run(request.requestContext ?? {}, () => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, controller.signal));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({

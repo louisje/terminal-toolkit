@@ -1,4 +1,5 @@
 import * as net from "net";
+import { createRequestContext, requestContextStorage, type RequestContext } from "./requestContext.js";
 import * as fs from "fs";
 import { TerminalManager } from "./terminal/index.js";
 import { createToolProxyServer } from "./transport/index.js";
@@ -20,6 +21,7 @@ interface SocketRequest {
   id: number;
   method: string;
   params?: Record<string, unknown>;
+  requestContext?: RequestContext;
 }
 
 interface SocketResponse {
@@ -195,7 +197,7 @@ export async function startMcpClientMode(
     signal?: AbortSignal
   ): Promise<unknown> {
     const id = ++requestId;
-    const request: SocketRequest = { id, method, params };
+    const request: SocketRequest = { id, method, params, requestContext: requestContextStorage.getStore() };
 
     return new Promise((resolve, reject) => {
       if (signal?.aborted) { reject(new Error("Tool call aborted")); return; }
@@ -244,7 +246,9 @@ export async function startMcpClientMode(
   // Register call tool handler - proxy to socket
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args } = request.params;
+    const context = createRequestContext(request.params._meta);
 
+    return requestContextStorage.run(context, async () => {
     try {
       const result = options.codemode
         ? name === "codemode"
@@ -268,6 +272,7 @@ export async function startMcpClientMode(
         isError: true,
       };
     }
+    });
   });
 
   // Connect MCP server to stdio
