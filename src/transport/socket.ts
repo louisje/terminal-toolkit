@@ -41,7 +41,7 @@ interface SocketResponse {
 
 const clientConnectedSchema = z.object({
   title: z.string().optional(),
-  piOperators: z.boolean().optional(),
+  piOperators: z.boolean().optional(), // Deprecated socket field; ignored (Core is always enabled).
   piExtraOperators: z.boolean().optional(),
 });
 
@@ -146,8 +146,7 @@ export function createToolProxyServer(
   socketPath: string,
   manager: TerminalManager,
   onClientConnected?: (params: ClientConnectedParams) => void,
-  piOperators = true,
-  piExtraOperators = false
+    piExtraOperators = false
 ): NetServer {
   let clientCount = 0;
   let nextConnectionId = 0;
@@ -193,7 +192,6 @@ export function createToolProxyServer(
       unsubscribeData = undefined;
       unsubscribeExit = undefined;
     };
-    let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
 
     socket.on("data", async (data) => {
@@ -304,9 +302,7 @@ export function createToolProxyServer(
             // In particular, cancel must work even in the same data chunk.
             void (async () => {
               try {
-                const response = await handleToolRequest(manager, request, onClientConnected, clientPiOperators, clientPiExtraOperators, (enabled) => {
-                  clientPiOperators = clientPiOperators || enabled;
-                }, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, controller.signal);
+                const response = await handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, controller.signal);
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -360,10 +356,8 @@ async function handleToolRequest(
   manager: TerminalManager,
   request: SocketRequest,
   onClientConnected?: (params: ClientConnectedParams) => void,
-  piOperators = true,
-  piExtraOperators = false,
-  setClientPiOperators?: (enabled: boolean) => void,
-  setClientPiExtraOperators?: (enabled: boolean) => void,
+    piExtraOperators = false,
+    setClientPiExtraOperators?: (enabled: boolean) => void,
   signal?: AbortSignal
 ): Promise<SocketResponse> {
   const { id, method, params } = request;
@@ -392,8 +386,7 @@ async function handleToolRequest(
       case "write":
       case "edit":
       case "shell":
-        if (!piOperators) throw new Error(`Unknown tool: ${method}`);
-        result = await handleOperatorTool(method, params, manager.getConfiguredShell(), signal);
+                result = await handleOperatorTool(method, params, manager.getConfiguredShell(), signal);
         break;
       case "type":
         stats.recordToolCall("type");
@@ -472,7 +465,6 @@ async function handleToolRequest(
 
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
-        setClientPiOperators?.(parsed.piOperators !== false);
         setClientPiExtraOperators?.(parsed.piExtraOperators === true);
         onClientConnected?.(parsed);
         result = { ok: true };

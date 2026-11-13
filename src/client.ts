@@ -31,8 +31,7 @@ interface SocketResponse {
 interface McpClientModeOptions {
   experimentInitialize?: boolean;
   title?: string;
-  piOperators?: boolean;
-  piExtraOperators?: boolean;
+    piExtraOperators?: boolean;
   codemode?: boolean;
   shell?: string;
   cols?: number;
@@ -50,12 +49,11 @@ export async function notifyClientConnected(
   sendRequest: SocketRequestSender,
   options: { title?: string; piOperators?: boolean; piExtraOperators?: boolean }
 ): Promise<void> {
-  const params = options.title === undefined && options.piOperators === undefined && options.piExtraOperators === undefined
+  const params = options.title === undefined && options.piExtraOperators === undefined
     ? undefined
     : {
         ...(options.title === undefined ? {} : { title: options.title }),
-        ...(options.piOperators === undefined ? {} : { piOperators: options.piOperators }),
-        ...(options.piExtraOperators === undefined ? {} : { piExtraOperators: options.piExtraOperators }),
+                ...(options.piExtraOperators === undefined ? {} : { piExtraOperators: options.piExtraOperators }),
       };
   await sendRequest("clientConnected", params);
 }
@@ -89,7 +87,7 @@ export async function startMcpClientMode(
       cols: options.cols, rows: options.rows, login: options.login,
       maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
     });
-    ownedServer = createToolProxyServer(socketPath, ownedManager, undefined, options.piOperators, options.piExtraOperators);
+    ownedServer = createToolProxyServer(socketPath, ownedManager, undefined, options.piExtraOperators);
     try {
       if (!ownedServer.listening) {
         await new Promise<void>((resolve, reject) => {
@@ -240,7 +238,7 @@ export async function startMcpClientMode(
 
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options.piOperators, options.piExtraOperators),
+    tools: options.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options.piExtraOperators),
   }));
 
   // Register call tool handler - proxy to socket
@@ -250,7 +248,7 @@ export async function startMcpClientMode(
     try {
       const result = options.codemode
         ? name === "codemode"
-          ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piOperators, options.piExtraOperators),
+          ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
               (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
         : limitToolResponse(await dispatchTool(name, args as Record<string, unknown>, extra.signal) as { content?: Array<{ type: string; text?: string }> });
@@ -277,7 +275,7 @@ export async function startMcpClientMode(
   await server.connect(transport);
 
   // Notify the interactive terminal without blocking MCP startup.
-  void notifyClientConnected(sendRequest, { title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators }).catch((error) => {
+  void notifyClientConnected(sendRequest, { title: options.title, piExtraOperators: options.piExtraOperators }).catch((error) => {
     console.error("Warning: Failed to notify interactive terminal about client connection:", error);
   });
 }

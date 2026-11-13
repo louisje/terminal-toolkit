@@ -6,12 +6,12 @@ import { join } from "node:path";
 import { getToolDefinitions } from "../src/tools/definitions.ts";
 import { handleExtraOperatorTool } from "../src/tools/extra-operators.ts";
 
-test("extra operators are independent of original pi operators", () => {
-  for (const [base, extra, expected] of [[false, false, 15], [true, false, 19], [false, true, 18], [true, true, 22]] as const) {
-    const names = getToolDefinitions(base, extra).map((tool) => tool.name);
+test("core operators are always enabled; extra operators are optional", () => {
+  for (const [extra, expected] of [[false, 19], [true, 22]] as const) {
+    const names = getToolDefinitions(extra).map((tool) => tool.name);
     assert.equal(names.length, expected);
-    assert.equal(names.includes("shell"), base);
-    assert.equal(names.includes("find"), extra);
+    for (const name of ["read", "write", "edit", "shell"]) assert.ok(names.includes(name));
+    for (const name of ["ls", "grep", "find"]) assert.equal(names.includes(name), extra);
   }
 });
 test("ls lists directories and respects limit", async () => {

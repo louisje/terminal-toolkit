@@ -44,7 +44,7 @@ interfere with MCP JSON-RPC on stdout.
 - Invalid URIs, unknown skills and path traversal are rejected. Files are
   hashed directly from raw bytes each time they are listed.
 - This protocol capability is independent of `--codemode`,
-  `--pi-operators`, `--extra-core-operators`, and terminal transport mode.
+  `--extra-core-operators` and terminal transport mode.
   Existing MCP tools and instructions are unaffected.
 
 The server's participation in SEP-2640 does **not** imply a particular host
@@ -231,17 +231,14 @@ Multi-Session Options:
                                after this period (default: 600s)
 ```
 
-### Pi operators
+### Core Operators
 
-The default tool surface is unchanged: Terminal Toolkit exposes its existing 15 terminal tools. Add
-The Pi Coding Agent-style `read`, `write`, `edit`, and `shell` tools are enabled by default
-tools. These file tools operate relative to the process startup directory; `write` creates parent
+Terminal Toolkit exposes 15 terminal tools plus four always-enabled Core Operators (`read`, `write`, `edit`, `shell`) for 19 tools by default. File operators work relative to the process startup directory; `write` creates parent
 directories, and `edit` requires exact unique non-overlapping replacements from the original file.
 `shell` runs one independent, stateless subprocess using Terminal Toolkit's configured shell (`--shell`, then `TERMINAL_TOOLKIT_SHELL`, then the platform-native shell/default) in that same startup directory,
 returns stdout/stderr when it finishes, and accepts an optional timeout in seconds. Prefer these
 operators for routine file operations and short one-shot non-interactive commands; use the PTY tools
-for long-running compilation, builds, and tests (even without interaction), as well as persistent shell state, interactive/TTY behavior, or live observability. The flag
-applies consistently to direct MCP, headless MCP, and socket/client mode.
+for long-running compilation, builds, and tests (even without interaction), as well as persistent shell state, interactive/TTY behavior, or live observability. Core Operators are always available in direct MCP, headless MCP, and socket/client mode.
 
 **Which execution mode should I use?**
 
@@ -254,9 +251,9 @@ applies consistently to direct MCP, headless MCP, and socket/client mode.
 
 Long-running builds and tests should use PTY even when no interaction is expected, because intermediate output can be inspected before completion.
 
-### Pi extra operators
+### Extra Core Operators
 
-The optional --extra-core-operators flag independently exposes ls, grep, and find. It does not enable read, write, edit, or shell. The two flags may be combined for 22 tools. ls uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
+The optional `--extra-core-operators` flag adds `ls`, `grep`, and `find` for 22 tools total. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. ls uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
 
 
 Environment variables:
@@ -795,7 +792,7 @@ MIT
 
 ### Experimental codemode (opt-in)
 
-Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `describeNamespace()` to list namespaces (`tools/core`, `tools/pty`, `tools/misc`), then `searchTools(query)`, `describeTool(name)`, and `describeNamespace("tools/pty")` to discover enabled tools and their schemas, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
+Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `searchTools(query)` to discover enabled tools, `describeTool(name)` for complete tool instructions and schemas, and `describeNamespace()` / `describeNamespace("tools/pty")` for namespace-level guidance, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
 
 ```sh
 terminal-toolkit --headless --codemode
@@ -811,4 +808,4 @@ Example `codemode` input:
 
 The Claude Code plugin bootstrap does not automatically download optional resvg at startup; set `TERMINAL_TOOLKIT_INSTALL_OPTIONAL_RESVG=1` when launching it to request installation for PNG screenshot support. The required native `node-pty` remains auto-installed if unavailable.
 
-The flag works with both headless servers and socket-connected MCP clients. Core operators are enabled by default; `--extra-core-operators` enables ls, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).
+The flag works with both headless servers and socket-connected MCP clients. Core Operators are always enabled; `--extra-core-operators` enables ls, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).

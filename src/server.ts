@@ -20,12 +20,11 @@ export interface ServerOptions {
   title?: string;
   maxSessions?: number;
   sessionIdleTimeout?: number;
-  piOperators?: boolean;
-  piExtraOperators?: boolean;
+    piExtraOperators?: boolean;
   codemode?: boolean;
 }
 
-export function createServerWithManager(manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): Server {
+export function createServerWithManager(manager: TerminalManager, piExtraOperators = false, codemode = false): Server {
   const server = new Server(
     {
       name: "terminal-toolkit",
@@ -41,7 +40,7 @@ export function createServerWithManager(manager: TerminalManager, piOperators = 
     }
   );
 
-  registerTools(server, manager, piOperators, piExtraOperators, codemode);
+  registerTools(server, manager, piExtraOperators, codemode);
   registerPrompts(server);
   registerSkills(server);
 
@@ -66,7 +65,7 @@ export function createServer(options: ServerOptions = {}): {
     sessionIdleTimeout: options.sessionIdleTimeout,
   });
 
-  const server = createServerWithManager(manager, options.piOperators, options.piExtraOperators, options.codemode);
+  const server = createServerWithManager(manager, options.piExtraOperators, options.codemode);
   if (options.experimentInitialize) enableInitializeExperiment(server);
 
   return { server, manager };

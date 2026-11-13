@@ -1,6 +1,6 @@
 # Tools Reference
 
-Terminal Toolkit exposes PTY tools and optional Pi-style operators. This document describes the terminal tools and the optional stateless shell operator.
+Terminal Toolkit exposes PTY tools and always-enabled Core Operators (`read`, `write`, `edit`, `shell`), plus optional Extra Core Operators (`ls`, `grep`, `find`).
 
 ## Overview
 
@@ -25,7 +25,7 @@ Primary Session (legacy: default session) is selected by omitting sessionId, nev
 
 The Primary Session may be directly visible to the human in interactive mode, but not in headless mode. Sessions created with `createSession()` are always headless PTYs. They support interactive terminal tools but do not display output or prompts directly to the user. Use a free user-visible Primary Session for direct human interaction, and extra headless sessions for isolated/parallel work and AI-observed builds.
 
-## shell (optional: `--pi-operators`)
+## shell (Core Operator; always enabled)
 
 Runs one non-interactive command in a fresh subprocess using the configured Terminal Toolkit shell, **not necessarily Bash**. It uses the server startup working directory, not the current PTY directory. The call waits until the command finishes and does not retain environment variables, aliases, or cwd across invocations.
 
@@ -36,7 +36,7 @@ Runs one non-interactive command in a fresh subprocess using the configured Term
 
 Returns stdout/stderr, with a tool error for failed exit, timeout, or output overflow. Prefer for quick checks and short tests. **Use PTY for long-running compiles, builds, and test suites** even without interaction, so progress and intermediate failures remain observable. PTY is also appropriate for TUI programs, prompts, and persistent shell state.
 
-In codemode, invoke `await tools.shell({command: "git status --short"})`. This operator is exposed only when `--pi-operators` is enabled.
+In codemode, invoke `await tools.shell({command: "git status --short"})`. This operator is always available in both Codemode and standard MCP.
 
 ---
 

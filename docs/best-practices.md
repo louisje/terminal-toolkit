@@ -2,7 +2,7 @@
 
 ## Choose PTY or stateless shell
 
-With `--pi-operators`, prefer `shell({command: "git status --short"})` for quick, non-interactive one-off commands and short tests. The configured shell may be Bash, zsh, or another shell; each invocation is a fresh process and does not inherit PTY state.
+Prefer `shell({command: "git status --short"})` for quick, non-interactive one-off commands and short tests. The configured shell may be Bash, zsh, or another shell; each invocation is a fresh process and does not inherit PTY state.
 
 Prefer PTY (`type` and `getContent`) for lengthy compiles, builds, and test suites, **even when they do not request user input**. PTY lets you inspect partial output, failure details, and progress while the command is still running. It is also required for interactive prompts, TUIs, and ongoing shell state. Use `read`, `write`, and `edit` for direct text-file operations.
 

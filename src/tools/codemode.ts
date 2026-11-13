@@ -134,7 +134,7 @@ export async function runCodemodeWithDispatch(
   }
 }
 
-export function runCodemode(manager: TerminalManager, args: unknown, piOperators: boolean, piExtraOperators: boolean, signal?: AbortSignal) {
-  return runCodemodeWithDispatch(args, getCodemodeToolDefinitions(piOperators, piExtraOperators),
-    (name, params, callSignal) => dispatchTool(manager, name, params, piOperators, piExtraOperators, callSignal), signal);
+export function runCodemode(manager: TerminalManager, args: unknown, piExtraOperators: boolean, signal?: AbortSignal) {
+  return runCodemodeWithDispatch(args, getCodemodeToolDefinitions(piExtraOperators),
+    (name, params, callSignal) => dispatchTool(manager, name, params, piExtraOperators, callSignal), signal);
 }

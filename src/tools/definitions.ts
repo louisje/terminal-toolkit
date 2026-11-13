@@ -123,8 +123,8 @@ const TOOL_SUMMARIES: Record<string, string> = {
 
 /** Canonical split fields for codemode. Legacy MCP descriptions are retained
  * unchanged as instruction text, avoiding a second copy of usage guidance. */
-export function getCodemodeToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
-  return getToolDefinitions(piOperators, piExtraOperators).map(tool => ({
+export function getCodemodeToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+  return getToolDefinitions(piExtraOperators).map(tool => ({
     ...tool,
     namespace: getToolNamespace(tool.name),
     description: TOOL_SUMMARIES[tool.name] ?? tool.description,
@@ -133,8 +133,8 @@ export function getCodemodeToolDefinitions(piOperators = true, piExtraOperators 
 }
 
 /** Standard MCP clients only see tools/list; include namespace guidance there. */
-export function getMcpToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
-  return getToolDefinitions(piOperators, piExtraOperators).map(tool => ({
+export function getMcpToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+  return getToolDefinitions(piExtraOperators).map(tool => ({
     ...tool,
     description: [tool.description, ...(getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : [])].join("\n\n"),
   }));
@@ -146,8 +146,8 @@ const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "type", "sendKey", 
 const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 const OPEN_WORLD_TOOLS = new Set(["shell", "type", "sendKey"]);
 
-export function getToolDefinitions(piOperators = true, piExtraOperators = false): ToolDefinition[] {
-  return [...toolDefinitions, ...(piOperators ? operatorToolDefinitions : []), ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
+export function getToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+  return [...toolDefinitions, ...operatorToolDefinitions, ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
     ...tool,
     annotations: {
       readOnlyHint: READ_ONLY_TOOLS.has(tool.name),

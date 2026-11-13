@@ -91,10 +91,9 @@ const options: {
   tmux?: boolean | string;
   maxSessions?: number;
   sessionIdleTimeout?: number;
-  piOperators?: boolean;
-  piExtraOperators?: boolean;
+    piExtraOperators?: boolean;
   codemode?: boolean;
-} = { piOperators: true };
+} = {};
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -119,7 +118,6 @@ for (let i = 0; i < args.length; i++) {
       break;
     case "--pi-operators":
       console.error("[Terminal Toolkit] Deprecated --pi-operators; core operators are enabled by default.");
-      options.piOperators = true;
       break;
     case "--cols":
       if (next) {
@@ -368,7 +366,7 @@ async function main() {
   // --mcp uses the lazy socket-backed MCP mode: it claims the socket and
   // starts its PTY only when the first terminal tool is called.
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -396,14 +394,14 @@ async function main() {
       title: options.title,
       maxSessions: options.maxSessions,
         sessionIdleTimeout: options.sessionIdleTimeout,
-        piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode,
+        piExtraOperators: options.piExtraOperators, codemode: options.codemode,
     });
   } else if (isInteractive) {
     // Interactive mode: Shell on stdin/stdout, tool proxy on Unix socket
       if (!(await tryAttachInteractive(socketPath))) await startInteractiveMode(socketPath);
   } else {
     // MCP client mode: Connect to socket, serve MCP over stdio
-      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
 }
 
@@ -597,7 +595,7 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
   const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
     setClientTitle(title);
     if (title) manager.setTitle(title);
-  }, options.piOperators, options.piExtraOperators);
+  }, options.piExtraOperators);
 
   try {
     await new Promise<void>((resolve, reject) => {

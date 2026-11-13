@@ -27,10 +27,10 @@ import { handleNotify } from "./notify.js";
 
 import { limitToolResponse } from "./outputLimit.js";
 
-export function registerTools(server: Server, manager: TerminalManager, piOperators = true, piExtraOperators = false, codemode = false): void {
+export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = false, codemode = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piOperators, piExtraOperators),
+    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piExtraOperators),
   }));
 
   // Register call tool handler
@@ -40,9 +40,9 @@ export function registerTools(server: Server, manager: TerminalManager, piOperat
     try {
       if (codemode) {
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-        return await runCodemode(manager, args, piOperators, piExtraOperators, extra.signal);
+        return await runCodemode(manager, args, piExtraOperators, extra.signal);
       }
-      return limitToolResponse(await dispatchTool(manager, name, args, piOperators, piExtraOperators, extra.signal));
+      return limitToolResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return {
@@ -58,7 +58,7 @@ export function registerTools(server: Server, manager: TerminalManager, piOperat
   });
 }
 
-export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piOperators = true, piExtraOperators = false, signal?: AbortSignal) {
+export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "ls":
@@ -70,8 +70,7 @@ export async function dispatchTool(manager: TerminalManager, name: string, args:
     case "write":
     case "edit":
     case "shell":
-      if (!piOperators) throw new Error(`Unknown tool: ${name}`);
-      return await handleOperatorTool(name, args, manager.getConfiguredShell(), signal);
+            return await handleOperatorTool(name, args, manager.getConfiguredShell(), signal);
     case "type":
       return await handleType(manager, args);
 

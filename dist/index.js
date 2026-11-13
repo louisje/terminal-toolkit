@@ -55430,16 +55430,16 @@ var TOOL_SUMMARIES = {
   grep: "Search file contents using ripgrep.",
   find: "Find files using fd or fdfind."
 };
-function getCodemodeToolDefinitions(piOperators = true, piExtraOperators = false) {
-  return getToolDefinitions(piOperators, piExtraOperators).map((tool) => ({
+function getCodemodeToolDefinitions(piExtraOperators = false) {
+  return getToolDefinitions(piExtraOperators).map((tool) => ({
     ...tool,
     namespace: getToolNamespace(tool.name),
     description: TOOL_SUMMARIES[tool.name] ?? tool.description,
     instruction: tool.description
   }));
 }
-function getMcpToolDefinitions(piOperators = true, piExtraOperators = false) {
-  return getToolDefinitions(piOperators, piExtraOperators).map((tool) => ({
+function getMcpToolDefinitions(piExtraOperators = false) {
+  return getToolDefinitions(piExtraOperators).map((tool) => ({
     ...tool,
     description: [tool.description, ...getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
@@ -55448,8 +55448,8 @@ var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "ge
 var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
 var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
-function getToolDefinitions(piOperators = true, piExtraOperators = false) {
-  return [...toolDefinitions, ...piOperators ? operatorToolDefinitions : [], ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
+function getToolDefinitions(piExtraOperators = false) {
+  return [...toolDefinitions, ...operatorToolDefinitions, ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
     ...tool,
     annotations: {
       readOnlyHint: READ_ONLY_TOOLS.has(tool.name),
@@ -56817,28 +56817,28 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
     await sandbox.close();
   }
 }
-function runCodemode(manager, args2, piOperators, piExtraOperators, signal) {
+function runCodemode(manager, args2, piExtraOperators, signal) {
   return runCodemodeWithDispatch(
     args2,
-    getCodemodeToolDefinitions(piOperators, piExtraOperators),
-    (name, params, callSignal) => dispatchTool(manager, name, params, piOperators, piExtraOperators, callSignal),
+    getCodemodeToolDefinitions(piExtraOperators),
+    (name, params, callSignal) => dispatchTool(manager, name, params, piExtraOperators, callSignal),
     signal
   );
 }
 
 // src/tools/index.ts
-function registerTools(server, manager, piOperators = true, piExtraOperators = false, codemode = false) {
+function registerTools(server, manager, piExtraOperators = false, codemode = false) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piOperators, piExtraOperators)
+    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piExtraOperators)
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
     try {
       if (codemode) {
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-        return await runCodemode(manager, args2, piOperators, piExtraOperators, extra.signal);
+        return await runCodemode(manager, args2, piExtraOperators, extra.signal);
       }
-      return limitToolResponse(await dispatchTool(manager, name, args2, piOperators, piExtraOperators, extra.signal));
+      return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
     } catch (error2) {
       const message = error2 instanceof Error ? error2.message : String(error2);
       return {
@@ -56853,7 +56853,7 @@ function registerTools(server, manager, piOperators = true, piExtraOperators = f
     }
   });
 }
-async function dispatchTool(manager, name, args2, piOperators = true, piExtraOperators = false, signal) {
+async function dispatchTool(manager, name, args2, piExtraOperators = false, signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "ls":
@@ -56865,7 +56865,6 @@ async function dispatchTool(manager, name, args2, piOperators = true, piExtraOpe
     case "write":
     case "edit":
     case "shell":
-      if (!piOperators) throw new Error(`Unknown tool: ${name}`);
       return await handleOperatorTool(name, args2, manager.getConfiguredShell(), signal);
     case "type":
       return await handleType(manager, args2);
@@ -57252,7 +57251,7 @@ function installStdioShutdownHandlers({ cleanup }) {
 }
 
 // src/server.ts
-function createServerWithManager(manager, piOperators = true, piExtraOperators = false, codemode = false) {
+function createServerWithManager(manager, piExtraOperators = false, codemode = false) {
   const server = new Server(
     {
       name: "terminal-toolkit",
@@ -57267,7 +57266,7 @@ function createServerWithManager(manager, piOperators = true, piExtraOperators =
       }
     }
   );
-  registerTools(server, manager, piOperators, piExtraOperators, codemode);
+  registerTools(server, manager, piExtraOperators, codemode);
   registerPrompts(server);
   registerSkills(server);
   return server;
@@ -57283,7 +57282,7 @@ function createServer(options2 = {}) {
     maxSessions: options2.maxSessions,
     sessionIdleTimeout: options2.sessionIdleTimeout
   });
-  const server = createServerWithManager(manager, options2.piOperators, options2.piExtraOperators, options2.codemode);
+  const server = createServerWithManager(manager, options2.piExtraOperators, options2.codemode);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   return { server, manager };
 }
@@ -57505,9 +57504,10 @@ function handleBrokerRequest(method, params, connectionId, connection, connectio
 var clientConnectedSchema = external_exports.object({
   title: external_exports.string().optional(),
   piOperators: external_exports.boolean().optional(),
+  // Deprecated socket field; ignored (Core is always enabled).
   piExtraOperators: external_exports.boolean().optional()
 });
-function createToolProxyServer(socketPath, manager, onClientConnected, piOperators = true, piExtraOperators = false) {
+function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOperators = false) {
   let clientCount = 0;
   let nextConnectionId = 0;
   const connections = /* @__PURE__ */ new Map();
@@ -57551,7 +57551,6 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
       unsubscribeData = void 0;
       unsubscribeExit = void 0;
     };
-    let clientPiOperators = piOperators;
     let clientPiExtraOperators = piExtraOperators;
     socket.on("data", async (data) => {
       buffer += data.toString();
@@ -57661,9 +57660,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
             inflight.set(request.id, controller);
             void (async () => {
               try {
-                const response = await handleToolRequest(manager, request, onClientConnected, clientPiOperators, clientPiExtraOperators, (enabled) => {
-                  clientPiOperators = clientPiOperators || enabled;
-                }, (enabled) => {
+                const response = await handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
                   clientPiExtraOperators = clientPiExtraOperators || enabled;
                 }, controller.signal);
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
@@ -57707,7 +57704,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piOperato
   server.listen(socketPath);
   return server;
 }
-async function handleToolRequest(manager, request, onClientConnected, piOperators = true, piExtraOperators = false, setClientPiOperators, setClientPiExtraOperators, signal) {
+async function handleToolRequest(manager, request, onClientConnected, piExtraOperators = false, setClientPiExtraOperators, signal) {
   const { id, method, params } = request;
   const stats = getStats();
   try {
@@ -57736,7 +57733,6 @@ async function handleToolRequest(manager, request, onClientConnected, piOperator
       case "write":
       case "edit":
       case "shell":
-        if (!piOperators) throw new Error(`Unknown tool: ${method}`);
         result2 = await handleOperatorTool(method, params, manager.getConfiguredShell(), signal);
         break;
       case "type":
@@ -57801,7 +57797,6 @@ async function handleToolRequest(manager, request, onClientConnected, piOperator
         break;
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
-        setClientPiOperators?.(parsed.piOperators !== false);
         setClientPiExtraOperators?.(parsed.piExtraOperators === true);
         onClientConnected?.(parsed);
         result2 = { ok: true };
@@ -57825,9 +57820,8 @@ async function handleToolRequest(manager, request, onClientConnected, piOperator
 
 // src/client.ts
 async function notifyClientConnected(sendRequest, options2) {
-  const params = options2.title === void 0 && options2.piOperators === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
+  const params = options2.title === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
     ...options2.title === void 0 ? {} : { title: options2.title },
-    ...options2.piOperators === void 0 ? {} : { piOperators: options2.piOperators },
     ...options2.piExtraOperators === void 0 ? {} : { piExtraOperators: options2.piExtraOperators }
   };
   await sendRequest("clientConnected", params);
@@ -57854,7 +57848,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       maxSessions: options2.maxSessions,
       sessionIdleTimeout: options2.sessionIdleTimeout
     });
-    ownedServer = createToolProxyServer(socketPath, ownedManager, void 0, options2.piOperators, options2.piExtraOperators);
+    ownedServer = createToolProxyServer(socketPath, ownedManager, void 0, options2.piExtraOperators);
     try {
       if (!ownedServer.listening) {
         await new Promise((resolve6, reject) => {
@@ -57982,14 +57976,14 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   }
   registerSkills(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options2.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options2.piOperators, options2.piExtraOperators)
+    tools: options2.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options2.piExtraOperators)
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
     try {
       const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
         args2,
-        getCodemodeToolDefinitions(options2.piOperators, options2.piExtraOperators),
+        getCodemodeToolDefinitions(options2.piExtraOperators),
         (tool, params, signal) => dispatchTool2(tool, params, signal),
         extra.signal
       ) : (() => {
@@ -58011,7 +58005,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   });
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  void notifyClientConnected(sendRequest, { title: options2.title, piOperators: options2.piOperators, piExtraOperators: options2.piExtraOperators }).catch((error2) => {
+  void notifyClientConnected(sendRequest, { title: options2.title, piExtraOperators: options2.piExtraOperators }).catch((error2) => {
     console.error("Warning: Failed to notify interactive terminal about client connection:", error2);
   });
 }
@@ -62421,7 +62415,7 @@ Examples:
   process.exit(await runSetup2(setupOpts));
 }
 var args = process.argv.slice(2);
-var options = { piOperators: true };
+var options = {};
 for (let i2 = 0; i2 < args.length; i2++) {
   const arg = args[i2];
   const next = args[i2 + 1];
@@ -62444,7 +62438,6 @@ for (let i2 = 0; i2 < args.length; i2++) {
       break;
     case "--pi-operators":
       console.error("[Terminal Toolkit] Deprecated --pi-operators; core operators are enabled by default.");
-      options.piOperators = true;
       break;
     case "--cols":
       if (next) {
@@ -62684,7 +62677,7 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -62705,14 +62698,13 @@ async function main() {
       title: options.title,
       maxSessions: options.maxSessions,
       sessionIdleTimeout: options.sessionIdleTimeout,
-      piOperators: options.piOperators,
       piExtraOperators: options.piExtraOperators,
       codemode: options.codemode
     });
   } else if (isInteractive) {
     if (!await tryAttachInteractive(socketPath)) await startInteractiveMode(socketPath);
   } else {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piOperators: options.piOperators, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
 }
 async function startInteractiveMode(socketPath) {
@@ -62854,7 +62846,7 @@ async function startInteractiveMode(socketPath) {
   const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
     setClientTitle(title);
     if (title) manager.setTitle(title);
-  }, options.piOperators, options.piExtraOperators);
+  }, options.piExtraOperators);
   try {
     await new Promise((resolve6, reject) => {
       if (socketServer.listening) return resolve6();

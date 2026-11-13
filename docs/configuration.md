@@ -19,9 +19,9 @@ Terminal Toolkit can be configured via command-line arguments and selected envir
 | `--version`, `-v` | flag | - | Show version number |
 | `--help`, `-h` | flag | - | Show help message |
 
-### Optional Pi operators
+### Core Operators
 
-`--pi-operators` adds `read`, `write`, `edit`, and `shell`. The `shell` tool executes a short, one-shot, non-interactive command with the configured shell. Use PTY for long-running compilation, builds, tests, interactive prompts, or ongoing session state. This option works in regular and codemode connections.
+`read`, `write`, `edit`, and `shell` are always available; `--pi-operators` is deprecated and has no effect. `--extra-core-operators` optionally adds `ls`, `grep`, and `find`. The `shell` tool executes a short, one-shot, non-interactive command with the configured shell. Use PTY for long-running compilation, builds, tests, interactive prompts, or ongoing session state. Core and Extra Core Operators work in both standard MCP and Codemode.
 
 See [Sandbox Mode](./sandbox.md) for detailed sandbox configuration.
 

@@ -8,6 +8,10 @@ Dates and release boundaries follow Git tags.
 
 ## [Unreleased]
 
+### Changed
+- Core Operators (`read`, `write`, `edit`, `shell`) are always available; only Extra Core Operators (`ls`, `grep`, `find`) are optional. The legacy `--pi-operators` flag is a no-op.
+- Standard MCP `tools/list` descriptions now carry standalone usage guidance; Codemode separates concise discovery descriptions, tool instructions, and namespace guidance. Normal operation no longer depends on `initialize.instructions`; `--experiment-initialize` remains available for testing.
+
 ## [0.6.0] - 2026-11-06
 
 ### Added

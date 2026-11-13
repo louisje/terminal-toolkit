@@ -11,14 +11,13 @@ description: |
 
 ## Default rule
 
-When core operators are enabled, discover `read`, `write`, and `edit` under `tools/core` before choosing `shell`. Use these for direct text-file
+Discover `read`, `write`, and `edit` under `tools/core` before choosing `shell`. Use these for direct text-file
 operations and `shell` for short one-shot, non-interactive commands. These avoid
 unnecessary PTY interaction and return their result directly.
 
 Use the PTY/session tools when the user's real shell matters. The five reasons below
 are the main cases for switching from the stateless operators to the persistent PTY.
-If Pi operators are not exposed by the MCP server, use the agent's own ordinary Bash
-facility where available and apply the same decision rule.
+Core Operators are always available in both standard MCP and Codemode.
 
 ## The five reasons to switch
 
@@ -51,10 +50,7 @@ whether the command technically requires a TTY.
 
 Programs that need a real terminal: `vim`, `less`, `htop`, `kubectl edit`, color
 output, progress bars, `fzf`, `watch`, or anything that needs to be observed while
-still running. This category is already covered in full detail by the MCP server's
-own `instructions` field (delivered to every MCP client on connect) — see
-`src/server.ts`'s `SERVER_INSTRUCTIONS` in this repo for the exact, up-to-date list.
-Deliberately not re-copied here so this file doesn't drift out of sync with it.
+still running. For current PTY guidance, read `describeNamespace("tools/pty")` in Codemode or the relevant tool descriptions from `tools/list` in standard MCP. Normal operation does not depend on `initialize.instructions`.
 
 ### 5. Built-in Bash is unavailable
 
@@ -66,7 +62,7 @@ because Bash cannot be used.
 
 Prefer the persistent PTY for lengthy `npm run build`, `cargo build`, `make`, integration tests, or full test suites, even without interactive input. Observe intermediate logs and failures with `getContent` while the process runs. Use `shell` for quick checks and short tests that finish promptly.
 
-## Pi operators
+## Core Operators
 
 Four core operators are enabled by default:
 
@@ -111,16 +107,14 @@ Default PTY/tool list: `type`, `sendKey`, `sleep`, `getContent`, `getBufferInfo`
 `takeScreenshot`, `startRecording`, `stopRecording`, `createSession`,
 `listSessions`, `destroySession`, `resize`, `getClipboard`, `setClipboard`,
 `notify` (OS-level desktop notification — useful to alert the user when a
-long-running command finishes while they're not watching). With core operators,
-`read`, `write`, `edit`, and `shell` are additionally available.
+long-running command finishes while they're not watching). The four Core Operators (`read`, `write`, `edit`, `shell`) are always available.
 
 ## Anti-patterns
 
 - Don't ask the user to paste a sudo/SSH password into chat — switch to
   terminal-toolkit so they type it themselves.
 - Don't drive the PTY for routine, invisible one-off commands where none of the five
-  reasons above apply — use the Pi `shell` operator when available (or the agent's
-  ordinary Bash facility otherwise).
+  reasons above apply — use the Core `shell` operator.
 - Don't silently keep using Bash after the user has visibly changed their own shell
   state (cd, export, activating a venv) mid-session — that's the continuity case.
 
@@ -128,8 +122,8 @@ long-running command finishes while they're not watching). With core operators,
 
 This opt-in mode exposes **only one MCP function**, `codemode`. The other Terminal
 MCP operators remain available *inside* its QuickJS script as `tools.<name>(args)`;
-Core operators are enabled by default; `--extra-core-operators` governs which optional tools
-exist. The server instructions continue to explain safe PTY/session selection.
+Core Operators are always enabled; `--extra-core-operators` governs which optional tools
+exist. Use `describeNamespace("tools/pty")` for PTY/session guidance; standard MCP exposes essential guidance through each tool description.
 
 Example (`code` argument to `codemode`):
 
@@ -141,7 +135,7 @@ text(matches);
 text(await describeNamespace("tools/pty")); // instructions and tool descriptions
 const shell = await describeTool("shell"); // enabled by default
 text(shell?.inputSchema);
-// In an operator-enabled connection:
+// Core Operators are always available:
 // text(await tools.shell({ command: "git status --short" }));
 ```
 

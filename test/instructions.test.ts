@@ -20,10 +20,10 @@ test('standard MCP tools include namespace guidance; codemode discovery keeps su
 });
 
 test('standard descriptions avoid redundant namespace text and respect extra operator flags', () => {
-  const tools = getMcpToolDefinitions(true, false);
+  const tools = getMcpToolDefinitions(false);
   assert.equal(tools.some(t => t.name === 'shell'), true);
   assert.equal(tools.some(t => t.name === 'grep'), false);
-  const normal = getMcpToolDefinitions(true, true);
+  const normal = getMcpToolDefinitions(true);
   const shell = normal.find(t => t.name === 'shell')!.description;
   assert.equal(shell.split("Prefer read/write/edit").length - 1, 0);
   assert.doesNotMatch(normal.find(t => t.name === 'notify')!.description, /Primary Session/);
@@ -32,7 +32,7 @@ test('standard descriptions avoid redundant namespace text and respect extra ope
 });
 
 test('flat MCP descriptions independently guide tool selection and PTY safety', () => {
-  const definitions = getMcpToolDefinitions(true, false);
+  const definitions = getMcpToolDefinitions(false);
   const description = (name: string) => definitions.find(t => t.name === name)!.description;
   assert.match(description('shell'), /non-interactive/);
   assert.match(description('shell'), /PTY for long-running/);
@@ -56,4 +56,16 @@ test('codemode entry guides discovery and preserves standalone tool instructions
   assert.match(type.instruction!, /persistent interactive PTY/);
   assert.match(type.instruction!, /autoSubmit=true/);
   assert.match(type.inputSchema.properties.sessionId.description, /Primary Session/);
+});
+
+test('core operators remain available with Extra Core disabled', () => {
+  for (const definitions of [getMcpToolDefinitions(false), getCodemodeToolDefinitions(false)]) {
+    for (const name of ['read', 'write', 'edit', 'shell'])
+      assert.ok(definitions.some(tool => tool.name === name), name);
+    for (const name of ['ls', 'grep', 'find'])
+      assert.ok(!definitions.some(tool => tool.name === name), name);
+  }
+  for (const definitions of [getMcpToolDefinitions(true), getCodemodeToolDefinitions(true)])
+    for (const name of ['ls', 'grep', 'find'])
+      assert.ok(definitions.some(tool => tool.name === name), name);
 });

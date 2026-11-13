@@ -36,7 +36,7 @@ test('cancelled PTY calls do not dispatch input into an existing session', async
   controller.abort();
   let called = false;
   const manager = { write() { called = true; } };
-  await assert.rejects(dispatchTool(manager, 'type', {text:'should-not-run'}, false, false, controller.signal), /Tool call aborted/);
+  await assert.rejects(dispatchTool(manager, 'type', {text:'should-not-run'}, false, controller.signal), /Tool call aborted/);
   assert.equal(called, false);
 });
 
