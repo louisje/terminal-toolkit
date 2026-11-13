@@ -1,4 +1,5 @@
 import { exec } from "child_process";
+import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
@@ -10,6 +11,7 @@ import { registerSkills } from "./skills.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
 
 export interface ServerOptions {
+  experimentInitialize?: boolean;
   cols?: number;
   rows?: number;
   shell?: string;
@@ -134,6 +136,7 @@ export function createServer(options: ServerOptions = {}): {
   });
 
   const server = createServerWithManager(manager, options.piOperators, options.piExtraOperators, options.codemode);
+  if (options.experimentInitialize) enableInitializeExperiment(server);
 
   return { server, manager };
 }

@@ -6,6 +6,7 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { VERSION } from "./utils/version.js";
 import { getServerInstructions } from "./server.js";
+import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { registerSkills } from "./skills.js";
 import {
   ListToolsRequestSchema,
@@ -29,6 +30,7 @@ interface SocketResponse {
 }
 
 interface McpClientModeOptions {
+  experimentInitialize?: boolean;
   title?: string;
   piOperators?: boolean;
   piExtraOperators?: boolean;
@@ -128,6 +130,8 @@ export async function startMcpClientMode(
       instructions: getServerInstructions(options),
     }
   );
+
+  if (options.experimentInitialize) enableInitializeExperiment(server);
 
   // Request ID counter
   let requestId = 0;
