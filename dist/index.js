@@ -46778,7 +46778,10 @@ function enableToolsListChangedExperiment(server) {
   const previous = server.oninitialized;
   server.oninitialized = () => {
     previous?.();
-    void server.notification({ method: "notifications/tools/list_changed" }).then(() => console.error("[terminal-toolkit] experiment: sent notifications/tools/list_changed")).catch((error2) => console.error("[terminal-toolkit] experiment: tools/list_changed failed:", error2));
+    const timer = setTimeout(() => {
+      void server.notification({ method: "notifications/tools/list_changed" }).then(() => console.error("[terminal-toolkit] experiment: sent idle notifications/tools/list_changed")).catch((error2) => console.error("[terminal-toolkit] experiment: tools/list_changed failed:", error2));
+    }, 2e3);
+    timer.unref();
   };
 }
 
@@ -57912,7 +57915,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     },
     {
       capabilities: {
-        tools: {},
+        tools: options2.experimentToolsListChanged ? { listChanged: true } : {},
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} }
       }

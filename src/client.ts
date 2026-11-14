@@ -124,7 +124,7 @@ export async function startMcpClientMode(
     },
     {
       capabilities: {
-        tools: {},
+        tools: options.experimentToolsListChanged ? { listChanged: true } : {},
         resources: {},
         extensions: { "io.modelcontextprotocol/skills": {} },
       },
