@@ -46773,6 +46773,15 @@ Experimental instruction: When the user asks 'What is the MCP experiment code?',
   });
 }
 
+// src/toolsListChangedExperiment.ts
+function enableToolsListChangedExperiment(server) {
+  const previous = server.oninitialized;
+  server.oninitialized = () => {
+    previous?.();
+    void server.notification({ method: "notifications/tools/list_changed" }).then(() => console.error("[terminal-toolkit] experiment: sent notifications/tools/list_changed")).catch((error2) => console.error("[terminal-toolkit] experiment: tools/list_changed failed:", error2));
+  };
+}
+
 // node_modules/zod/v3/external.js
 var external_exports = {};
 __export(external_exports, {
@@ -57305,6 +57314,7 @@ function createServer(options2 = {}) {
   });
   const server = createServerWithManager(manager, options2.piExtraOperators, options2.codemode);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
+  if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   return { server, manager };
 }
 async function startServer(options2 = {}) {
@@ -57909,6 +57919,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     }
   );
   if (options2.experimentInitialize) enableInitializeExperiment(server);
+  if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   let requestId = 0;
   const pendingRequests = /* @__PURE__ */ new Map();
   let buffer = "";
@@ -62450,6 +62461,9 @@ for (let i2 = 0; i2 < args.length; i2++) {
     case "--experiment-initialize":
       options.experimentInitialize = true;
       break;
+    case "--experiment-tools-list-changed":
+      options.experimentToolsListChanged = true;
+      break;
     case "--extra-core-operators":
       options.piExtraOperators = true;
       break;
@@ -62591,6 +62605,7 @@ Options:
   --socket <path>        IPC socket/pipe path for MCP (default: ${DEFAULT_SOCKET_PATH})
   --mcp                  Use direct MCP mode (no socket, standard MCP mode)
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
+  --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional ls, grep, and find tools
@@ -62701,7 +62716,7 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -62719,6 +62734,7 @@ async function main() {
       login: options.login,
       tmux: options.tmux,
       experimentInitialize: options.experimentInitialize,
+      experimentToolsListChanged: options.experimentToolsListChanged,
       title: options.title,
       maxSessions: options.maxSessions,
       sessionIdleTimeout: options.sessionIdleTimeout,
@@ -62728,7 +62744,7 @@ async function main() {
   } else if (isInteractive) {
     if (!await tryAttachInteractive(socketPath)) await startInteractiveMode(socketPath);
   } else {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
 }
 async function startInteractiveMode(socketPath) {

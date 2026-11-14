@@ -87,6 +87,7 @@ const options: {
   inactivityTimeout?: number;
   useMcp?: boolean;
   experimentInitialize?: boolean;
+  experimentToolsListChanged?: boolean;
   login?: boolean;
   tmux?: boolean | string;
   maxSessions?: number;
@@ -105,6 +106,9 @@ for (let i = 0; i < args.length; i++) {
       break;
     case "--experiment-initialize":
       options.experimentInitialize = true;
+      break;
+    case "--experiment-tools-list-changed":
+      options.experimentToolsListChanged = true;
       break;
     case "--extra-core-operators":
       options.piExtraOperators = true;
@@ -250,6 +254,7 @@ Options:
   --socket <path>        IPC socket/pipe path for MCP (default: ${DEFAULT_SOCKET_PATH})
   --mcp                  Use direct MCP mode (no socket, standard MCP mode)
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
+  --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional ls, grep, and find tools
@@ -366,7 +371,7 @@ async function main() {
   // --mcp uses the lazy socket-backed MCP mode: it claims the socket and
   // starts its PTY only when the first terminal tool is called.
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -390,7 +395,7 @@ async function main() {
       shell: options.shell,
       login: options.login,
       tmux: options.tmux,
-      experimentInitialize: options.experimentInitialize,
+      experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged,
       title: options.title,
       maxSessions: options.maxSessions,
         sessionIdleTimeout: options.sessionIdleTimeout,
@@ -401,7 +406,7 @@ async function main() {
       if (!(await tryAttachInteractive(socketPath))) await startInteractiveMode(socketPath);
   } else {
     // MCP client mode: Connect to socket, serve MCP over stdio
-      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
 }
 
