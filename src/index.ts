@@ -35,12 +35,21 @@ type RecordingMode = 'always' | 'on-failure' | 'off';
 const subcommandArgs = process.argv.slice(2);
 const subcommand = subcommandArgs[0];
 if (subcommand === "event" && subcommandArgs[1] === "emit") {
-  if (subcommandArgs[2] !== "terminal.test" || subcommandArgs[3] !== "--message" || !subcommandArgs[4] || subcommandArgs.length !== 5) {
-    console.error('Usage: terminal-toolkit event emit terminal.test --message "Hello"');
+  const args = subcommandArgs.slice(3);
+  const options = new Map<string, string>();
+  const allowed = new Set(["--message", "--subscription-id"]);
+  let valid = subcommandArgs[2] === "terminal.test" && args.length % 2 === 0;
+  for (let i = 0; valid && i < args.length; i += 2) {
+    const [flag, value] = [args[i], args[i + 1]];
+    if (!allowed.has(flag) || options.has(flag) || !value || value.startsWith("--")) valid = false;
+    else options.set(flag, value);
+  }
+  if (!valid || !options.has("--message")) {
+    console.error('Usage: terminal-toolkit event emit terminal.test --message "Hello" [--subscription-id sub_...]');
     process.exit(2);
   }
   const { emitTerminalTest } = await import("./mcpEventsExperiment.js");
-  const result = await emitTerminalTest(subcommandArgs[4]);
+  const result = await emitTerminalTest(options.get("--message")!, options.get("--subscription-id"));
   console.log(JSON.stringify(result));
   process.exit(result.delivered === result.attempted && result.attempted > 0 ? 0 : 1);
 }

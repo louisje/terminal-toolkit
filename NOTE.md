@@ -2,6 +2,15 @@
 
 Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作與歷史進度以 Git 紀錄為準。
 
+
+## MCP Events 實驗（暫停）
+
+- [x] 選用的 `--experiment-mcp-events` 提供 `events/list`、`events/subscribe`、`events/unsubscribe` 與 `terminal.test`；訂閱持久化、Webhook Challenge 與 HTTPS 投遞已實測成功，重啟後訂閱仍保留。
+- [x] HMAC-SHA256 簽章以獨立安裝的 `standardwebhooks@1.1.1` 交叉驗證一致（含 Unicode Payload）；不增加正式相依套件。
+- [x] CLI `event emit terminal.test --message "..." [--subscription-id sub_...]` 可廣播或指定單筆訂閱；回傳 eventId、timestamp、逐筆 HTTP 狀態及不含機密的診斷資訊。
+- [ ] **端對端仍未成功**：2026-11-16 在 ChatGPT Work 建立新工作與新訂閱，單筆 Webhook 回 HTTP 200，但 Work 對話未顯示事件；HTTP 200 只表示端點接受請求，尚無證據確定問題位於 OpenAI 端。後續待 ChatGPT MCP Events 功能更新再重測。
+- 維持實驗開關，不預設啟用；暫不擴充事件種類、重試機制或修改 Payload。
+
 ## MCP Skills 相容層
 
 - [ ] 評估是否提供選用的 MCP Tools 相容層，例如 `listSkills()`、`getSkill(name)`，供尚未原生支援 MCP Skills Extension（SEP-2640）的 AI Client 探索、讀取 Skills。

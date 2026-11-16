@@ -10259,22 +10259,30 @@ async function verify(sub) {
   const actual = Buffer.from(typeof echoed === "string" ? echoed : "");
   if (result2.status < 200 || result2.status >= 300 || actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw new Error("Callback challenge failed");
 }
-async function emitTerminalTest(message) {
+async function emitTerminalTest(message, subscriptionId) {
   if (!message || Buffer.byteLength(message) > 8192) throw new Error("Message must be 1\u20138192 bytes");
-  const subs = (await readSubscriptions()).filter((s) => s.name === "terminal.test" && Date.parse(s.refreshBefore) > Date.now());
+  const subs = (await readSubscriptions()).filter((s) => s.name === "terminal.test" && Date.parse(s.refreshBefore) > Date.now() && (subscriptionId === void 0 || s.id === subscriptionId));
+  if (subscriptionId !== void 0 && subs.length === 0) throw new Error("No active subscription matches the requested ID");
   const event = { eventId: "evt_" + randomUUID(), name: "terminal.test", timestamp: (/* @__PURE__ */ new Date()).toISOString(), data: { message }, cursor: null };
   const body = JSON.stringify(event);
   let delivered = 0;
+  const responses = [];
   for (const sub of subs) {
     try {
       const result2 = await postSigned(sub, event.eventId, body);
+      responses.push({
+        subscriptionId: sub.id,
+        status: result2.status,
+        responseBytes: Buffer.byteLength(result2.body),
+        responseSha256: createHash("sha256").update(result2.body).digest("hex").slice(0, 16)
+      });
       if (result2.status >= 200 && result2.status < 300) delivered++;
-      else console.error("[terminal-toolkit] event delivery rejected", { status: result2.status });
     } catch (error2) {
-      console.error("[terminal-toolkit] event delivery failed", { error: String(error2) });
+      const code = error2.code;
+      responses.push({ subscriptionId: sub.id, error: typeof code === "string" ? code : "DELIVERY_FAILED" });
     }
   }
-  return { delivered, attempted: subs.length };
+  return { delivered, attempted: subs.length, eventId: event.eventId, timestamp: event.timestamp, responses };
 }
 function enableMcpEventsExperiment(server) {
   const schema = (method) => external_exports.object({ method: external_exports.literal(method), params: external_exports.record(external_exports.unknown()).optional() });
@@ -62674,12 +62682,21 @@ var DEFAULT_SOCKET_PATH = getDefaultSocketPath();
 var subcommandArgs = process.argv.slice(2);
 var subcommand = subcommandArgs[0];
 if (subcommand === "event" && subcommandArgs[1] === "emit") {
-  if (subcommandArgs[2] !== "terminal.test" || subcommandArgs[3] !== "--message" || !subcommandArgs[4] || subcommandArgs.length !== 5) {
-    console.error('Usage: terminal-toolkit event emit terminal.test --message "Hello"');
+  const args2 = subcommandArgs.slice(3);
+  const options2 = /* @__PURE__ */ new Map();
+  const allowed = /* @__PURE__ */ new Set(["--message", "--subscription-id"]);
+  let valid = subcommandArgs[2] === "terminal.test" && args2.length % 2 === 0;
+  for (let i2 = 0; valid && i2 < args2.length; i2 += 2) {
+    const [flag, value] = [args2[i2], args2[i2 + 1]];
+    if (!allowed.has(flag) || options2.has(flag) || !value || value.startsWith("--")) valid = false;
+    else options2.set(flag, value);
+  }
+  if (!valid || !options2.has("--message")) {
+    console.error('Usage: terminal-toolkit event emit terminal.test --message "Hello" [--subscription-id sub_...]');
     process.exit(2);
   }
   const { emitTerminalTest: emitTerminalTest2 } = await Promise.resolve().then(() => (init_mcpEventsExperiment(), mcpEventsExperiment_exports));
-  const result2 = await emitTerminalTest2(subcommandArgs[4]);
+  const result2 = await emitTerminalTest2(options2.get("--message"), options2.get("--subscription-id"));
   console.log(JSON.stringify(result2));
   process.exit(result2.delivered === result2.attempted && result2.attempted > 0 ? 0 : 1);
 }

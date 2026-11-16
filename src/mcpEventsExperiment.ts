@@ -91,22 +91,37 @@ async function verify(sub: Subscription): Promise<void> {
 }
 
 /** Experimental single-user event delivery. The CLI and MCP process share a local state file. */
-export async function emitTerminalTest(message: string): Promise<{ delivered: number; attempted: number }> {
+export async function emitTerminalTest(message: string, subscriptionId?: string): Promise<{
+  delivered: number;
+  attempted: number;
+  eventId: string;
+  timestamp: string;
+  responses: Array<{ subscriptionId: string; status?: number; responseBytes?: number; responseSha256?: string; error?: string }>;
+}> {
   if (!message || Buffer.byteLength(message) > 8192) throw new Error("Message must be 1–8192 bytes");
-  const subs = (await readSubscriptions()).filter(s => s.name === "terminal.test" && Date.parse(s.refreshBefore) > Date.now());
+  const subs = (await readSubscriptions()).filter(s => s.name === "terminal.test" && Date.parse(s.refreshBefore) > Date.now() && (subscriptionId === undefined || s.id === subscriptionId));
+  if (subscriptionId !== undefined && subs.length === 0) throw new Error("No active subscription matches the requested ID");
   const event = { eventId: "evt_" + randomUUID(), name: "terminal.test", timestamp: new Date().toISOString(), data: { message }, cursor: null };
   const body = JSON.stringify(event);
   let delivered = 0;
+  const responses: Array<{ subscriptionId: string; status?: number; responseBytes?: number; responseSha256?: string; error?: string }> = [];
   for (const sub of subs) {
     try {
       const result = await postSigned(sub, event.eventId, body);
+      responses.push({
+        subscriptionId: sub.id,
+        status: result.status,
+        responseBytes: Buffer.byteLength(result.body),
+        responseSha256: createHash("sha256").update(result.body).digest("hex").slice(0, 16),
+      });
       if (result.status >= 200 && result.status < 300) delivered++;
-      else console.error("[terminal-toolkit] event delivery rejected", { status: result.status });
     } catch (error) {
-      console.error("[terminal-toolkit] event delivery failed", { error: String(error) });
+      // Only report the error code: network error messages may contain the callback URL.
+      const code = (error as NodeJS.ErrnoException).code;
+      responses.push({ subscriptionId: sub.id, error: typeof code === "string" ? code : "DELIVERY_FAILED" });
     }
   }
-  return { delivered, attempted: subs.length };
+  return { delivered, attempted: subs.length, eventId: event.eventId, timestamp: event.timestamp, responses };
 }
 export function enableMcpEventsExperiment(server: Server): void {
   const schema = (method: string) => z.object({ method: z.literal(method), params: z.record(z.unknown()).optional() });

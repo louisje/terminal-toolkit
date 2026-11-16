@@ -35,7 +35,13 @@ test("MCP Events advertises terminal.test and validates subscriptions", async ()
     await assert.rejects(subscribe({ method: "events/subscribe", params: {
       name: "terminal.test", arguments: { unexpected: true }, delivery: { mode: "webhook", url: "https://example.com", secret },
     } }), /Invalid terminal.test/);
-    assert.deepEqual(await emitTerminalTest("hello"), { attempted: 0, delivered: 0 });
+    const emitted = await emitTerminalTest("hello");
+    assert.equal(emitted.attempted, 0);
+    assert.equal(emitted.delivered, 0);
+    assert.match(emitted.eventId, /^evt_/);
+    assert.ok(Number.isFinite(Date.parse(emitted.timestamp)));
+    assert.deepEqual(emitted.responses, []);
+    await assert.rejects(emitTerminalTest("hello", "sub_missing"), /No active subscription/);
     assert.deepEqual(await handlers.get("events/unsubscribe")({ method: "events/unsubscribe", params: {
       name: "terminal.test", arguments: {}, delivery: { mode: "webhook", url: "https://example.com" },
     } }), {});
