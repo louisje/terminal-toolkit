@@ -50826,6 +50826,23 @@ var coerce = {
 };
 var NEVER2 = INVALID;
 
+// src/mcpEventsExperiment.ts
+function enableMcpEventsExperiment(server) {
+  const schema = (method) => external_exports.object({ method: external_exports.literal(method), params: external_exports.record(external_exports.unknown()).optional() });
+  server.setRequestHandler(schema("events/list"), async () => {
+    console.error("[terminal-toolkit] experiment: events/list received");
+    return { events: [{ name: "terminal.test", description: "Experimental event; delivery not enabled", delivery: ["webhook"], inputSchema: { type: "object", properties: {}, additionalProperties: false }, payloadSchema: { type: "object", properties: { message: { type: "string" } }, required: ["message"], additionalProperties: false } }] };
+  });
+  server.setRequestHandler(schema("events/subscribe"), async (request) => {
+    console.error("[terminal-toolkit] experiment: events/subscribe received", { name: request.params?.name });
+    throw new Error("Experimental event delivery and callback verification not implemented");
+  });
+  server.setRequestHandler(schema("events/unsubscribe"), async () => {
+    console.error("[terminal-toolkit] experiment: events/unsubscribe received");
+    return {};
+  });
+}
+
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/zod-compat.js
 function isZ4Schema(s) {
   const schema = s;
@@ -57318,6 +57335,10 @@ function createServer(options2 = {}) {
   const server = createServerWithManager(manager, options2.piExtraOperators, options2.codemode);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
+  if (options2.experimentMcpEvents) {
+    server.registerCapabilities({ events: {} });
+    enableMcpEventsExperiment(server);
+  }
   return { server, manager };
 }
 async function startServer(options2 = {}) {
@@ -57917,12 +57938,14 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       capabilities: {
         tools: options2.experimentToolsListChanged ? { listChanged: true } : {},
         resources: {},
+        ...options2.experimentMcpEvents ? { events: {} } : {},
         extensions: { "io.modelcontextprotocol/skills": {} }
       }
     }
   );
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
+  if (options2.experimentMcpEvents) enableMcpEventsExperiment(server);
   let requestId = 0;
   const pendingRequests = /* @__PURE__ */ new Map();
   let buffer = "";
@@ -62464,6 +62487,9 @@ for (let i2 = 0; i2 < args.length; i2++) {
     case "--experiment-initialize":
       options.experimentInitialize = true;
       break;
+    case "--experiment-mcp-events":
+      options.experimentMcpEvents = true;
+      break;
     case "--experiment-tools-list-changed":
       options.experimentToolsListChanged = true;
       break;
@@ -62609,6 +62635,7 @@ Options:
   --mcp                  Use direct MCP mode (no socket, standard MCP mode)
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
   --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
+  --experiment-mcp-events         Advertise experimental MCP Events discovery
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional ls, grep, and find tools
@@ -62719,7 +62746,7 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -62738,6 +62765,7 @@ async function main() {
       tmux: options.tmux,
       experimentInitialize: options.experimentInitialize,
       experimentToolsListChanged: options.experimentToolsListChanged,
+      experimentMcpEvents: options.experimentMcpEvents,
       title: options.title,
       maxSessions: options.maxSessions,
       sessionIdleTimeout: options.sessionIdleTimeout,
@@ -62747,7 +62775,7 @@ async function main() {
   } else if (isInteractive) {
     if (!await tryAttachInteractive(socketPath)) await startInteractiveMode(socketPath);
   } else {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
   }
 }
 async function startInteractiveMode(socketPath) {

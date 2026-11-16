@@ -8,6 +8,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { VERSION } from "./utils/version.js";
 import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { enableToolsListChangedExperiment } from "./toolsListChangedExperiment.js";
+import { enableMcpEventsExperiment } from "./mcpEventsExperiment.js";
 import { registerSkills } from "./skills.js";
 import {
   ListToolsRequestSchema,
@@ -34,6 +35,7 @@ interface SocketResponse {
 interface McpClientModeOptions {
   experimentInitialize?: boolean;
   experimentToolsListChanged?: boolean;
+  experimentMcpEvents?: boolean;
   title?: string;
     piExtraOperators?: boolean;
   codemode?: boolean;
@@ -126,6 +128,7 @@ export async function startMcpClientMode(
       capabilities: {
         tools: options.experimentToolsListChanged ? { listChanged: true } : {},
         resources: {},
+        ...(options.experimentMcpEvents ? { events: {} } : {}),
         extensions: { "io.modelcontextprotocol/skills": {} },
       },
     }
@@ -133,6 +136,7 @@ export async function startMcpClientMode(
 
   if (options.experimentInitialize) enableInitializeExperiment(server);
   if (options.experimentToolsListChanged) enableToolsListChangedExperiment(server);
+  if (options.experimentMcpEvents) enableMcpEventsExperiment(server);
 
   // Request ID counter
   let requestId = 0;

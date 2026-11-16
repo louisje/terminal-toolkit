@@ -1,6 +1,7 @@
 import { exec } from "child_process";
 import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { enableToolsListChangedExperiment } from "./toolsListChangedExperiment.js";
+import { enableMcpEventsExperiment } from "./mcpEventsExperiment.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
@@ -14,6 +15,7 @@ import { installStdioShutdownHandlers } from "./utils/shutdown.js";
 export interface ServerOptions {
   experimentInitialize?: boolean;
   experimentToolsListChanged?: boolean;
+  experimentMcpEvents?: boolean;
   cols?: number;
   rows?: number;
   shell?: string;
@@ -70,6 +72,10 @@ export function createServer(options: ServerOptions = {}): {
   const server = createServerWithManager(manager, options.piExtraOperators, options.codemode);
   if (options.experimentInitialize) enableInitializeExperiment(server);
   if (options.experimentToolsListChanged) enableToolsListChangedExperiment(server);
+  if (options.experimentMcpEvents) {
+    server.registerCapabilities({ events: {} } as Parameters<Server["registerCapabilities"]>[0]);
+    enableMcpEventsExperiment(server);
+  }
 
   return { server, manager };
 }
