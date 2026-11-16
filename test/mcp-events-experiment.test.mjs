@@ -1,8 +1,14 @@
 import { test } from "node:test";
 import { strict as assert } from "node:assert";
-import { enableMcpEventsExperiment } from "../src/mcpEventsExperiment.ts";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { enableMcpEventsExperiment, emitTerminalTest } from "../src/mcpEventsExperiment.ts";
 
-test("MCP Events experiment advertises one event and refuses unverified subscriptions", async () => {
+test("MCP Events advertises terminal.test and validates subscriptions", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "tt-events-"));
+  const oldState = process.env.TERMINAL_TOOLKIT_EVENTS_STATE;
+  process.env.TERMINAL_TOOLKIT_EVENTS_STATE = join(dir, "subscriptions.json");
   const handlers = new Map();
   const server = { setRequestHandler(schema, handler) {
     for (const method of ["events/list", "events/subscribe", "events/unsubscribe"]) {
@@ -18,14 +24,26 @@ test("MCP Events experiment advertises one event and refuses unverified subscrip
     const catalog = await handlers.get("events/list")({ method: "events/list" });
     assert.equal(catalog.events[0].name, "terminal.test");
     assert.deepEqual(catalog.events[0].delivery, ["webhook"]);
-    const secret = "whsec_dont-log-this";
-    await assert.rejects(handlers.get("events/subscribe")({
-      method: "events/subscribe",
-      params: { name: "terminal.test", delivery: { mode: "webhook", url: "https://example.com", secret } },
-    }), /not implemented/);
+    const secret = "whsec_" + Buffer.alloc(32, 1).toString("base64");
+    const subscribe = handlers.get("events/subscribe");
+    await assert.rejects(subscribe({ method: "events/subscribe", params: {
+      name: "terminal.test", arguments: {}, delivery: { mode: "webhook", url: "http://example.com", secret },
+    } }), /HTTPS/);
+    await assert.rejects(subscribe({ method: "events/subscribe", params: {
+      name: "terminal.test", arguments: {}, delivery: { mode: "webhook", url: "https://127.0.0.1/callback", secret },
+    } }), /HTTPS/);
+    await assert.rejects(subscribe({ method: "events/subscribe", params: {
+      name: "terminal.test", arguments: { unexpected: true }, delivery: { mode: "webhook", url: "https://example.com", secret },
+    } }), /Invalid terminal.test/);
+    assert.deepEqual(await emitTerminalTest("hello"), { attempted: 0, delivered: 0 });
+    assert.deepEqual(await handlers.get("events/unsubscribe")({ method: "events/unsubscribe", params: {
+      name: "terminal.test", arguments: {}, delivery: { mode: "webhook", url: "https://example.com" },
+    } }), {});
     assert.equal(JSON.stringify(logs).includes(secret), false);
-    assert.deepEqual(await handlers.get("events/unsubscribe")({ method: "events/unsubscribe" }), {});
   } finally {
     console.error = oldError;
+    if (oldState === undefined) delete process.env.TERMINAL_TOOLKIT_EVENTS_STATE;
+    else process.env.TERMINAL_TOOLKIT_EVENTS_STATE = oldState;
+    await rm(dir, { recursive: true, force: true });
   }
 });

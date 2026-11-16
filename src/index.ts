@@ -34,6 +34,16 @@ type RecordingMode = 'always' | 'on-failure' | 'off';
 // into the interactive/headless/client mode-detection logic below.
 const subcommandArgs = process.argv.slice(2);
 const subcommand = subcommandArgs[0];
+if (subcommand === "event" && subcommandArgs[1] === "emit") {
+  if (subcommandArgs[2] !== "terminal.test" || subcommandArgs[3] !== "--message" || !subcommandArgs[4] || subcommandArgs.length !== 5) {
+    console.error('Usage: terminal-toolkit event emit terminal.test --message "Hello"');
+    process.exit(2);
+  }
+  const { emitTerminalTest } = await import("./mcpEventsExperiment.js");
+  const result = await emitTerminalTest(subcommandArgs[4]);
+  console.log(JSON.stringify(result));
+  process.exit(result.delivered === result.attempted && result.attempted > 0 ? 0 : 1);
+}
 if (subcommand === "setup") {
   const { runSetup } = await import("./setup/index.js");
   const setupOpts = { dryRun: false, uninstall: false, clients: undefined as string[] | undefined };
@@ -259,7 +269,7 @@ Options:
   --mcp                  Use direct MCP mode (no socket, standard MCP mode)
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
   --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
-  --experiment-mcp-events         Advertise experimental MCP Events discovery
+  --experiment-mcp-events         Enable experimental MCP Events webhook subscriptions
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional ls, grep, and find tools
