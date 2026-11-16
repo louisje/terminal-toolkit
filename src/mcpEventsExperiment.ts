@@ -60,7 +60,10 @@ async function postSigned(sub: Subscription, id: string, body: string): Promise<
     const req = httpsRequest(url, {
       method: "POST",
       timeout: 10000,
-      lookup: (_host, _opts, cb) => cb(null, address, 4),
+      lookup: (_host, opts, cb) => {
+        if (opts.all) cb(null, [{ address, family: 4 }]);
+        else cb(null, address, 4);
+      },
       headers: {
         "Content-Type": "application/json", "webhook-id": id,
         "webhook-timestamp": timestamp, "webhook-signature": sign(sub.secret, id, timestamp, body),

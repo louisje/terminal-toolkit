@@ -10221,7 +10221,10 @@ async function postSigned(sub, id, body) {
     const req = httpsRequest(url, {
       method: "POST",
       timeout: 1e4,
-      lookup: (_host, _opts, cb) => cb(null, address, 4),
+      lookup: (_host, opts, cb) => {
+        if (opts.all) cb(null, [{ address, family: 4 }]);
+        else cb(null, address, 4);
+      },
       headers: {
         "Content-Type": "application/json",
         "webhook-id": id,
