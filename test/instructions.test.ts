@@ -45,8 +45,10 @@ test('flat MCP descriptions independently guide tool selection and PTY safety', 
   assert.match(description('getContent'), /visibleOnly=false/);
   assert.match(description('createSession'), /headless/);
   assert.match(description('destroySession'), /cannot be destroyed/);
-  for (const name of ['type', 'sendKey', 'getContent', 'createSession'])
-    assert.match(description(name), /Primary Session/);
+  assert.match(description('type'), /Before using the Primary Session/);
+  assert.match(description('createSession'), /Primary Session already exists and persists/);
+  for (const name of ['sendKey', 'getContent', 'createSession'])
+    assert.doesNotMatch(description(name), /Before using the Primary Session/);
 });
 
 test('codemode entry guides discovery and preserves standalone tool instructions', () => {

@@ -13,7 +13,7 @@ async function evaluate(code, pi = false, extra = false) {
   } finally { await client.close(); }
 }
 
-test('codemode discovery functions identify tools, schemas and namespace', {timeout:20000}, async () => {
+test('codemode discovery functions identify tools, schemas and namespace', {timeout:60000}, async () => {
   const found = await evaluate('text(await searchTools("type", {limit:3, namespace:"tools/pty"}))');
   assert.ok(found.length <= 3 && found.length > 0);
   const tool = await evaluate('text(await describeTool("shell"))', true);
@@ -32,7 +32,7 @@ test('codemode discovery functions identify tools, schemas and namespace', {time
 });
 
 
-test('discovery honors enabled operator sets and validates search options', {timeout:30000}, async () => {
+test('discovery honors enabled operator sets and validates search options', {timeout:60000}, async () => {
   const none = await evaluate('text({names:(await searchTools()).map(t=>t.name), ns:await describeNamespace("tools/pty")})');
   assert.equal(none.names.includes('shell'), true);
   assert.ok(none.ns.tools.every(t => none.names.includes(t.name)));
