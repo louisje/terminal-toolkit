@@ -9,7 +9,7 @@ export const createSessionSchema = z.object({
 
 export const createSessionTool = {
   name: "createSession",
-  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. Returns a sessionId for subsequent terminal calls.",
+  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. The Primary Session already exists and persists across tool calls; it does not need to be created. Its shell state (such as working directory and environment changes) is retained until the session restarts. Returns a sessionId for subsequent terminal calls.",
   inputSchema: {
     type: "object" as const,
     properties: {

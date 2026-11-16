@@ -136,7 +136,7 @@ export function getCodemodeToolDefinitions(piExtraOperators = false): ToolDefini
 export function getMcpToolDefinitions(piExtraOperators = false): ToolDefinition[] {
   return getToolDefinitions(piExtraOperators).map(tool => ({
     ...tool,
-    description: [tool.description, ...(getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : [])].join("\n\n"),
+    description: [tool.description, ...(tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : [])].join("\n\n"),
   }));
 }
 

@@ -13,7 +13,10 @@ test('namespace instructions are independent of MCP initialize', () => {
 test('standard MCP tools include namespace guidance; codemode discovery keeps summaries', () => {
   const standard = getMcpToolDefinitions();
   const codemode = getCodemodeToolDefinitions();
-  assert.match(standard.find(t => t.name === 'getContent')!.description, /Primary Session/);
+  assert.match(standard.find(t => t.name === 'type')!.description, /Before using the Primary Session/);
+  for (const name of ['sendKey', 'getContent', 'createSession']) {
+    assert.doesNotMatch(standard.find(t => t.name === name)!.description, /Before using the Primary Session/);
+  }
   assert.match(standard.find(t => t.name === 'shell')!.description, /non-interactive/);
   assert.doesNotMatch(codemode.find(t => t.name === 'getContent')!.description, /Primary Session/);
   assert.ok(codemode.find(t => t.name === 'getContent')!.instruction);

@@ -55123,7 +55123,7 @@ var createSessionSchema = external_exports.object({
 });
 var createSessionTool = {
   name: "createSession",
-  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. Returns a sessionId for subsequent terminal calls.",
+  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. The Primary Session already exists and persists across tool calls; it does not need to be created. Its shell state (such as working directory and environment changes) is retained until the session restarts. Returns a sessionId for subsequent terminal calls.",
   inputSchema: {
     type: "object",
     properties: {
@@ -55726,7 +55726,7 @@ function getCodemodeToolDefinitions(piExtraOperators = false) {
 function getMcpToolDefinitions(piExtraOperators = false) {
   return getToolDefinitions(piExtraOperators).map((tool) => ({
     ...tool,
-    description: [tool.description, ...getToolNamespace(tool.name) === "tools/pty" && ["type", "sendKey", "getContent", "createSession"].includes(tool.name) ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
+    description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
 var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
