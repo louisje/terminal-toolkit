@@ -56993,6 +56993,7 @@ var codemodeDefinition = {
 - Discover tools with await searchTools() or search by keyword with await searchTools(query, {limit?, namespace?}). Before using an unfamiliar tool, call await describeTool(name) for its usage instructions and inputSchema. Use await describeNamespace() to list namespaces and await describeNamespace(name) for cross-tool guidance; read await describeNamespace("tools/pty") before PTY operations, especially Primary Session interactions.
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
+- Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
@@ -58122,53 +58123,160 @@ async function notifyClientConnected(sendRequest, options2) {
   await sendRequest("clientConnected", params);
 }
 async function startMcpClientMode(socketPath, options2 = {}) {
-  const SOCKET_CLOSE_GRACE_MS = 100;
   let socket;
   let ownedManager;
   let ownedServer;
+  let ownedSocketIdentity;
+  let reconnecting = false;
+  let stopped = false;
   const isRemoteClient = () => !ownedServer;
-  try {
-    socket = await connectToSocket(socketPath);
-  } catch (error2) {
-    const code = error2.code;
-    if (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK") throw error2;
-    if (code === "ECONNREFUSED" || code === "ENOTSOCK") fs16.unlinkSync(socketPath);
-    ownedManager = new TerminalManager({
-      mode: "interactive",
-      role: "server",
-      shell: options2.shell,
-      cols: options2.cols,
-      rows: options2.rows,
-      login: options2.login,
-      maxSessions: options2.maxSessions,
-      sessionIdleTimeout: options2.sessionIdleTimeout
-    });
-    ownedServer = createToolProxyServer(socketPath, ownedManager, void 0, options2.piExtraOperators);
-    try {
-      if (!ownedServer.listening) {
-        await new Promise((resolve6, reject) => {
-          ownedServer.once("listening", resolve6);
-          ownedServer.once("error", reject);
-        });
-      }
-      socket = await connectToSocket(socketPath);
-    } catch (startupError) {
-      ownedServer.close();
-      ownedManager.dispose();
-      throw startupError;
-    }
-  }
-  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
-    socket.destroy();
+  const pendingRequests = /* @__PURE__ */ new Map();
+  let requestId = 0;
+  let buffer = "";
+  const unavailable = () => new Error("Socket server unavailable; reconnecting");
+  const failPending = () => {
+    for (const pending of pendingRequests.values()) pending.reject(unavailable());
+    pendingRequests.clear();
+  };
+  const releaseOwned = () => {
     ownedServer?.close();
     ownedManager?.dispose();
-    if (ownedServer) {
+    ownedServer = void 0;
+    ownedManager = void 0;
+    if (ownedSocketIdentity) {
       try {
-        fs16.unlinkSync(socketPath);
+        const current = fs16.statSync(socketPath);
+        if (current.dev === ownedSocketIdentity.dev && current.ino === ownedSocketIdentity.ino) fs16.unlinkSync(socketPath);
       } catch {
       }
     }
+    ownedSocketIdentity = void 0;
+  };
+  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
+    stopped = true;
+    socket?.destroy();
+    failPending();
+    releaseOwned();
   } });
+  function attachSocket(next) {
+    socket = next;
+    buffer = "";
+    next.on("data", (data) => {
+      buffer += data.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const response = JSON.parse(line);
+          const pending = pendingRequests.get(response.id);
+          if (!pending) continue;
+          pendingRequests.delete(response.id);
+          if (response.error) pending.reject(new Error(response.error.message));
+          else pending.resolve(response.result);
+        } catch {
+        }
+      }
+    });
+    next.on("error", (error2) => console.error("Socket error:", error2.message));
+    next.on("close", () => {
+      if (socket !== next) return;
+      socket = void 0;
+      failPending();
+      if (!stopped && !shutdownState.isShuttingDown()) void reconnect();
+    });
+  }
+  async function establish(allowTakeover) {
+    try {
+      return await connectToSocket(socketPath);
+    } catch (error2) {
+      const code = error2.code;
+      if (!allowTakeover || code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK") throw error2;
+      if (code !== "ENOENT") {
+        let stale;
+        try {
+          const stat2 = fs16.statSync(socketPath);
+          stale = { dev: stat2.dev, ino: stat2.ino };
+        } catch (statError) {
+          if (statError.code !== "ENOENT") throw statError;
+        }
+        try {
+          await connectToSocket(socketPath).then((s) => {
+            s.destroy();
+            throw new Error("Server recovered");
+          });
+        } catch (retryError) {
+          const retryCode = retryError.code;
+          if (retryCode !== "ENOENT" && retryCode !== "ECONNREFUSED" && retryCode !== "ENOTSOCK") throw retryError;
+        }
+        try {
+          const current = fs16.statSync(socketPath);
+          if (stale && current.dev === stale.dev && current.ino === stale.ino) fs16.unlinkSync(socketPath);
+        } catch {
+        }
+      }
+      const manager = new TerminalManager({
+        mode: "interactive",
+        role: "server",
+        shell: options2.shell,
+        cols: options2.cols,
+        rows: options2.rows,
+        login: options2.login,
+        maxSessions: options2.maxSessions,
+        sessionIdleTimeout: options2.sessionIdleTimeout
+      });
+      const server2 = createToolProxyServer(socketPath, manager, void 0, options2.piExtraOperators);
+      try {
+        if (!server2.listening) await new Promise((resolve6, reject) => {
+          server2.once("listening", resolve6);
+          server2.once("error", reject);
+        });
+        ownedManager = manager;
+        ownedServer = server2;
+        const stat2 = fs16.statSync(socketPath);
+        ownedSocketIdentity = { dev: stat2.dev, ino: stat2.ino };
+        return await connectToSocket(socketPath);
+      } catch (startupError) {
+        server2.close();
+        manager.dispose();
+        if (startupError.code === "EADDRINUSE") {
+          return connectToSocket(socketPath);
+        }
+        throw startupError;
+      }
+    }
+  }
+  async function reconnect() {
+    if (reconnecting || stopped) return;
+    reconnecting = true;
+    let attempt = 0;
+    while (!stopped && !shutdownState.isShuttingDown() && !socket) {
+      try {
+        const next = await establish(attempt >= 3);
+        if (stopped) {
+          next.destroy();
+          break;
+        }
+        attachSocket(next);
+        console.error("[terminal-toolkit] Socket reconnected");
+        void notifyClientConnected(sendRequest, { title: options2.title, piExtraOperators: options2.piExtraOperators }).catch(() => {
+        });
+        break;
+      } catch (error2) {
+        if (attempt === 0) console.error("[terminal-toolkit] Socket disconnected; reconnecting", error2);
+        const delay2 = Math.min(3e4, attempt === 0 ? 1e3 : 1e3 * 2 ** Math.min(attempt, 5));
+        await new Promise((resolve6) => setTimeout(resolve6, delay2));
+        attempt++;
+      }
+    }
+    reconnecting = false;
+  }
+  try {
+    attachSocket(await establish(true));
+  } catch (error2) {
+    console.error("[terminal-toolkit] Initial socket unavailable; retrying:", error2);
+    void reconnect();
+  }
   const server = new Server(
     {
       name: "terminal-toolkit",
@@ -58186,45 +58294,9 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options2.experimentMcpEvents) enableMcpEventsExperiment(server);
-  let requestId = 0;
-  const pendingRequests = /* @__PURE__ */ new Map();
-  let buffer = "";
-  socket.on("data", (data) => {
-    buffer += data.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-    for (const line of lines) {
-      if (line.trim()) {
-        try {
-          const response = JSON.parse(line);
-          const pending = pendingRequests.get(response.id);
-          if (pending) {
-            pendingRequests.delete(response.id);
-            if (response.error) {
-              pending.reject(new Error(response.error.message));
-            } else {
-              pending.resolve(response.result);
-            }
-          }
-        } catch {
-        }
-      }
-    }
-  });
-  socket.on("error", (error2) => {
-    console.error("Socket error:", error2.message);
-    process.exit(1);
-  });
-  socket.on("close", () => {
-    if (shutdownState.isShuttingDown()) return;
-    const graceTimer = setTimeout(() => {
-      if (shutdownState.isShuttingDown()) return;
-      console.error("Socket closed");
-      process.exit(1);
-    }, SOCKET_CLOSE_GRACE_MS);
-    graceTimer.unref();
-  });
   async function sendRequest(method, params, signal) {
+    if (!socket || socket.destroyed) throw unavailable();
+    const activeSocket = socket;
     const id = ++requestId;
     const request = { id, method, params, requestContext: requestContextStorage.getStore() };
     return new Promise((resolve6, reject) => {
@@ -58235,7 +58307,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       const cleanup = () => signal?.removeEventListener("abort", abort);
       const abort = () => {
         if (!pendingRequests.delete(id)) return;
-        socket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
+        activeSocket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
         cleanup();
         reject(new Error("Tool call aborted"));
       };
@@ -58247,7 +58319,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
         cleanup();
         reject(error2);
       } });
-      socket.write(JSON.stringify(request) + "\n", (error2) => {
+      activeSocket.write(JSON.stringify(request) + "\n", (error2) => {
         if (error2) {
           pendingRequests.delete(id);
           reject(error2);

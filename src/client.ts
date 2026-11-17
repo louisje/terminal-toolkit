@@ -71,52 +71,145 @@ export async function startMcpClientMode(
   socketPath: string,
   options: McpClientModeOptions = {}
 ): Promise<void> {
-  // How long a socket close waits for a stdin EOF that would mark this as a
-  // clean mutual shutdown rather than the interactive session dying alone.
-  const SOCKET_CLOSE_GRACE_MS = 100;
-
-  // Attach to an existing socket or own a new lazy socket-backed manager.
-  let socket: net.Socket;
+  // Keep the MCP stdio transport alive across socket server restarts.
+  let socket: net.Socket | undefined;
   let ownedManager: TerminalManager | undefined;
   let ownedServer: net.Server | undefined;
+  let ownedSocketIdentity: { dev: number; ino: number } | undefined;
+  let reconnecting = false;
+  let stopped = false;
   const isRemoteClient = () => !ownedServer;
-  try {
-    socket = await connectToSocket(socketPath);
-  } catch (error) {
-    const code = (error as NodeJS.ErrnoException).code;
-    if (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK") throw error;
-    // macOS reports ENOTSOCK when a stale socket pathname is a regular file.
-    // Only reclaim the path after a failed connection; never remove a live socket.
-    if (code === "ECONNREFUSED" || code === "ENOTSOCK") fs.unlinkSync(socketPath);
-    ownedManager = new TerminalManager({
-      mode: "interactive", role: "server", shell: options.shell,
-      cols: options.cols, rows: options.rows, login: options.login,
-      maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
-    });
-    ownedServer = createToolProxyServer(socketPath, ownedManager, undefined, options.piExtraOperators);
-    try {
-      if (!ownedServer.listening) {
-        await new Promise<void>((resolve, reject) => {
-          ownedServer!.once("listening", resolve);
-          ownedServer!.once("error", reject);
-        });
+  const pendingRequests = new Map<number, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
+  let requestId = 0;
+  let buffer = "";
+  const unavailable = () => new Error("Socket server unavailable; reconnecting");
+  const failPending = () => {
+    for (const pending of pendingRequests.values()) pending.reject(unavailable());
+    pendingRequests.clear();
+  };
+  const releaseOwned = () => {
+    ownedServer?.close();
+    ownedManager?.dispose();
+    ownedServer = undefined;
+    ownedManager = undefined;
+    if (ownedSocketIdentity) {
+      try {
+        const current = fs.statSync(socketPath);
+        if (current.dev === ownedSocketIdentity.dev && current.ino === ownedSocketIdentity.ino) fs.unlinkSync(socketPath);
+      } catch { /* Already removed or replaced. */ }
+    }
+    ownedSocketIdentity = undefined;
+  };
+  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
+    stopped = true;
+    socket?.destroy();
+    failPending();
+    releaseOwned();
+  } });
+
+  function attachSocket(next: net.Socket): void {
+    socket = next;
+    buffer = "";
+    next.on("data", (data) => {
+      buffer += data.toString();
+      const lines = buffer.split("\n");
+      buffer = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const response = JSON.parse(line) as SocketResponse;
+          const pending = pendingRequests.get(response.id);
+          if (!pending) continue;
+          pendingRequests.delete(response.id);
+          if (response.error) pending.reject(new Error(response.error.message));
+          else pending.resolve(response.result);
+        } catch { /* Ignore malformed frames. */ }
       }
-      socket = await connectToSocket(socketPath);
-    } catch (startupError) {
-      ownedServer.close();
-      ownedManager.dispose();
-      throw startupError;
+    });
+    next.on("error", (error) => console.error("Socket error:", error.message));
+    next.on("close", () => {
+      if (socket !== next) return;
+      socket = undefined;
+      failPending();
+      if (!stopped && !shutdownState.isShuttingDown()) void reconnect();
+    });
+  }
+
+  async function establish(allowTakeover: boolean): Promise<net.Socket> {
+    try { return await connectToSocket(socketPath); }
+    catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (!allowTakeover || (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK")) throw error;
+      // Only reclaim a stale pathname after verifying no server accepts connections.
+      if (code !== "ENOENT") {
+        let stale: { dev: number; ino: number } | undefined;
+        try { const stat = fs.statSync(socketPath); stale = { dev: stat.dev, ino: stat.ino }; }
+        catch (statError) { if ((statError as NodeJS.ErrnoException).code !== "ENOENT") throw statError; }
+        try { await connectToSocket(socketPath).then(s => { s.destroy(); throw new Error("Server recovered"); }); }
+        catch (retryError) {
+          const retryCode = (retryError as NodeJS.ErrnoException).code;
+          if (retryCode !== "ENOENT" && retryCode !== "ECONNREFUSED" && retryCode !== "ENOTSOCK") throw retryError;
+        }
+        try {
+          const current = fs.statSync(socketPath);
+          if (stale && current.dev === stale.dev && current.ino === stale.ino) fs.unlinkSync(socketPath);
+        } catch { /* Another client may have claimed it. */ }
+      }
+      const manager = new TerminalManager({
+        mode: "interactive", role: "server", shell: options.shell,
+        cols: options.cols, rows: options.rows, login: options.login,
+        maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
+      });
+      const server = createToolProxyServer(socketPath, manager, undefined, options.piExtraOperators);
+      try {
+        if (!server.listening) await new Promise<void>((resolve, reject) => {
+          server.once("listening", resolve);
+          server.once("error", reject);
+        });
+        ownedManager = manager;
+        ownedServer = server;
+        const stat = fs.statSync(socketPath);
+        ownedSocketIdentity = { dev: stat.dev, ino: stat.ino };
+        return await connectToSocket(socketPath);
+      } catch (startupError) {
+        server.close();
+        manager.dispose();
+        // Another client may have won the bind race. Connect to that owner.
+        if ((startupError as NodeJS.ErrnoException).code === "EADDRINUSE") {
+          return connectToSocket(socketPath);
+        }
+        throw startupError;
+      }
     }
   }
 
-  // Close our socket on MCP shutdown; release the manager and pathname only
-  // when this process owns the server, never when attached to another owner.
-  const shutdownState = installStdioShutdownHandlers({ cleanup: () => {
-    socket.destroy();
-    ownedServer?.close();
-    ownedManager?.dispose();
-    if (ownedServer) { try { fs.unlinkSync(socketPath); } catch { /* already removed */ } }
-  } });
+  async function reconnect(): Promise<void> {
+    if (reconnecting || stopped) return;
+    reconnecting = true;
+    let attempt = 0;
+    while (!stopped && !shutdownState.isShuttingDown() && !socket) {
+      try {
+        const next = await establish(attempt >= 3);
+        if (stopped) { next.destroy(); break; }
+        attachSocket(next);
+        console.error("[terminal-toolkit] Socket reconnected");
+        void notifyClientConnected(sendRequest, { title: options.title, piExtraOperators: options.piExtraOperators }).catch(() => {});
+        break;
+      } catch (error) {
+        if (attempt === 0) console.error("[terminal-toolkit] Socket disconnected; reconnecting", error);
+        const delay = Math.min(30000, attempt === 0 ? 1000 : 1000 * 2 ** Math.min(attempt, 5));
+        await new Promise<void>(resolve => setTimeout(resolve, delay));
+        attempt++;
+      }
+    }
+    reconnecting = false;
+  }
+
+  try { attachSocket(await establish(true)); }
+  catch (error) {
+    console.error("[terminal-toolkit] Initial socket unavailable; retrying:", error);
+    void reconnect();
+  }
 
   // Create MCP server
   const server = new Server(
@@ -138,71 +231,14 @@ export async function startMcpClientMode(
   if (options.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options.experimentMcpEvents) enableMcpEventsExperiment(server);
 
-  // Request ID counter
-  let requestId = 0;
-
-  // Pending requests waiting for responses
-  const pendingRequests = new Map<
-    number,
-    { resolve: (value: unknown) => void; reject: (error: Error) => void }
-  >();
-
-  // Buffer for incoming data
-  let buffer = "";
-
-  // Handle responses from the interactive terminal
-  socket.on("data", (data) => {
-    buffer += data.toString();
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      if (line.trim()) {
-        try {
-          const response = JSON.parse(line) as SocketResponse;
-          const pending = pendingRequests.get(response.id);
-          if (pending) {
-            pendingRequests.delete(response.id);
-            if (response.error) {
-              pending.reject(new Error(response.error.message));
-            } else {
-              pending.resolve(response.result);
-            }
-          }
-        } catch {
-          // Ignore parse errors
-        }
-      }
-    }
-  });
-
-  socket.on("error", (error) => {
-    console.error("Socket error:", error.message);
-    process.exit(1);
-  });
-
-  socket.on("close", () => {
-    if (shutdownState.isShuttingDown()) return;
-    // The interactive session and the MCP host often go away together (user
-    // quits the terminal, host detaches). If the socket close is dequeued
-    // first, exiting 1 immediately would mislabel a clean mutual teardown —
-    // give an imminent stdin EOF a moment to start the clean shutdown instead.
-    const graceTimer = setTimeout(() => {
-      if (shutdownState.isShuttingDown()) return;
-      console.error("Socket closed");
-      process.exit(1);
-    }, SOCKET_CLOSE_GRACE_MS);
-    // stdin keeps the loop alive here, so this timer never needs to; unref'ing
-    // it keeps that an implementation detail rather than a load-bearing one.
-    graceTimer.unref();
-  });
-
   // Helper to send request to interactive terminal
   async function sendRequest(
     method: string,
     params?: Record<string, unknown>,
     signal?: AbortSignal
   ): Promise<unknown> {
+    if (!socket || socket.destroyed) throw unavailable();
+    const activeSocket = socket;
     const id = ++requestId;
     const request: SocketRequest = { id, method, params, requestContext: requestContextStorage.getStore() };
 
@@ -211,13 +247,13 @@ export async function startMcpClientMode(
       const cleanup = () => signal?.removeEventListener("abort", abort);
       const abort = () => {
         if (!pendingRequests.delete(id)) return;
-        socket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
+        activeSocket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
         cleanup();
         reject(new Error("Tool call aborted"));
       };
       signal?.addEventListener("abort", abort, { once: true });
       pendingRequests.set(id, { resolve: value => { cleanup(); resolve(value); }, reject: error => { cleanup(); reject(error); } });
-      socket.write(JSON.stringify(request) + "\n", (error) => {
+      activeSocket.write(JSON.stringify(request) + "\n", (error) => {
         if (error) {
           pendingRequests.delete(id);
           reject(error);

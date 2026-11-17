@@ -145,7 +145,7 @@ test("stale socket path is reclaimed when the prior server is gone", async () =>
   }
 });
 
-test("attached MCP client exits when its socket owner dies unexpectedly", async () => {
+test("attached MCP client takes over when its socket owner dies unexpectedly", async () => {
   const dir = await mkdtemp(path.join(tmpdir(), "tt-owner-dies-"));
   const socket = path.join(dir, "terminal.sock");
   const args = ["dist/index.js", "--mcp", "--socket", socket];
@@ -158,11 +158,41 @@ test("attached MCP client exits when its socket owner dies unexpectedly", async 
     assert.equal((await sessions(client, 80, false)).sessions[0].role, "client");
     owner.child.kill("SIGKILL");
     await waitFor(() => owner.exit);
-    await waitFor(() => client.exit, { timeoutMs: 5000 });
-    assert.equal(client.exit.code, 1);
-    assert.match(client.stderr, /Socket closed/);
+    await waitFor(() => client.stderr.includes("Socket reconnected"), { timeoutMs: 15000 });
+    assert.equal(client.exit, null);
+    assert.equal((await sessions(client, 81, false)).sessions[0].role, "server");
   } finally {
     for (const state of [client, owner]) {
+      if (state && !state.exit) state.child.kill("SIGKILL");
+    }
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+
+test("concurrent clients recover to one socket owner after server loss", async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), "tt-race-recover-"));
+  const socket = path.join(dir, "terminal.sock");
+  const args = ["dist/index.js", "--mcp", "--socket", socket];
+  const owner = spawnNode(args);
+  const clients = [];
+  try {
+    await initialize(owner);
+    for (let i = 0; i < 3; i++) {
+      const client = spawnNode(args);
+      clients.push(client);
+      await initialize(client);
+      await sessions(client, 200 + i, false);
+    }
+    owner.child.kill("SIGKILL");
+    await waitFor(() => owner.exit);
+    await Promise.all(clients.map(client => waitFor(() => client.stderr.includes("Socket reconnected"), { timeoutMs: 20000 })));
+    const listings = await Promise.all(clients.map((client, i) => sessions(client, 220 + i, false)));
+    assert.equal(listings.filter(x => x.sessions[0].role === "server").length, 1);
+    assert.ok(listings.every(x => x.sessions[0].clientCount === 3));
+    assert.ok(clients.every(client => client.exit === null));
+  } finally {
+    for (const state of [...clients, owner]) {
       if (state && !state.exit) state.child.kill("SIGKILL");
     }
     await rm(dir, { recursive: true, force: true });

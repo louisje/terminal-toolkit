@@ -35,7 +35,7 @@ test("socket close just before stdin EOF still exits 0", async () => {
   }
 });
 
-test("socket close without a stdin EOF still exits 1", async () => {
+test("socket close without a stdin EOF keeps MCP alive", async () => {
   const sockPath = path.join(os.tmpdir(), `tmcp-test-solo-${process.pid}-${Date.now()}.sock`);
   let conn = null;
   const server = net.createServer((c) => (conn = c));
@@ -47,13 +47,12 @@ test("socket close without a stdin EOF still exits 1", async () => {
     await waitFor(() => conn !== null);
     await initialize(state);
 
-    // The interactive session dies on its own while the host stays attached.
-    // The grace period must expire and report the failure as before.
+    // The interactive session dies, but MCP stdio must stay available.
     conn.destroy();
 
-    await waitFor(() => state.exit !== null);
-    assert.equal(state.exit.code, 1, `expected failure exit, got ${JSON.stringify(state.exit)}`);
-    assert.match(state.stderr, /Socket closed/);
+    await waitFor(() => state.stderr.includes("reconnecting"));
+    assert.equal(state.exit, null);
+    await initialize(state);
   } finally {
     if (state.exit === null) state.child.kill("SIGKILL");
     server.close();
