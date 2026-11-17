@@ -21,6 +21,7 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 
 - [x] 頂層 `codemode()` description 已揭露 `tools/core` 的 `read`、`write`、`edit`、`shell` 與 PTY/Misc 分工；namespace 與工具描述也加入檔案操作優先規則。後續仍可觀察 Agent 實際選擇行為。
 - [ ] P2：工具數量增加或搜尋品質不足時，評估將 `searchTools()` 的字串比對升級為 BM25；目前非必要。
+- [ ] 研究依 ChatGPT 對話識別保留 Codemode QuickJS 全域狀態：先驗證 `RequestContext`／MCP `_meta` 能否穩定區分同一對話的多次 `tools/call`，以及 `@earendil-works/pi-codemode` 是否支援重複 `execute()` 並保留 JavaScript Context。若可行，評估以識別雜湊隔離每個對話的 Sandbox、同一對話呼叫序列化、閒置逾時回收、錯誤／取消時重建；無法可靠識別時維持每次獨立 Sandbox。此項僅供研究，暫不改變現行 `--codemode` 行為。
 
 ## ChatGPT MCP 初始化、工具快取與指示傳遞實驗
 
