@@ -1,6 +1,6 @@
 # Tools Reference
 
-Terminal Toolkit exposes PTY tools and always-enabled Core Operators (`read`, `write`, `edit`, `shell`), plus optional Extra Core Operators (`ls`, `grep`, `find`).
+Terminal Toolkit exposes PTY tools and always-enabled Core Operators (`read`, `write`, `edit`, `shell`), plus optional Extra Core Operators (`list`, `grep`, `find`).
 
 ## Overview
 

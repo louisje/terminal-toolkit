@@ -55515,8 +55515,223 @@ function handleSystemInfo(manager, _args) {
 // src/tools/operators.ts
 init_zod();
 import { spawn as spawn3 } from "node:child_process";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile as readFile2, writeFile } from "node:fs/promises";
 import { dirname as dirname2, join as join6, resolve } from "node:path";
+
+// src/skills.ts
+init_zod();
+var import_yaml = __toESM(require_dist4(), 1);
+import { createHash as createHash2 } from "node:crypto";
+import { readFile, readdir, realpath, stat } from "node:fs/promises";
+import path21 from "node:path";
+import os12 from "node:os";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+var SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath8(import.meta.url)), "../skills");
+var listRequest = external_exports.object({ method: external_exports.literal("skills/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
+var getRequest = external_exports.object({ method: external_exports.literal("skills/get"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
+var readRequest = external_exports.object({ method: external_exports.literal("resources/read"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
+var listResourcesRequest = external_exports.object({ method: external_exports.literal("resources/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
+function invalid(message) {
+  throw new McpError(ErrorCode.InvalidParams, message);
+}
+async function decodeSkillUri(uri) {
+  if (!uri.startsWith("skill://") || /[?#]/.test(uri)) invalid("Invalid skill URI");
+  const raw = uri.slice("skill://".length);
+  if (!raw || raw.includes("\\") || raw.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) invalid("Invalid skill path");
+  let segments;
+  try {
+    segments = raw.split("/").map(decodeURIComponent);
+  } catch {
+    invalid("Invalid URI encoding");
+  }
+  if (segments.some((s) => !s || s === "." || s === ".." || s.includes("/") || s.includes("\\") || s.includes("\0"))) invalid("Invalid skill path");
+  const locations = await skillLocations();
+  const matches = locations.filter((location) => {
+    const prefix = [...location.namespace.slice("skills/".length).split("/"), location.name];
+    return segments.length > prefix.length && prefix.every((part, i2) => segments[i2] === part);
+  }).sort((a2, b) => b.namespace.length - a2.namespace.length);
+  if (matches.length) {
+    const match = matches[0];
+    return { namespace: match.namespace, name: match.name, relative: segments.slice(match.namespace.split("/").length).join("/") };
+  }
+  const [first, ...rest] = segments;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(first)) invalid("Invalid skill name");
+  return { name: first, relative: rest.join("/") };
+}
+var skillWarnings = /* @__PURE__ */ new Set();
+async function skillLocations(overrideRoots) {
+  const roots = overrideRoots ?? [SKILLS_ROOT];
+  if (!overrideRoots) try {
+    const config3 = JSON.parse(await readFile(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    if (Array.isArray(config3.skills)) for (const value of config3.skills) {
+      if (typeof value !== "string" || !value.trim()) continue;
+      const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
+      roots.push(path21.resolve(expanded));
+    }
+  } catch (error2) {
+    if (!(error2 instanceof Error && "code" in error2 && error2.code === "ENOENT"))
+      skillWarnings.add("Cannot read settings.json: " + (error2 instanceof Error ? error2.message : String(error2)));
+  }
+  const locations = [];
+  const namespaces = /* @__PURE__ */ new Map();
+  for (const rootPath of roots) {
+    try {
+      const root2 = await realpath(rootPath);
+      const builtin = rootPath === SKILLS_ROOT;
+      const parts = root2.split(path21.sep).filter(Boolean);
+      const anchor = parts.lastIndexOf("skills");
+      const namespaceParts = anchor > 0 ? [parts[anchor - 1], ...parts.slice(anchor + 1)] : [path21.basename(root2)];
+      const namespace = builtin ? "skills/builtin" : "skills/" + namespaceParts.join("/");
+      const previous = namespaces.get(namespace);
+      if (previous && previous !== root2) {
+        const warning = `Skill namespace conflict ${namespace}: keeping ${previous}; skipping ${root2}`;
+        if (!skillWarnings.has(warning)) console.error("[Terminal Toolkit] " + warning);
+        skillWarnings.add(warning);
+        continue;
+      }
+      namespaces.set(namespace, root2);
+      for (const item of await readdir(root2, { withFileTypes: true })) {
+        if (!item.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
+        const dir = await realpath(path21.join(root2, item.name));
+        if (path21.dirname(dir) === root2) locations.push({ namespace, name: item.name, directory: dir, source: builtin ? "builtin" : "file" });
+      }
+    } catch (error2) {
+      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
+    }
+  }
+  return locations;
+}
+async function skillCatalog(overrideRoots) {
+  const result2 = [];
+  for (const location of await skillLocations(overrideRoots)) {
+    try {
+      const { frontmatter, size } = await readSkillMetadata(location);
+      result2.push({ namespace: location.namespace, name: location.name, description: frontmatter.description, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path21.sep, entrypoint: "SKILL.md", size });
+    } catch {
+    }
+  }
+  return result2;
+}
+async function readSkillMetadata(location) {
+  const file = await secureSkillFile(location.directory, "SKILL.md");
+  const source = await readFile(file, "utf8");
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
+  if (!match) invalid("Skill frontmatter missing");
+  let frontmatter;
+  try {
+    frontmatter = import_yaml.default.parse(match[1]);
+  } catch {
+    invalid("Invalid YAML frontmatter");
+  }
+  if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter) || frontmatter.name !== location.name || typeof frontmatter.description !== "string" || !frontmatter.description.trim()) invalid("Invalid skill frontmatter");
+  return { frontmatter, size: (await stat(file)).size };
+}
+async function secureSkillFile(directory, relative2) {
+  const candidate = await realpath(path21.join(directory, relative2));
+  if (!candidate.startsWith(directory + path21.sep) || !(await stat(candidate)).isFile()) throw new Error("Invalid skill resource path");
+  return candidate;
+}
+async function resolveBuiltinSkillPath(uri) {
+  if (!uri.startsWith("builtin://skills/")) throw new Error("Invalid builtin path");
+  const relative2 = uri.slice("builtin://skills/".length);
+  if (!relative2 || /[?#\\\\]/.test(relative2) || relative2.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) throw new Error("Invalid builtin path");
+  const segments = relative2.split("/");
+  if (segments.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[0])) throw new Error("Invalid builtin skill name");
+  const location = (await skillLocations()).find((s) => s.source === "builtin" && s.name === segments[0]);
+  if (!location) throw new Error("Builtin skill not found");
+  return secureSkillFile(location.directory, segments.slice(1).join("/"));
+}
+async function locateSkill(name, namespace) {
+  const matches = (await skillLocations()).filter((s) => s.name === name && (!namespace || s.namespace === namespace));
+  if (matches.length !== 1) invalid(matches.length ? "Ambiguous skill name; use a namespaced URI" : "Skill not found");
+  return matches[0];
+}
+async function secureFile(name, relative2, namespace) {
+  if (!relative2) invalid("Expected a file URI");
+  const skill = await locateSkill(name, namespace);
+  return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
+}
+async function enumerateFiles(dir, base = "") {
+  const entries = await readdir(path21.join(dir, base), { withFileTypes: true });
+  const files = [];
+  for (const item of entries) {
+    const rel = path21.posix.join(base, item.name);
+    if (item.isSymbolicLink()) continue;
+    if (item.isDirectory()) files.push(...await enumerateFiles(dir, rel));
+    else if (item.isFile()) files.push(rel);
+  }
+  return files;
+}
+async function skillEntry(location, locations) {
+  const { name, namespace } = location;
+  const duplicateName = (locations ?? await skillLocations()).some((s) => s.name === name && s.namespace !== namespace);
+  const prefix = !duplicateName && namespace === "skills/builtin" ? `skill://${name}` : `skill://${namespace.slice("skills/".length)}/${name}`;
+  const { frontmatter } = await readSkillMetadata(location);
+  const dir = location.directory;
+  const resources = [];
+  for (const rel of (await enumerateFiles(dir)).sort()) {
+    const bytes = await readFile(await secureSkillFile(location.directory, rel));
+    resources.push({
+      uri: `${prefix}/${rel.split("/").map(encodeURIComponent).join("/")}`,
+      digest: `sha256:${createHash2("sha256").update(bytes).digest("hex")}`,
+      size: bytes.length
+    });
+  }
+  return { uri: `${prefix}/SKILL.md`, frontmatter, resources };
+}
+var loggedSkillSummary = false;
+async function skills() {
+  const locations = await skillLocations();
+  const result2 = [];
+  const skipped = [];
+  let builtIn = 0;
+  for (const location of locations.sort((a2, b) => (a2.namespace + "/" + a2.name).localeCompare(b.namespace + "/" + b.name))) {
+    try {
+      result2.push(await skillEntry(location, locations));
+      if (location.source === "builtin") builtIn++;
+    } catch (error2) {
+      skipped.push(location.namespace + "/" + location.name + ": " + (error2 instanceof Error ? error2.message : String(error2)));
+    }
+  }
+  if (!loggedSkillSummary) {
+    loggedSkillSummary = true;
+    console.error("[Terminal Toolkit] Skills: " + result2.length + " available (" + builtIn + " built-in, " + (result2.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
+    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
+    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
+  }
+  return result2;
+}
+async function logSkillsOnStartup() {
+  await skills();
+}
+function registerSkills(server) {
+  server.setRequestHandler(listRequest, async (request) => {
+    if (request.params?.cursor) invalid("Unknown skills cursor");
+    return { resultType: "complete", skills: await skills(), ttlMs: 0, cacheScope: "public" };
+  });
+  server.setRequestHandler(getRequest, async ({ params }) => {
+    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
+    if (relative2 !== "SKILL.md") invalid("skills/get expects a SKILL.md URI");
+    return { resultType: "complete", skill: await skillEntry(await locateSkill(name, namespace)), ttlMs: 0, cacheScope: "public" };
+  });
+  server.setRequestHandler(readRequest, async ({ params }) => {
+    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
+    const bytes = await readFile(await secureFile(name, relative2, namespace));
+    const isText = /\.(md|txt|json|yaml|yml|ts|js|mjs|cjs|sh|py|html|css|xml|svg)$/i.test(relative2);
+    return { resultType: "complete", ttlMs: 0, cacheScope: "public", contents: [isText ? { uri: params.uri, mimeType: relative2.endsWith(".md") ? "text/markdown" : "text/plain", text: bytes.toString("utf8") } : { uri: params.uri, mimeType: "application/octet-stream", blob: bytes.toString("base64") }] };
+  });
+  server.setRequestHandler(listResourcesRequest, async ({ params }) => {
+    if (params?.cursor) invalid("Unknown resources cursor");
+    return { resultType: "complete", ttlMs: 0, cacheScope: "public", resources: (await skills()).map((skill) => ({
+      uri: skill.uri,
+      name: skill.frontmatter.name,
+      description: skill.frontmatter.description,
+      mimeType: "text/markdown"
+    })) };
+  });
+}
+
+// src/tools/operators.ts
 var operatorCwd = process.cwd();
 function killProcessTree(pid) {
   if (process.platform === "win32") {
@@ -55556,13 +55771,15 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args2);
-      const lines = (await readFile(localPath(parsed.path), "utf8")).split("\n");
+      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
+      const lines = (await readFile2(target, "utf8")).split("\n");
       const start = (parsed.offset ?? 1) - 1;
       if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
       return result(lines.slice(start, parsed.limit === void 0 ? void 0 : start + parsed.limit).join("\n"));
     }
     case "write": {
       const parsed = writeSchema.parse(args2);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
       const target = localPath(parsed.path);
       await mkdir(dirname2(target), { recursive: true });
       if (signal?.aborted) throw new Error("Tool call aborted");
@@ -55571,8 +55788,9 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
     }
     case "edit": {
       const parsed = editSchema.parse(args2);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
       const target = localPath(parsed.path);
-      const original = await readFile(target, "utf8");
+      const original = await readFile2(target, "utf8");
       const ranges = [];
       for (const edit of parsed.edits) {
         if (!edit.oldText) throw new Error("Each oldText must be non-empty");
@@ -55648,7 +55866,7 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
 // src/tools/extra-operators.ts
 init_zod();
 import { spawn as spawn4, spawnSync as spawnSync2 } from "node:child_process";
-import { readdir, lstat } from "node:fs/promises";
+import { readdir as readdir2, lstat } from "node:fs/promises";
 import { resolve as resolve2, relative } from "node:path";
 var cwd = process.cwd();
 var output = (value) => ({ content: [{ type: "text", text: value }] });
@@ -55680,15 +55898,15 @@ var lsSchema = external_exports.object({ path: external_exports.string().optiona
 var findSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
 var grepSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
 var extraOperatorToolDefinitions = [
-  { name: "ls", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+  { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
   { name: "grep", description: "Search text with rg, respecting .gitignore; requires system ripgrep, never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
   { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
 ];
 async function handleExtraOperatorTool(name, args2) {
-  if (name === "ls") {
+  if (name === "list") {
     const params = lsSchema.parse(args2);
     const dir = resolve2(cwd, params.path || ".");
-    const entries = (await readdir(dir)).sort();
+    const entries = (await readdir2(dir)).sort();
     const limit = params.limit ?? 500;
     const lines = await Promise.all(entries.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
     return output(capped(lines.join("\n") + (entries.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
@@ -55748,7 +55966,7 @@ async function handleExtraOperatorTool(name, args2) {
 var namespaceRegistry = {
   "tools/core": {
     defaultEnabled: true,
-    toolNames: ["read", "write", "edit", "shell", "ls", "grep", "find"]
+    toolNames: ["read", "write", "edit", "shell", "list", "grep", "find"]
   },
   "tools/pty": {
     defaultEnabled: true,
@@ -55816,7 +56034,7 @@ var TOOL_SUMMARIES = {
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",
   shell: "Run a quick one-shot non-interactive command with the configured shell; prefer PTY for long builds and tests.",
-  ls: "List directory entries.",
+  list: "List directory entries.",
   grep: "Search file contents using ripgrep.",
   find: "Find files using fd or fdfind."
 };
@@ -55834,7 +56052,7 @@ function getMcpToolDefinitions(piExtraOperators = false) {
     description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
-var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo"]);
+var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo"]);
 var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
 var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
@@ -56306,7 +56524,7 @@ var CodemodeSandboxBase = class {
 import { Worker } from "node:worker_threads";
 
 // node_modules/@earendil-works/pi-codemode/dist/wasm.js
-import { readFile as readFile2 } from "node:fs/promises";
+import { readFile as readFile3 } from "node:fs/promises";
 import { createRequire as createRequire3 } from "node:module";
 var modules = /* @__PURE__ */ new Map();
 function loadQuickJSWasm(path28) {
@@ -56314,7 +56532,7 @@ function loadQuickJSWasm(path28) {
   let module2 = modules.get(resolved);
   if (!module2) {
     const { WebAssembly: WebAssembly2 } = globalThis;
-    module2 = readFile2(resolved).then((bytes) => WebAssembly2.compile(bytes)).catch((error2) => {
+    module2 = readFile3(resolved).then((bytes) => WebAssembly2.compile(bytes)).catch((error2) => {
       modules.delete(resolved);
       throw error2;
     });
@@ -56963,7 +57181,7 @@ SOURCE: /[\s\S]+/
 `;
 
 // src/tools/codemode.ts
-import { fileURLToPath as fileURLToPath8 } from "node:url";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
 
 // src/tools/namespaceGuidance.ts
 var namespaceRegistryGuidance = {
@@ -57007,8 +57225,7 @@ another). The Primary Session cannot be destroyed.` },
 var startedAt = (/* @__PURE__ */ new Date()).toISOString();
 var counters = /* @__PURE__ */ new Map();
 var searches = /* @__PURE__ */ new Map();
-var describedTools = /* @__PURE__ */ new Map();
-var describedNamespaces = /* @__PURE__ */ new Map();
+var descriptions = /* @__PURE__ */ new Map();
 var otherQueries = 0;
 var MAX_QUERIES = 1e3;
 var MAX_QUERY_LENGTH = 256;
@@ -57027,11 +57244,8 @@ function recordSearch(query, results) {
   if (!results) stat2.zeroResults++;
   searches.set(key, stat2);
 }
-function recordDescribeTool(name) {
-  increment2(describedTools, name);
-}
-function recordDescribeNamespace(name) {
-  increment2(describedNamespaces, name);
+function recordDescribe(name) {
+  increment2(descriptions, name);
 }
 async function trackCall(name, fn2, signal) {
   const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
@@ -57058,7 +57272,7 @@ function getToolStat(options2 = {}, namespaces = {}) {
   if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
   if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
   const entries = [...counters.entries()].filter(([name]) => {
-    const discovery = ["searchTools", "describeTool", "describeNamespace", "getToolStat"].includes(name);
+    const discovery = ["search", "describe", "getToolStat"].includes(name);
     return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
   }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
   entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
@@ -57068,9 +57282,8 @@ function getToolStat(options2 = {}, namespaces = {}) {
     tools: entries.slice(0, options2.limit),
     ...!options2.category || options2.category === "discovery" ? {
       discovery: {
-        searchTools: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
-        describeTool: Object.fromEntries(describedTools),
-        describeNamespace: Object.fromEntries(describedNamespaces)
+        search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
+        describe: Object.fromEntries(descriptions)
       }
     } : {}
   };
@@ -57095,7 +57308,7 @@ var codemodeDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover tools with await searchTools() or search by keyword with await searchTools(query, {limit?, namespace?}). Before using an unfamiliar tool, call await describeTool(name) for its usage instructions and inputSchema. Use await describeNamespace() to list namespaces and await describeNamespace(name) for cross-tool guidance; read await describeNamespace("tools/pty") before PTY operations, especially Primary Session interactions.
+- Discover tools and skills with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. Skill descriptions contain metadata, path and byte size only; read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
@@ -57136,49 +57349,46 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
     }
   }));
   const namespaces = Object.fromEntries(definitions.filter((d) => d.namespace).map((d) => [d.name, d.namespace]));
+  const matchGlob = (value, pattern) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map((part) => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
   const globals = [
     {
-      name: "searchTools",
+      name: "search",
       spread: true,
-      execute: (args3) => trackCall("searchTools", () => {
-        const [query, rawOptions] = args3;
-        if (rawOptions !== null && rawOptions !== void 0 && (typeof rawOptions !== "object" || Array.isArray(rawOptions))) throw new Error("searchTools() options must be an object");
-        const options2 = rawOptions;
-        if (query !== void 0 && typeof query !== "string") throw new Error("searchTools() expects a query string");
-        if (options2?.limit !== void 0 && (typeof options2.limit !== "number" || !Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
-        if (options2?.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options2?.namespace && !["tools/core", "tools/pty", "tools/misc"].includes(options2.namespace)) {
-          recordSearch(query ?? "", 0);
-          return [];
-        }
+      execute: (args3) => trackCall("search", async () => {
+        const [options2 = {}] = args3;
+        if (!options2 || typeof options2 !== "object" || Array.isArray(options2)) throw new Error("search() expects an options object");
+        const { query, namespace, name, limit } = options2;
+        if ([query, namespace, name].some((v) => v !== void 0 && typeof v !== "string")) throw new Error("search() filters must be strings");
+        if (limit !== void 0 && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
+        const skills2 = await skillCatalog();
+        const entries = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        const results = summaries.map((d) => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) })).filter((d) => (!options2?.namespace || d.namespace === options2.namespace) && (!words.length || d.score > 0)).sort((a2, b) => b.score - a2.score).slice(0, options2?.limit ?? (words.length ? 10 : void 0)).map(({ name, namespace, description }) => ({ name, namespace, description }));
-        recordSearch(query ?? "", results.length);
-        return results;
+        const found = entries.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
+        recordSearch(query ?? "", found.length);
+        return limit ? found.slice(0, limit) : found;
       })
     },
     {
-      name: "describeTool",
+      name: "describe",
       spread: true,
-      execute: (args3) => trackCall("describeTool", () => {
-        const [name] = args3;
-        if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
-        recordDescribeTool(name);
-        const tool = summaries.find((d) => d.name === name);
-        return tool ? { name: tool.name, namespace: tool.namespace, ...tool.instruction ? { instruction: tool.instruction } : {}, inputSchema: tool.inputSchema, annotations: tool.annotations } : null;
-      })
-    },
-    {
-      name: "describeNamespace",
-      spread: true,
-      execute: (args3) => trackCall("describeNamespace", () => {
-        const [name] = args3;
-        if (name !== void 0 && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        recordDescribeNamespace(name ?? "(all)");
-        const namespaces2 = Object.entries(namespaceRegistryGuidance).map(([name2, guidance]) => ({ name: name2, ...guidance }));
-        if (name === void 0) return namespaces2.filter((ns2) => summaries.some((tool) => tool.namespace === ns2.name)).map(({ name: name2, description }) => ({ name: name2, description }));
-        const ns = namespaces2.find((ns2) => ns2.name === name);
-        return ns ? { ...ns, tools: summaries.filter((tool) => tool.namespace === name).map(({ name: name2, description }) => ({ name: name2, description })) } : null;
+      execute: (args3) => trackCall("describe", async () => {
+        const [options2] = args3;
+        if (!options2 || typeof options2 !== "object" || Array.isArray(options2) || typeof options2.namespace !== "string") throw new Error("describe() requires namespace");
+        if (options2.name !== void 0 && typeof options2.name !== "string") throw new Error("describe() name must be a string");
+        recordDescribe(options2.namespace + (options2.name ? "/" + options2.name : ""));
+        const skills2 = await skillCatalog();
+        if (options2.namespace.startsWith("skills/")) {
+          const members2 = skills2.filter((s) => s.namespace === options2.namespace);
+          if (options2.name) return members2.find((s) => s.name === options2.name) ?? null;
+          return members2.length ? { namespace: options2.namespace, skills: members2.map(({ name, description, size }) => ({ name, description, size })) } : null;
+        }
+        const members = summaries.filter((s) => s.namespace === options2.namespace);
+        if (options2.name) {
+          const tool = members.find((s) => s.name === options2.name);
+          return tool ? { namespace: tool.namespace, name: tool.name, instruction: tool.instruction, inputSchema: tool.inputSchema, annotations: tool.annotations } : null;
+        }
+        const guidance = namespaceRegistryGuidance[options2.namespace];
+        return members.length ? { namespace: options2.namespace, ...guidance, tools: members.map(({ name, description }) => ({ name, description })) } : null;
       })
     },
     {
@@ -57195,7 +57405,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
     timeoutMs,
     tools,
     globals,
-    wasm: loadQuickJSWasm(fileURLToPath8(new URL("./quickjs.wasm", import.meta.url))),
+    wasm: loadQuickJSWasm(fileURLToPath9(new URL("./quickjs.wasm", import.meta.url))),
     workerUrl: new URL("./codemode-worker.js", import.meta.url)
   });
   try {
@@ -57249,7 +57459,7 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
 async function dispatchTool(manager, name, args2, piExtraOperators = false, signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
-    case "ls":
+    case "list":
     case "grep":
     case "find":
       if (!piExtraOperators) throw new Error("Unknown tool: " + name);
@@ -57452,164 +57662,6 @@ function registerPrompts(server) {
       };
     }
     throw new Error(`Unknown prompt: ${name}`);
-  });
-}
-
-// src/skills.ts
-init_zod();
-var import_yaml = __toESM(require_dist4(), 1);
-import { createHash as createHash2 } from "node:crypto";
-import { readFile as readFile3, readdir as readdir2, realpath, stat } from "node:fs/promises";
-import path21 from "node:path";
-import os12 from "node:os";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
-var SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath9(import.meta.url)), "../skills");
-var listRequest = external_exports.object({ method: external_exports.literal("skills/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
-var getRequest = external_exports.object({ method: external_exports.literal("skills/get"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
-var readRequest = external_exports.object({ method: external_exports.literal("resources/read"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
-var listResourcesRequest = external_exports.object({ method: external_exports.literal("resources/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
-function invalid(message) {
-  throw new McpError(ErrorCode.InvalidParams, message);
-}
-function decodeSkillUri(uri) {
-  if (!uri.startsWith("skill://") || /[?#]/.test(uri)) invalid("Invalid skill URI");
-  const raw = uri.slice("skill://".length);
-  if (!raw || raw.includes("\\") || raw.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) invalid("Invalid skill path");
-  let segments;
-  try {
-    segments = raw.split("/").map(decodeURIComponent);
-  } catch {
-    invalid("Invalid URI encoding");
-  }
-  if (segments.some((s) => !s || s === "." || s === ".." || s.includes("/") || s.includes("\\") || s.includes("\0"))) invalid("Invalid skill path");
-  const [name, ...files] = segments;
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(name)) invalid("Invalid skill name");
-  return { name, relative: files.join("/") };
-}
-var skillWarnings = /* @__PURE__ */ new Set();
-async function skillDirectories() {
-  const roots = [SKILLS_ROOT];
-  try {
-    const config3 = JSON.parse(await readFile3(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
-    if (Array.isArray(config3.skills)) for (const value of config3.skills) {
-      if (typeof value !== "string" || !value.trim()) continue;
-      const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
-      roots.push(path21.resolve(expanded));
-    }
-  } catch (error2) {
-    if (!(error2 instanceof Error && "code" in error2 && error2.code === "ENOENT"))
-      skillWarnings.add("Cannot read settings.json: " + (error2 instanceof Error ? error2.message : String(error2)));
-  }
-  const dirs = /* @__PURE__ */ new Map();
-  for (const rootPath of roots) {
-    try {
-      const root2 = await realpath(rootPath);
-      for (const item of await readdir2(root2, { withFileTypes: true })) {
-        if (!item.isDirectory() || dirs.has(item.name) || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
-        const dir = await realpath(path21.join(root2, item.name));
-        if (path21.dirname(dir) === root2) dirs.set(item.name, dir);
-      }
-    } catch (error2) {
-      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
-    }
-  }
-  return dirs;
-}
-async function secureFile(name, relative2) {
-  if (!relative2) invalid("Expected a file URI");
-  const dir = (await skillDirectories()).get(name);
-  if (!dir) invalid("Skill not found");
-  const candidate = await realpath(path21.join(dir, relative2)).catch(() => invalid("Resource not found"));
-  if (!candidate.startsWith(dir + path21.sep)) invalid("Resource escapes skill directory");
-  if (!(await stat(candidate)).isFile()) invalid("Resource is not a file");
-  return candidate;
-}
-async function enumerateFiles(dir, base = "") {
-  const entries = await readdir2(path21.join(dir, base), { withFileTypes: true });
-  const files = [];
-  for (const item of entries) {
-    const rel = path21.posix.join(base, item.name);
-    if (item.isSymbolicLink()) continue;
-    if (item.isDirectory()) files.push(...await enumerateFiles(dir, rel));
-    else if (item.isFile()) files.push(rel);
-  }
-  return files;
-}
-async function skillEntry(name) {
-  const file = await secureFile(name, "SKILL.md");
-  const source = await readFile3(file, "utf8");
-  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
-  if (!match) invalid("Skill frontmatter missing");
-  let frontmatter;
-  try {
-    frontmatter = import_yaml.default.parse(match[1]);
-  } catch {
-    invalid("Invalid YAML frontmatter");
-  }
-  if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter) || frontmatter.name !== name || typeof frontmatter.description !== "string" || !frontmatter.description.trim()) {
-    invalid("Invalid skill frontmatter");
-  }
-  const dir = path21.dirname(file);
-  const resources = [];
-  for (const rel of (await enumerateFiles(dir)).sort()) {
-    const bytes = await readFile3(await secureFile(name, rel));
-    resources.push({
-      uri: `skill://${name}/${rel.split("/").map(encodeURIComponent).join("/")}`,
-      digest: `sha256:${createHash2("sha256").update(bytes).digest("hex")}`,
-      size: bytes.length
-    });
-  }
-  return { uri: `skill://${name}/SKILL.md`, frontmatter, resources };
-}
-var loggedSkillSummary = false;
-async function skills() {
-  const dirs = await skillDirectories();
-  const result2 = [];
-  const skipped = [];
-  let builtIn = 0;
-  for (const [name, dir] of [...dirs].sort(([a2], [b]) => a2.localeCompare(b))) {
-    try {
-      result2.push(await skillEntry(name));
-      if (dir.startsWith(SKILLS_ROOT + path21.sep)) builtIn++;
-    } catch (error2) {
-      skipped.push(name + ": " + (error2 instanceof Error ? error2.message : String(error2)));
-    }
-  }
-  if (!loggedSkillSummary) {
-    loggedSkillSummary = true;
-    console.error("[Terminal Toolkit] Skills: " + result2.length + " available (" + builtIn + " built-in, " + (result2.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
-    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
-    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
-  }
-  return result2;
-}
-async function logSkillsOnStartup() {
-  await skills();
-}
-function registerSkills(server) {
-  server.setRequestHandler(listRequest, async (request) => {
-    if (request.params?.cursor) invalid("Unknown skills cursor");
-    return { resultType: "complete", skills: await skills(), ttlMs: 0, cacheScope: "public" };
-  });
-  server.setRequestHandler(getRequest, async ({ params }) => {
-    const { name, relative: relative2 } = decodeSkillUri(params.uri);
-    if (relative2 !== "SKILL.md") invalid("skills/get expects a SKILL.md URI");
-    return { resultType: "complete", skill: await skillEntry(name), ttlMs: 0, cacheScope: "public" };
-  });
-  server.setRequestHandler(readRequest, async ({ params }) => {
-    const { name, relative: relative2 } = decodeSkillUri(params.uri);
-    const bytes = await readFile3(await secureFile(name, relative2));
-    const isText = /\.(md|txt|json|yaml|yml|ts|js|mjs|cjs|sh|py|html|css|xml|svg)$/i.test(relative2);
-    return { resultType: "complete", ttlMs: 0, cacheScope: "public", contents: [isText ? { uri: params.uri, mimeType: relative2.endsWith(".md") ? "text/markdown" : "text/plain", text: bytes.toString("utf8") } : { uri: params.uri, mimeType: "application/octet-stream", blob: bytes.toString("base64") }] };
-  });
-  server.setRequestHandler(listResourcesRequest, async ({ params }) => {
-    if (params?.cursor) invalid("Unknown resources cursor");
-    return { resultType: "complete", ttlMs: 0, cacheScope: "public", resources: (await skills()).map((skill) => ({
-      uri: skill.uri,
-      name: skill.frontmatter.name,
-      description: skill.frontmatter.description,
-      mimeType: "text/markdown"
-    })) };
   });
 }
 
@@ -58125,7 +58177,7 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
       await manager.getSessionAsync();
     }
     switch (method) {
-      case "ls":
+      case "list":
       case "grep":
       case "find":
         if (!piExtraOperators) throw new Error("Unknown tool: " + method);
@@ -63081,7 +63133,7 @@ Options:
   --experiment-mcp-events         Enable experimental MCP Events webhook subscriptions
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
-  --extra-core-operators Expose optional ls, grep, and find tools
+  --extra-core-operators Expose optional list, grep, and find tools
   --pi-extra-operators   Deprecated alias for --extra-core-operators
   --title <label>        Set the interactive terminal title when connecting as a client
   --headless             Run in headless mode (MCP server with embedded terminal, no TTY needed)

@@ -125,6 +125,44 @@ test("socket/client MCP mode exposes the Skills extension independently of socke
   }
 });
 
+test("nested namespaces round-trip through list, get, read and reject traversal", async () => {
+  const { StdioClientTransport } = await import("@modelcontextprotocol/sdk/client/stdio.js");
+  const fs = await import("node:fs/promises");
+  const os = await import("node:os");
+  const path = await import("node:path");
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), "tt-nested-sep-"));
+  const roots = ["engineering", "productivity"].map(part => path.join(home, "mattpocock", "skills", part));
+  const client = new Client({name:"nested-sep-test",version:"1"});
+  try {
+    for (const [index, root] of roots.entries()) {
+      const dir = path.join(root, "shared");
+      await fs.mkdir(dir, {recursive:true});
+      await fs.writeFile(path.join(dir,"SKILL.md"), `---\nname: shared\ndescription: sample-${index}\n---\n`);
+      await fs.mkdir(path.join(dir,"references"));
+      await fs.writeFile(path.join(dir,"references","guide.md"), `guide-${index}`);
+    }
+    await fs.mkdir(path.join(home,".config","terminal-toolkit"), {recursive:true});
+    await fs.writeFile(path.join(home,".config","terminal-toolkit","settings.json"), JSON.stringify({skills:roots}));
+    const env = {...process.env, HOME:home};
+    delete env.TERMINAL_TOOLKIT;
+    delete env.TERMINAL_TOOLKIT_SOCKET;
+    await client.connect(new StdioClientTransport({command:process.execPath,args:["dist/index.js","--headless"],env,stderr:"pipe"}));
+    const entries = (await call(client,"skills/list")).skills.filter(s=>s.frontmatter.name==="shared");
+    assert.deepEqual(entries.map(s=>s.uri).sort(), ["skill://mattpocock/engineering/shared/SKILL.md","skill://mattpocock/productivity/shared/SKILL.md"]);
+    for (const [index, root] of roots.entries()) {
+      const uri = `skill://mattpocock/${path.basename(root)}/shared/SKILL.md`;
+      assert.equal((await call(client,"skills/get",{uri})).skill.uri,uri);
+      assert.match((await call(client,"resources/read",{uri})).contents[0].text,new RegExp(`description: sample-${index}`));
+      const guide = `skill://mattpocock/${path.basename(root)}/shared/references/guide.md`;
+      assert.equal((await call(client,"resources/read",{uri:guide})).contents[0].text,`guide-${index}`);
+      await assert.rejects(call(client,"resources/read",{uri:`skill://mattpocock/${path.basename(root)}/shared/%2e%2e/SKILL.md`}),/-32602/);
+    }
+  } finally {
+    await client.close().catch(()=>{});
+    await fs.rm(home,{recursive:true,force:true});
+  }
+});
+
 test("Skills extension rejects nonexistent and traversal URIs", async () => {
   await withClient(async (client) => {
     for (const uri of [

@@ -18,7 +18,7 @@ test('MCP tools/list includes explicit safety annotations', { timeout: 20000 }, 
         assert.equal(typeof tool.annotations?.[key], 'boolean', `${tool.name}.${key}`);
     }
     const byName = Object.fromEntries(tools.map(t => [t.name, t.annotations]));
-    for (const name of ['read', 'ls', 'grep', 'find', 'getContent', 'getBufferInfo', 'takeScreenshot', 'listSessions', 'getClipboard', 'sleep'])
+    for (const name of ['read', 'list', 'grep', 'find', 'getContent', 'getBufferInfo', 'takeScreenshot', 'listSessions', 'getClipboard', 'sleep'])
       assert.equal(byName[name].readOnlyHint, true, name);
     for (const name of ['write', 'edit', 'shell', 'type', 'sendKey', 'setClipboard', 'notify', 'createSession', 'destroySession'])
       assert.equal(byName[name].readOnlyHint, false, name);
@@ -27,14 +27,14 @@ test('MCP tools/list includes explicit safety annotations', { timeout: 20000 }, 
   });
 });
 
-test('codemode is non-read-only and describeTool exposes nested annotations', { timeout: 20000 }, async () => {
+test('codemode is non-read-only and describe exposes nested annotations', { timeout: 20000 }, async () => {
   await withClient(true, async client => {
     const { tools } = await client.listTools();
     assert.equal(tools.length, 1);
     assert.equal(tools[0].name, 'codemode');
     assert.equal(tools[0].annotations.readOnlyHint, false);
     assert.equal(tools[0].annotations.openWorldHint, true);
-    const result = await client.callTool({ name: 'codemode', arguments: { code: 'text({read:await describeTool("read"),shell:await describeTool("shell")})' } });
+    const result = await client.callTool({ name: 'codemode', arguments: { code: 'text({read:await describe({namespace:"tools/core",name:"read"}),shell:await describe({namespace:"tools/core",name:"shell"})})' } });
     assert.equal(result.isError, false, JSON.stringify(result));
     const details = JSON.parse(result.content[0].text);
     assert.equal(details.read.annotations.readOnlyHint, true);

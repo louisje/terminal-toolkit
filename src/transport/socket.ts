@@ -379,7 +379,7 @@ async function handleToolRequest(
     }
 
     switch (method) {
-      case "ls":
+      case "list":
       case "grep":
       case "find":
         if (!piExtraOperators) throw new Error("Unknown tool: " + method);

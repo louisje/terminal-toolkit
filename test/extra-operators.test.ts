@@ -11,17 +11,17 @@ test("core operators are always enabled; extra operators are optional", () => {
     const names = getToolDefinitions(extra).map((tool) => tool.name);
     assert.equal(names.length, expected);
     for (const name of ["read", "write", "edit", "shell"]) assert.ok(names.includes(name));
-    for (const name of ["ls", "grep", "find"]) assert.equal(names.includes(name), extra);
+    for (const name of ["list", "grep", "find"]) assert.equal(names.includes(name), extra);
   }
 });
-test("ls lists directories and respects limit", async () => {
+test("list lists directories and respects limit", async () => {
   const dir = await mkdtemp(join(tmpdir(), "terminal-extra-"));
   try {
     await mkdir(join(dir, "folder"));
     await writeFile(join(dir, ".hidden"), "x");
-    const result = await handleExtraOperatorTool("ls", { path: dir });
+    const result = await handleExtraOperatorTool("list", { path: dir });
     assert.equal(result.content[0]?.text, ".hidden\nfolder/");
-    const limited = await handleExtraOperatorTool("ls", { path: dir, limit: 1 });
+    const limited = await handleExtraOperatorTool("list", { path: dir, limit: 1 });
     assert.match(limited.content[0]?.text ?? "", /limit reached/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

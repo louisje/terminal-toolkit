@@ -25,6 +25,15 @@ test("namespace registry covers every tool and preserves enabled defaults", () =
   }
 });
 
+test("builtin skill paths support progressive read but never write", async () => {
+  const uri = "builtin://skills/terminal-toolkit/SKILL.md";
+  const result = await handleOperatorTool("read", { path: uri, offset: 1, limit: 3 });
+  assert.ok(result.content[0]?.text.includes("---"));
+  await assert.rejects(() => handleOperatorTool("write", {path:uri, content:"bad"}), /read-only/);
+  await assert.rejects(() => handleOperatorTool("edit", {path:uri, edits:[{oldText:"---",newText:"bad"}]}), /read-only/);
+  await assert.rejects(() => handleOperatorTool("read", {path:"builtin://skills/terminal-toolkit/../package.json"}), /Invalid builtin path/);
+});
+
 test("read, write, and edit implement the basic operator semantics", async () => {
   const dir = await mkdtemp(join(tmpdir(), "terminal-toolkit-operators-"));
   const path = join(dir, "nested", "file.txt");

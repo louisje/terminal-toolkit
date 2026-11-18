@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { z } from "zod";
 import type { ToolDefinition } from "./definitions.js";
 import { getDefaultShell } from "../utils/platform.js";
+import { resolveBuiltinSkillPath } from "../skills.js";
 
 const operatorCwd = process.cwd();
 
@@ -43,13 +44,15 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args);
-      const lines = (await readFile(localPath(parsed.path), "utf8")).split("\n");
+      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
+      const lines = (await readFile(target, "utf8")).split("\n");
       const start = (parsed.offset ?? 1) - 1;
       if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
       return result(lines.slice(start, parsed.limit === undefined ? undefined : start + parsed.limit).join("\n"));
     }
     case "write": {
       const parsed = writeSchema.parse(args);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
       const target = localPath(parsed.path);
       await mkdir(dirname(target), { recursive: true });
       if (signal?.aborted) throw new Error("Tool call aborted");
@@ -58,6 +61,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
     }
     case "edit": {
       const parsed = editSchema.parse(args);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
       const target = localPath(parsed.path);
       const original = await readFile(target, "utf8");
       const ranges: Array<{ start: number; end: number; newText: string }> = [];

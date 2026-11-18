@@ -281,7 +281,7 @@ Options:
   --experiment-mcp-events         Enable experimental MCP Events webhook subscriptions
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
-  --extra-core-operators Expose optional ls, grep, and find tools
+  --extra-core-operators Expose optional list, grep, and find tools
   --pi-extra-operators   Deprecated alias for --extra-core-operators
   --title <label>        Set the interactive terminal title when connecting as a client
   --headless             Run in headless mode (MCP server with embedded terminal, no TTY needed)

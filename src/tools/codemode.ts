@@ -5,9 +5,10 @@ import type { TerminalManager } from "../terminal/index.js";
 import { getCodemodeToolDefinitions, type ToolDefinition } from "./definitions.js";
 import { dispatchTool } from "./index.js";
 import { namespaceRegistryGuidance } from "./namespaceGuidance.js";
-import { trackCall, recordSearch, recordDescribeTool, recordDescribeNamespace, getToolStat } from "./stats.js";
+import { trackCall, recordSearch, recordDescribe, getToolStat } from "./stats.js";
 
 import { limitTextBlock } from "./outputLimit.js";
+import { skillCatalog } from "../skills.js";
 
 export const codemodeDefinition: ToolDefinition = {
   name: "codemode",
@@ -16,7 +17,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover tools with await searchTools() or search by keyword with await searchTools(query, {limit?, namespace?}). Before using an unfamiliar tool, call await describeTool(name) for its usage instructions and inputSchema. Use await describeNamespace() to list namespaces and await describeNamespace(name) for cross-tool guidance; read await describeNamespace("tools/pty") before PTY operations, especially Primary Session interactions.
+- Discover tools and skills with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. Skill descriptions contain metadata, path and byte size only; read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
@@ -65,45 +66,44 @@ export async function runCodemodeWithDispatch(
     },
   }));
   const namespaces = Object.fromEntries(definitions.filter(d => d.namespace).map(d => [d.name, d.namespace!]));
+  const matchGlob = (value: string, pattern?: string) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map(part => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
   const globals: CodemodeTool[] = [
     {
-      name: "searchTools", spread: true,
-      execute: (args) => trackCall("searchTools", () => {
-        const [query, rawOptions] = args as [unknown, unknown];
-        if (rawOptions !== null && rawOptions !== undefined && (typeof rawOptions !== "object" || Array.isArray(rawOptions))) throw new Error("searchTools() options must be an object");
-        const options = rawOptions as {limit?: number; namespace?: string} | undefined;
-        if (query !== undefined && typeof query !== "string") throw new Error("searchTools() expects a query string");
-        if (options?.limit !== undefined && (typeof options.limit !== "number" || !Number.isInteger(options.limit) || options.limit <= 0)) throw new Error("searchTools() limit must be a positive integer");
-        if (options?.namespace !== undefined && typeof options.namespace !== "string") throw new Error("searchTools() namespace must be a string");
-        if (options?.namespace && !["tools/core", "tools/pty", "tools/misc"].includes(options.namespace)) { recordSearch(query ?? "", 0); return []; }
+      name: "search", spread: true,
+      execute: (args) => trackCall("search", async () => {
+        const [options = {}] = args as [{query?: string; namespace?: string; name?: string; limit?: number}?];
+        if (!options || typeof options !== "object" || Array.isArray(options)) throw new Error("search() expects an options object");
+        const { query, namespace, name, limit } = options;
+        if ([query, namespace, name].some(v => v !== undefined && typeof v !== "string")) throw new Error("search() filters must be strings");
+        if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
+        const skills = await skillCatalog();
+        const entries = [...summaries.map(({name, namespace, description}) => ({name, namespace, description, kind:"tool"})), ...skills.map(({name,namespace,description}) => ({name,namespace,description,kind:"skill"}))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        const results = summaries.map(d => ({ name: d.name, namespace: d.namespace, description: d.description, score: words.reduce((score, w) => score + (d.name.toLowerCase().includes(w) ? 4 : 0) + (d.description.toLowerCase().includes(w) ? 1 : 0), 0) }))
-          .filter(d => (!options?.namespace || d.namespace === options.namespace) && (!words.length || d.score > 0)).sort((a,b) => b.score - a.score)
-          .slice(0, options?.limit ?? (words.length ? 10 : undefined)).map(({ name, namespace, description }) => ({ name, namespace, description }));
-        recordSearch(query ?? "", results.length);
-        return results;
+        const found = entries.filter(item => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every(w => (item.name + " " + item.description).toLowerCase().includes(w)));
+        recordSearch(query ?? "", found.length);
+        return limit ? found.slice(0,limit) : found;
       }),
     },
     {
-      name: "describeTool", spread: true,
-      execute: (args) => trackCall("describeTool", () => {
-        const [name] = args as unknown[];
-        if (typeof name !== "string") throw new Error("describeTool() expects a tool name");
-        recordDescribeTool(name);
-        const tool = summaries.find(d => d.name === name);
-        return tool ? { name: tool.name, namespace: tool.namespace, ...(tool.instruction ? { instruction: tool.instruction } : {}), inputSchema: tool.inputSchema, annotations: tool.annotations } : null;
-      }),
-    },
-    {
-      name: "describeNamespace", spread: true,
-      execute: (args) => trackCall("describeNamespace", () => {
-        const [name] = args as unknown[];
-        if (name !== undefined && typeof name !== "string") throw new Error("describeNamespace() expects a namespace name");
-        recordDescribeNamespace(name ?? "(all)");
-        const namespaces = Object.entries(namespaceRegistryGuidance).map(([name, guidance]) => ({ name, ...guidance }));
-        if (name === undefined) return namespaces.filter(ns => summaries.some(tool => tool.namespace === ns.name)).map(({name,description}) => ({name,description}));
-        const ns = namespaces.find(ns => ns.name === name);
-        return ns ? { ...ns, tools: summaries.filter(tool => tool.namespace === name).map(({name,description}) => ({name,description})) } : null;
+      name: "describe", spread: true,
+      execute: (args) => trackCall("describe", async () => {
+        const [options] = args as [{namespace?:string; name?:string}?];
+        if (!options || typeof options !== "object" || Array.isArray(options) || typeof options.namespace !== "string") throw new Error("describe() requires namespace");
+        if (options.name !== undefined && typeof options.name !== "string") throw new Error("describe() name must be a string");
+        recordDescribe(options.namespace + (options.name ? "/" + options.name : ""));
+        const skills = await skillCatalog();
+        if (options.namespace.startsWith("skills/")) {
+          const members = skills.filter(s => s.namespace === options.namespace);
+          if (options.name) return members.find(s => s.name === options.name) ?? null;
+          return members.length ? {namespace:options.namespace, skills:members.map(({name,description,size}) => ({name,description,size}))} : null;
+        }
+        const members = summaries.filter(s => s.namespace === options.namespace);
+        if (options.name) {
+          const tool = members.find(s => s.name === options.name);
+          return tool ? {namespace:tool.namespace,name:tool.name,instruction:tool.instruction,inputSchema:tool.inputSchema,annotations:tool.annotations} : null;
+        }
+        const guidance = namespaceRegistryGuidance[options.namespace as keyof typeof namespaceRegistryGuidance];
+        return members.length ? {namespace:options.namespace,...guidance,tools:members.map(({name,description}) => ({name,description}))} : null;
       }),
     },
     {

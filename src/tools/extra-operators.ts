@@ -28,12 +28,12 @@ const lsSchema = z.object({ path: z.string().optional(), limit: z.number().int()
 const findSchema = z.object({ pattern: z.string(), path: z.string().optional(), limit: z.number().int().positive().optional() });
 const grepSchema = z.object({ pattern: z.string(), path: z.string().optional(), glob: z.string().optional(), ignoreCase: z.boolean().optional(), literal: z.boolean().optional(), context: z.number().int().nonnegative().optional(), limit: z.number().int().positive().optional() });
 export const extraOperatorToolDefinitions: ToolDefinition[] = [
-  { name: "ls", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+  { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
   { name: "grep", description: "Search text with rg, respecting .gitignore; requires system ripgrep, never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
   { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
 ];
 export async function handleExtraOperatorTool(name: string, args: unknown) {
-  if (name === "ls") {
+  if (name === "list") {
     const params = lsSchema.parse(args);
     const dir = resolve(cwd, params.path || ".");
     const entries = (await readdir(dir)).sort();

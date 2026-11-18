@@ -23,8 +23,15 @@ Skill directories can be configured in `~/.config/terminal-toolkit/settings.json
 ```
 
 Each configured directory contains Skill subdirectories with a `SKILL.md`.
-Bundled skills take precedence over external skills of the same name; the first
-configured directory wins for other duplicates. Missing directories are ignored.
+Skill namespaces use the directory immediately before the last `skills` anchor,
+followed by any directories after that anchor (for example,
+`~/projects/mattpocock/skills/engineering` becomes `skills/mattpocock/engineering`).
+Without a `skills` anchor, the configured directory basename is used (for example,
+`/opt/company/automation` becomes `skills/automation`). Bundled skills use
+`skills/builtin`. Skills with the same name in different namespaces are distinct.
+When two configured roots produce the same namespace, the first root wins and
+the other is skipped with a stderr warning that includes both paths. Missing
+directories are ignored.
 The file is read on demand, so changes are reflected on the next request.
 The first Skills discovery request logs a short load summary to stderr
 (built-in/external counts and any skipped or unreadable paths). This does not
@@ -34,7 +41,9 @@ interfere with MCP JSON-RPC on stdout.
 - `skills/list` enumerates skills and includes the full YAML frontmatter plus a
   complete SHA-256 manifest (`uri`, `digest`, `size`).
 - `skills/get` accepts the **SKILL.md URI**, e.g.
-  `skill://terminal-toolkit/SKILL.md`, and returns the same skill entry.
+  `skill://terminal-toolkit/SKILL.md` for the built-in skill or
+  `skill://mattpocock/engineering/implement/SKILL.md` for an external skill, and returns
+  the same skill entry. Legacy unqualified URIs resolve only when unambiguous.
 - `resources/read` serves SKILL.md and supporting files under `skill://`
   URIs. `resources/list` also advertises the skill entry points.
 - The server declares `resources` and
@@ -43,6 +52,10 @@ interfere with MCP JSON-RPC on stdout.
   declared.
 - Invalid URIs, unknown skills and path traversal are rejected. Files are
   hashed directly from raw bytes each time they are listed.
+- In `--codemode`, `search({query?, namespace?, name?, limit?})` discovers
+  Tools and Skills; `describe({namespace, name?})` returns metadata without
+  loading the full SKILL.md. `read({path:"builtin://skills/terminal-toolkit/SKILL.md",offset?,limit?})`
+  reads bundled Skill files incrementally; these virtual paths are read-only.
 - This protocol capability is independent of `--codemode`,
   `--extra-core-operators` and terminal transport mode.
   Existing MCP tools and instructions are unaffected.
@@ -202,7 +215,7 @@ terminal-toolkit [OPTIONS]
 Options:
   --mcp                  Use MCP mode (connects to existing session or creates new PTY)
   --pi-operators         Deprecated; core operators are already enabled
-  --extra-core-operators Expose optional ls, grep, and find (22 tools total)
+  --extra-core-operators Expose optional list, grep, and find (22 tools total)
   --title <label>        Set the interactive terminal title when connecting as a client
   --cols <number>        Terminal width in columns (default: $TERMINAL_TOOLKIT_COLS or 120)
   --rows <number>        Terminal height in rows (default: $TERMINAL_TOOLKIT_ROWS or 40)
@@ -253,7 +266,7 @@ Long-running builds and tests should use PTY even when no interaction is expecte
 
 ### Extra Core Operators
 
-The optional `--extra-core-operators` flag adds `ls`, `grep`, and `find` for 22 tools total. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. ls uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
+The optional `--extra-core-operators` flag adds `list`, `grep`, and `find` for 22 tools total. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. list uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
 
 
 Environment variables:
@@ -802,7 +815,7 @@ MIT
 
 ### Experimental codemode (opt-in)
 
-Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `searchTools(query)` to discover enabled tools, `describeTool(name)` for complete tool instructions and schemas, and `describeNamespace()` / `describeNamespace("tools/pty")` for namespace-level guidance, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
+Use `--codemode` to expose **one** MCP tool, `codemode`, in place of the regular tool list. The tool runs JavaScript inside Pi's QuickJS WASM sandbox and can call any tools enabled for that connection via `await tools.<name>(args)`. Use `search({query?,namespace?,name?,limit?})` to discover enabled tools and skills, and `describe({namespace,name?})` for namespace guidance or detailed tool schemas and skill metadata, and `text(value)` to include output in the model context. Tool calls themselves are not automatically returned to the model.
 
 ```sh
 terminal-toolkit --headless --codemode
@@ -818,4 +831,4 @@ Example `codemode` input:
 
 The Claude Code plugin bootstrap does not automatically download optional resvg at startup; set `TERMINAL_TOOLKIT_INSTALL_OPTIONAL_RESVG=1` when launching it to request installation for PNG screenshot support. The required native `node-pty` remains auto-installed if unavailable.
 
-The flag works with both headless servers and socket-connected MCP clients. Core Operators are always enabled; `--extra-core-operators` enables ls, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).
+The flag works with both headless servers and socket-connected MCP clients. Core Operators are always enabled; `--extra-core-operators` enables list, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).

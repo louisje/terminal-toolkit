@@ -64,7 +64,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
 export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
-    case "ls":
+    case "list":
     case "grep":
     case "find":
       if (!piExtraOperators) throw new Error("Unknown tool: " + name);

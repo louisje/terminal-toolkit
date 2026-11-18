@@ -7,7 +7,7 @@ import { getCodemodeToolDefinitions, getMcpToolDefinitions } from '../src/tools/
 test('namespace instructions are independent of MCP initialize', () => {
   assert.match(namespaceRegistryGuidance['tools/pty'].instruction, /Primary Session/);
   assert.match(namespaceRegistryGuidance['tools/core'].instruction, /non-interactive/);
-  assert.match(codemodeDefinition.description, /searchTools/);
+  assert.match(codemodeDefinition.description, /search\(\{query\?/);
 });
 
 test('standard MCP tools include namespace guidance; codemode discovery keeps summaries', () => {
@@ -52,9 +52,9 @@ test('flat MCP descriptions independently guide tool selection and PTY safety', 
 });
 
 test('codemode entry guides discovery and preserves standalone tool instructions', () => {
-  assert.match(codemodeDefinition.description, /Before using an unfamiliar tool/);
-  assert.match(codemodeDefinition.description, /describeTool\(name\)/);
-  assert.match(codemodeDefinition.description, /describeNamespace\("tools\/pty"\)/);
+  assert.match(codemodeDefinition.description, /Discover tools and skills/);
+  assert.match(codemodeDefinition.description, /describe\(\{namespace, name\?\}\)/);
+  assert.match(codemodeDefinition.description, /builtin:\/\/skills/);
   const tools = getCodemodeToolDefinitions();
   const type = tools.find(t => t.name === 'type')!;
   assert.match(type.description, /interactive terminal session/);
@@ -67,10 +67,10 @@ test('core operators remain available with Extra Core disabled', () => {
   for (const definitions of [getMcpToolDefinitions(false), getCodemodeToolDefinitions(false)]) {
     for (const name of ['read', 'write', 'edit', 'shell'])
       assert.ok(definitions.some(tool => tool.name === name), name);
-    for (const name of ['ls', 'grep', 'find'])
+    for (const name of ['list', 'grep', 'find'])
       assert.ok(!definitions.some(tool => tool.name === name), name);
   }
   for (const definitions of [getMcpToolDefinitions(true), getCodemodeToolDefinitions(true)])
-    for (const name of ['ls', 'grep', 'find'])
+    for (const name of ['list', 'grep', 'find'])
       assert.ok(definitions.some(tool => tool.name === name), name);
 });
