@@ -17,7 +17,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover tools and skills with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. Skill descriptions contain metadata, path and byte size only; read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
+- Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
@@ -33,6 +33,7 @@ export async function runCodemodeWithDispatch(
   definitions: ToolDefinition[],
   dispatch: (name: string, args: Record<string, unknown>, signal?: AbortSignal) => Promise<unknown>,
   signal?: AbortSignal,
+  skillsEnabled = false,
 ) {
   const code = (args as { code?: unknown } | undefined)?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
@@ -76,7 +77,7 @@ export async function runCodemodeWithDispatch(
         const { query, namespace, name, limit } = options;
         if ([query, namespace, name].some(v => v !== undefined && typeof v !== "string")) throw new Error("search() filters must be strings");
         if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
-        const skills = await skillCatalog();
+        const skills = skillsEnabled ? await skillCatalog() : [];
         const entries = [...summaries.map(({name, namespace, description}) => ({name, namespace, description, kind:"tool"})), ...skills.map(({name,namespace,description}) => ({name,namespace,description,kind:"skill"}))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         const found = entries.filter(item => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every(w => (item.name + " " + item.description).toLowerCase().includes(w)));
@@ -91,7 +92,7 @@ export async function runCodemodeWithDispatch(
         if (!options || typeof options !== "object" || Array.isArray(options) || typeof options.namespace !== "string") throw new Error("describe() requires namespace");
         if (options.name !== undefined && typeof options.name !== "string") throw new Error("describe() name must be a string");
         recordDescribe(options.namespace + (options.name ? "/" + options.name : ""));
-        const skills = await skillCatalog();
+        const skills = skillsEnabled ? await skillCatalog() : [];
         if (options.namespace.startsWith("skills/")) {
           const members = skills.filter(s => s.namespace === options.namespace);
           if (options.name) return members.find(s => s.name === options.name) ?? null;
@@ -135,7 +136,7 @@ export async function runCodemodeWithDispatch(
   }
 }
 
-export function runCodemode(manager: TerminalManager, args: unknown, piExtraOperators: boolean, signal?: AbortSignal) {
+export function runCodemode(manager: TerminalManager, args: unknown, piExtraOperators: boolean, signal?: AbortSignal, skillsEnabled = false) {
   return runCodemodeWithDispatch(args, getCodemodeToolDefinitions(piExtraOperators),
-    (name, params, callSignal) => dispatchTool(manager, name, params, piExtraOperators, callSignal), signal);
+    (name, params, callSignal) => dispatchTool(manager, name, params, piExtraOperators, callSignal), signal, skillsEnabled);
 }

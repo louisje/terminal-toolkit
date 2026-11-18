@@ -9,6 +9,7 @@ import { VERSION } from "./utils/version.js";
 import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { enableToolsListChangedExperiment } from "./toolsListChangedExperiment.js";
 import { enableMcpEventsExperiment } from "./mcpEventsExperiment.js";
+import { skillDiscoveryDefinitions, handleSkillDiscovery } from './tools/skillDiscovery.js';
 import { registerSkills } from "./skills.js";
 import {
   ListToolsRequestSchema,
@@ -39,6 +40,7 @@ interface McpClientModeOptions {
   title?: string;
     piExtraOperators?: boolean;
   codemode?: boolean;
+  skills?: boolean;
   shell?: string;
   cols?: number;
   rows?: number;
@@ -283,7 +285,7 @@ export async function startMcpClientMode(
 
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options.piExtraOperators),
+    tools: options.codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(options.piExtraOperators), ...(options.skills ? skillDiscoveryDefinitions : [])],
   }));
 
   // Register call tool handler - proxy to socket
@@ -296,9 +298,9 @@ export async function startMcpClientMode(
       const result = options.codemode
         ? name === "codemode"
           ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
-              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal)
+              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal, options.skills)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : limitToolResponse(await dispatchTool(name, args as Record<string, unknown>, extra.signal) as { content?: Array<{ type: string; text?: string }> });
+        : limitToolResponse(await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? handleSkillDiscovery(name, args) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;

@@ -27,12 +27,13 @@ import { handleSetClipboard } from "./setClipboard.js";
 import { handleNotify } from "./notify.js";
 import { handleSystemInfo } from "./systemInfo.js";
 
+import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscovery.js';
 import { limitToolResponse } from "./outputLimit.js";
 
-export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = false, codemode = false): void {
+export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = false, codemode = false, skills = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piExtraOperators),
+    tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...(skills ? skillDiscoveryDefinitions : [])],
   }));
 
   // Register call tool handler
@@ -42,8 +43,9 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
     try {
       if (codemode) {
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-        return await runCodemode(manager, args, piExtraOperators, extra.signal);
+        return await runCodemode(manager, args, piExtraOperators, extra.signal, skills);
       }
+      if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitToolResponse(await handleSkillDiscovery(name, args));
       return limitToolResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

@@ -5,7 +5,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 
 async function evaluate(code, pi = false, extra = false) {
   const client = new Client({ name: 'discovery-test', version: '1' });
-  await client.connect(new StdioClientTransport({command:process.execPath,args:['dist/index.js','--headless','--codemode',,...(extra ? ['--extra-core-operators'] : [])],stderr:'pipe'}));
+  await client.connect(new StdioClientTransport({command:process.execPath,args:['dist/index.js','--headless','--codemode','--skills',...(extra ? ['--extra-core-operators'] : [])],stderr:'pipe'}));
   try {
     const result = await client.callTool({name:'codemode',arguments:{code}});
     assert.equal(result.isError, false, JSON.stringify(result));

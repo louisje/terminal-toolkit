@@ -52,7 +52,7 @@ test('flat MCP descriptions independently guide tool selection and PTY safety', 
 });
 
 test('codemode entry guides discovery and preserves standalone tool instructions', () => {
-  assert.match(codemodeDefinition.description, /Discover tools and skills/);
+  assert.match(codemodeDefinition.description, /Discover tools with/);
   assert.match(codemodeDefinition.description, /describe\(\{namespace, name\?\}\)/);
   assert.match(codemodeDefinition.description, /builtin:\/\/skills/);
   const tools = getCodemodeToolDefinitions();

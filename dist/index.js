@@ -17173,14 +17173,14 @@ var require_dist3 = __commonJS({
     var formats_1 = require_formats();
     var limit_1 = require_limit();
     var codegen_1 = require_codegen();
-    var fullName = new codegen_1.Name("fullFormats");
+    var fullName2 = new codegen_1.Name("fullFormats");
     var fastName = new codegen_1.Name("fastFormats");
     var formatsPlugin = (ajv, opts = { keywords: true }) => {
       if (Array.isArray(opts)) {
-        addFormats(ajv, opts, formats_1.fullFormats, fullName);
+        addFormats(ajv, opts, formats_1.fullFormats, fullName2);
         return ajv;
       }
-      const [formats, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName];
+      const [formats, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName2];
       const list = opts.formats || formats_1.formatNames;
       addFormats(ajv, list, formats, exportName);
       if (opts.keywords)
@@ -57308,7 +57308,7 @@ var codemodeDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
-- Discover tools and skills with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. Skill descriptions contain metadata, path and byte size only; read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
+- Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
@@ -57316,7 +57316,7 @@ var codemodeDefinition = {
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
-async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
+async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, skillsEnabled = false) {
   const code = args2?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
   const requestedTimeout = args2.timeoutMs;
@@ -57360,7 +57360,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
         const { query, namespace, name, limit } = options2;
         if ([query, namespace, name].some((v) => v !== void 0 && typeof v !== "string")) throw new Error("search() filters must be strings");
         if (limit !== void 0 && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
-        const skills2 = await skillCatalog();
+        const skills2 = skillsEnabled ? await skillCatalog() : [];
         const entries = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         const found = entries.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
@@ -57376,7 +57376,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
         if (!options2 || typeof options2 !== "object" || Array.isArray(options2) || typeof options2.namespace !== "string") throw new Error("describe() requires namespace");
         if (options2.name !== void 0 && typeof options2.name !== "string") throw new Error("describe() name must be a string");
         recordDescribe(options2.namespace + (options2.name ? "/" + options2.name : ""));
-        const skills2 = await skillCatalog();
+        const skills2 = skillsEnabled ? await skillCatalog() : [];
         if (options2.namespace.startsWith("skills/")) {
           const members2 = skills2.filter((s) => s.namespace === options2.namespace);
           if (options2.name) return members2.find((s) => s.name === options2.name) ?? null;
@@ -57418,19 +57418,48 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal) {
     await sandbox.close();
   }
 }
-function runCodemode(manager, args2, piExtraOperators, signal) {
+function runCodemode(manager, args2, piExtraOperators, signal, skillsEnabled = false) {
   return runCodemodeWithDispatch(
     args2,
     getCodemodeToolDefinitions(piExtraOperators),
     (name, params, callSignal) => dispatchTool(manager, name, params, piExtraOperators, callSignal),
-    signal
+    signal,
+    skillsEnabled
   );
 }
 
+// src/tools/skillDiscovery.ts
+init_zod();
+var skillDiscoveryDefinitions = [
+  { name: "searchSkills", description: "Search available Skills by keywords or globbed full name. Use describeSkill({name}) to inspect metadata; read the returned SKILL.md path using read().", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { query: { type: "string" }, name: { type: "string", description: "Glob pattern matching the full unique Skill name" }, limit: { type: "integer", minimum: 1 } }, required: [] } },
+  { name: "describeSkill", description: "Describe one Skill by its full unique name. Returns metadata and SKILL.md path, not its contents. Read the path using read({path,offset?,limit?}).", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { name: { type: "string", description: "Full unique Skill name, e.g. mattpocock/engineering/code-review" } }, required: ["name"] } }
+];
+var searchSchema = external_exports.object({ query: external_exports.string().optional(), name: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
+var describeSchema = external_exports.object({ name: external_exports.string().min(1) });
+var glob = (value, pattern) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map((part) => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
+var fullName = (s) => s.namespace.slice("skills/".length) + "/" + s.name;
+async function handleSkillDiscovery(name, args2) {
+  const catalog = await skillCatalog();
+  const entries = catalog.map((s) => ({ ...s, name: fullName(s) }));
+  if (name === "searchSkills") {
+    const options2 = searchSchema.parse(args2 ?? {});
+    const words = (options2.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
+    const found = entries.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
+    return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, options2.limit), total: found.length }) }] };
+  }
+  if (name === "describeSkill") {
+    const { name: target } = describeSchema.parse(args2);
+    const found = entries.find((s) => s.name === target);
+    if (!found) throw new Error("Skill not found: " + target);
+    return { content: [{ type: "text", text: JSON.stringify(found) }] };
+  }
+  throw new Error("Unknown tool: " + name);
+}
+
 // src/tools/index.ts
-function registerTools(server, manager, piExtraOperators = false, codemode = false) {
+function registerTools(server, manager, piExtraOperators = false, codemode = false, skills2 = false) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: codemode ? [codemodeDefinition] : getMcpToolDefinitions(piExtraOperators)
+    tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...skills2 ? skillDiscoveryDefinitions : []]
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
@@ -57438,8 +57467,9 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
       try {
         if (codemode) {
           if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-          return await runCodemode(manager, args2, piExtraOperators, extra.signal);
+          return await runCodemode(manager, args2, piExtraOperators, extra.signal, skills2);
         }
+        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitToolResponse(await handleSkillDiscovery(name, args2));
         return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
@@ -57699,7 +57729,7 @@ function installStdioShutdownHandlers({ cleanup }) {
 }
 
 // src/server.ts
-function createServerWithManager(manager, piExtraOperators = false, codemode = false) {
+function createServerWithManager(manager, piExtraOperators = false, codemode = false, skills2 = false) {
   const server = new Server(
     {
       name: "terminal-toolkit",
@@ -57714,7 +57744,7 @@ function createServerWithManager(manager, piExtraOperators = false, codemode = f
       }
     }
   );
-  registerTools(server, manager, piExtraOperators, codemode);
+  registerTools(server, manager, piExtraOperators, codemode, skills2);
   registerPrompts(server);
   registerSkills(server);
   return server;
@@ -57730,7 +57760,7 @@ function createServer(options2 = {}) {
     maxSessions: options2.maxSessions,
     sessionIdleTimeout: options2.sessionIdleTimeout
   });
-  const server = createServerWithManager(manager, options2.piExtraOperators, options2.codemode);
+  const server = createServerWithManager(manager, options2.piExtraOperators, options2.codemode, options2.skills);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options2.experimentMcpEvents) {
@@ -58509,7 +58539,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   }
   registerSkills(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: options2.codemode ? [codemodeDefinition] : getMcpToolDefinitions(options2.piExtraOperators)
+    tools: options2.codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(options2.piExtraOperators), ...options2.skills ? skillDiscoveryDefinitions : []]
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
@@ -58520,10 +58550,11 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           args2,
           getCodemodeToolDefinitions(options2.piExtraOperators),
           (tool, params, signal) => dispatchTool2(tool, params, signal),
-          extra.signal
+          extra.signal,
+          options2.skills
         ) : (() => {
           throw new Error(`Unknown tool: ${name}`);
-        })() : limitToolResponse(await dispatchTool2(name, args2, extra.signal));
+        })() : limitToolResponse(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? handleSkillDiscovery(name, args2) : dispatchTool2(name, args2, extra.signal)));
         return result2;
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
@@ -62995,6 +63026,9 @@ for (let i2 = 0; i2 < args.length; i2++) {
       console.error("[Terminal Toolkit] Deprecated --pi-extra-operators; use --extra-core-operators.");
       options.piExtraOperators = true;
       break;
+    case "--skills":
+      options.skills = true;
+      break;
     case "--codemode":
       options.codemode = true;
       break;
@@ -63131,6 +63165,7 @@ Options:
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
   --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
   --experiment-mcp-events         Enable experimental MCP Events webhook subscriptions
+  --skills               Enable compatibility skill discovery tools
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional list, grep, and find tools
@@ -63241,7 +63276,7 @@ async function main() {
   const socketPath = resolveSocketPath(options.socket);
   if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, skills: options.skills, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -63265,12 +63300,13 @@ async function main() {
       maxSessions: options.maxSessions,
       sessionIdleTimeout: options.sessionIdleTimeout,
       piExtraOperators: options.piExtraOperators,
-      codemode: options.codemode
+      codemode: options.codemode,
+      skills: options.skills
     });
   } else if (isInteractive) {
     if (!await tryAttachInteractive(socketPath)) await startInteractiveMode(socketPath);
   } else {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, skills: options.skills });
   }
 }
 async function startInteractiveMode(socketPath) {

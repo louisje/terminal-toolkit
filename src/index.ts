@@ -114,6 +114,7 @@ const options: {
   sessionIdleTimeout?: number;
     piExtraOperators?: boolean;
   codemode?: boolean;
+  skills?: boolean;
 } = {};
 
 for (let i = 0; i < args.length; i++) {
@@ -139,6 +140,9 @@ for (let i = 0; i < args.length; i++) {
     case "--pi-extra-operators":
       console.error("[Terminal Toolkit] Deprecated --pi-extra-operators; use --extra-core-operators.");
       options.piExtraOperators = true;
+      break;
+    case "--skills":
+      options.skills = true;
       break;
     case "--codemode":
       options.codemode = true;
@@ -279,6 +283,7 @@ Options:
   --experiment-initialize  Test per-initialize dynamic MCP instructions (stderr log)
   --experiment-tools-list-changed  Emit MCP tools/list_changed after initialization
   --experiment-mcp-events         Enable experimental MCP Events webhook subscriptions
+  --skills               Enable compatibility skill discovery tools
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
   --extra-core-operators Expose optional list, grep, and find tools
@@ -395,7 +400,7 @@ async function main() {
   // --mcp uses the lazy socket-backed MCP mode: it claims the socket and
   // starts its PTY only when the first terminal tool is called.
   if (options.useMcp) {
-    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
+    await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, skills: options.skills, shell: options.shell, cols: options.cols ?? getDefaultCols(), rows: options.rows ?? getDefaultRows(), login: options.login, maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout });
     return;
   }
   const isInteractive = process.stdin.isTTY;
@@ -423,14 +428,14 @@ async function main() {
       title: options.title,
       maxSessions: options.maxSessions,
         sessionIdleTimeout: options.sessionIdleTimeout,
-        piExtraOperators: options.piExtraOperators, codemode: options.codemode,
+        piExtraOperators: options.piExtraOperators, codemode: options.codemode, skills: options.skills,
     });
   } else if (isInteractive) {
     // Interactive mode: Shell on stdin/stdout, tool proxy on Unix socket
       if (!(await tryAttachInteractive(socketPath))) await startInteractiveMode(socketPath);
   } else {
     // MCP client mode: Connect to socket, serve MCP over stdio
-      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode });
+      await startMcpClientMode(socketPath, { experimentInitialize: options.experimentInitialize, experimentToolsListChanged: options.experimentToolsListChanged, experimentMcpEvents: options.experimentMcpEvents, title: options.title, piExtraOperators: options.piExtraOperators, codemode: options.codemode, skills: options.skills });
   }
 }
 
