@@ -25,6 +25,7 @@ import { handleResize } from "./resize.js";
 import { handleGetClipboard } from "./getClipboard.js";
 import { handleSetClipboard } from "./setClipboard.js";
 import { handleNotify } from "./notify.js";
+import { handleSystemInfo } from "./systemInfo.js";
 
 import { limitToolResponse } from "./outputLimit.js";
 
@@ -117,6 +118,9 @@ export async function dispatchTool(manager: TerminalManager, name: string, args:
 
     case "notify":
       return await handleNotify(manager, args);
+
+    case "systemInfo":
+      return handleSystemInfo(manager, args);
 
         default:
       throw new Error(`Unknown tool: ${name}`);

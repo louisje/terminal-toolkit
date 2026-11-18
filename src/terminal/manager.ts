@@ -32,7 +32,8 @@ export interface SessionMetadata {
   cols: number;
   rows: number;
   createdAt: string;
-  lastActivityAt: string;
+  lastInputAt: string | null;
+  lastOutputAt: string | null;
   isDefault: boolean;
   mode: "uninitialized" | "interactive" | "headless";
   role: "server" | "client" | null;
@@ -133,7 +134,7 @@ export class TerminalManager {
     const entry = this.sessions.get(sessionId);
     if (entry) {
       entry.lastActivity = Date.now();
-      entry.metadata.lastActivityAt = new Date().toISOString();
+      // Access time is used only for idle eviction.
     }
   }
 
@@ -154,8 +155,22 @@ export class TerminalManager {
    * Wire recording hooks onto a session so its output is captured by any
    * active recordings.
    */
-  private wireRecording(session: TerminalSession): void {
-    session.onData((data) => this.recordingManager.recordOutputToAll(data));
+  private wireRecording(session: TerminalSession, sessionId: string): void {
+    session.onInput(() => {
+      const entry = this.sessions.get(sessionId);
+      if (entry) {
+        entry.metadata.lastInputAt = new Date().toISOString();
+        entry.lastActivity = Date.now();
+      }
+    });
+    session.onData((data) => {
+      const entry = this.sessions.get(sessionId);
+      if (entry && data.length > 0) {
+        entry.metadata.lastOutputAt = new Date().toISOString();
+        entry.lastActivity = Date.now();
+      }
+      this.recordingManager.recordOutputToAll(data);
+    });
     session.onResize((cols, rows) => this.recordingManager.recordResizeToAll(cols, rows));
   }
 
@@ -202,7 +217,8 @@ export class TerminalManager {
           cols: dims.cols,
           rows: dims.rows,
           createdAt: now,
-          lastActivityAt: now,
+          lastInputAt: null,
+          lastOutputAt: null,
           isDefault: true,
           mode: this.options.mode ?? "headless",
           role: this.options.role ?? null,
@@ -213,7 +229,7 @@ export class TerminalManager {
       };
       this.sessions.set(id, entry);
       this.defaultSessionId = id;
-      this.wireRecording(session);
+      this.wireRecording(session, id);
       return session;
     })();
 
@@ -307,7 +323,8 @@ export class TerminalManager {
       cols: dims.cols,
       rows: dims.rows,
       createdAt: now,
-      lastActivityAt: now,
+      lastInputAt: null,
+          lastOutputAt: null,
       isDefault: false,
       mode: "headless",
       role: null,
@@ -319,7 +336,7 @@ export class TerminalManager {
       lastActivity: Date.now(),
       isDefault: false,
     });
-    this.wireRecording(session);
+    this.wireRecording(session, id);
     this.emitSessionEvent("session.created", id);
     return metadata;
   }
@@ -358,7 +375,8 @@ export class TerminalManager {
         cols: this.options.cols ?? 80,
         rows: this.options.rows ?? 25,
         createdAt: "",
-        lastActivityAt: "",
+        lastInputAt: null,
+        lastOutputAt: null,
         isDefault: true,
         mode: "uninitialized",
         role: this.options.role ?? null,

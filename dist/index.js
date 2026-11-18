@@ -3841,9 +3841,9 @@ var require_conf = __commonJS({
 var require_defaults = __commonJS({
   "node_modules/@pnpm/npm-conf/lib/defaults.js"(exports2) {
     "use strict";
-    var os14 = __require("os");
+    var os15 = __require("os");
     var path28 = __require("path");
-    var temp = os14.tmpdir();
+    var temp = os15.tmpdir();
     var uidOrPid = process.getuid ? process.getuid() : process.pid;
     var hasUnicode = () => true;
     var isWindows2 = process.platform === "win32";
@@ -3854,7 +3854,7 @@ var require_defaults = __commonJS({
     var umask = {
       fromString: () => process.umask()
     };
-    var home = os14.homedir();
+    var home = os15.homedir();
     if (home) {
       process.env.HOME = home;
     } else {
@@ -22028,7 +22028,7 @@ var require_signal_exit = __commonJS({
 var require_kill = __commonJS({
   "node_modules/run-jxa/node_modules/execa/lib/kill.js"(exports2, module2) {
     "use strict";
-    var os14 = __require("os");
+    var os15 = __require("os");
     var onExit2 = require_signal_exit();
     var DEFAULT_FORCE_KILL_TIMEOUT2 = 1e3 * 5;
     var spawnedKill = (kill, signal = "SIGTERM", options2 = {}) => {
@@ -22052,7 +22052,7 @@ var require_kill = __commonJS({
       return isSigterm(signal) && forceKillAfterTimeout !== false && killResult;
     };
     var isSigterm = (signal) => {
-      return signal === os14.constants.signals.SIGTERM || typeof signal === "string" && signal.toUpperCase() === "SIGTERM";
+      return signal === os15.constants.signals.SIGTERM || typeof signal === "string" && signal.toUpperCase() === "SIGTERM";
     };
     var getForceKillAfterTimeout = ({ forceKillAfterTimeout = true }) => {
       if (forceKillAfterTimeout === true) {
@@ -31554,14 +31554,14 @@ var require_is_docker = __commonJS({
 var require_is_wsl = __commonJS({
   "node_modules/node-notifier/node_modules/is-wsl/index.js"(exports2, module2) {
     "use strict";
-    var os14 = __require("os");
+    var os15 = __require("os");
     var fs26 = __require("fs");
     var isDocker2 = require_is_docker();
     var isWsl2 = () => {
       if (process.platform !== "linux") {
         return false;
       }
-      if (os14.release().toLowerCase().includes("microsoft")) {
+      if (os15.release().toLowerCase().includes("microsoft")) {
         if (isDocker2()) {
           return false;
         }
@@ -31590,7 +31590,7 @@ var require_utils3 = __commonJS({
     var isWSL = require_is_wsl();
     var path28 = __require("path");
     var url = __require("url");
-    var os14 = __require("os");
+    var os15 = __require("os");
     var fs26 = __require("fs");
     var net3 = __require("net");
     var BUFFER_SIZE = 1024;
@@ -31976,19 +31976,19 @@ var require_utils3 = __commonJS({
       return options2;
     };
     module2.exports.isMac = function() {
-      return os14.type() === "Darwin";
+      return os15.type() === "Darwin";
     };
     module2.exports.isMountainLion = function() {
-      return os14.type() === "Darwin" && semver3.satisfies(garanteeSemverFormat(os14.release()), ">=12.0.0");
+      return os15.type() === "Darwin" && semver3.satisfies(garanteeSemverFormat(os15.release()), ">=12.0.0");
     };
     module2.exports.isWin8 = function() {
-      return os14.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os14.release()), ">=6.2.9200");
+      return os15.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os15.release()), ">=6.2.9200");
     };
     module2.exports.isWSL = function() {
       return isWSL;
     };
     module2.exports.isLessThanWin8 = function() {
-      return os14.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os14.release()), "<6.2.9200");
+      return os15.type() === "Windows_NT" && semver3.satisfies(garanteeSemverFormat(os15.release()), "<6.2.9200");
     };
     function garanteeSemverFormat(version5) {
       if (version5.split(".").length === 2) {
@@ -32026,7 +32026,7 @@ var require_utils3 = __commonJS({
 // node_modules/node-notifier/notifiers/notifysend.js
 var require_notifysend = __commonJS({
   "node_modules/node-notifier/notifiers/notifysend.js"(exports2, module2) {
-    var os14 = __require("os");
+    var os15 = __require("os");
     var which = require_which();
     var utils = require_utils3();
     var EventEmitter2 = __require("events").EventEmitter;
@@ -32060,7 +32060,7 @@ var require_notifysend = __commonJS({
         callback(new Error("Message is required."));
         return this;
       }
-      if (os14.type() !== "Linux" && !os14.type().match(/BSD$/)) {
+      if (os15.type() !== "Linux" && !os15.type().match(/BSD$/)) {
         callback(new Error("Only supported on Linux and *BSD systems"));
         return this;
       }
@@ -32492,7 +32492,7 @@ var require_balloon = __commonJS({
     var utils = require_utils3();
     var Toaster = require_toaster();
     var Growl = require_growl();
-    var os14 = __require("os");
+    var os15 = __require("os");
     var EventEmitter2 = __require("events").EventEmitter;
     var util2 = __require("util");
     var hasGrowl;
@@ -32560,7 +32560,7 @@ var require_balloon = __commonJS({
     });
     var allowedArguments = ["t", "d", "p", "m", "i", "e", "q", "w", "xp"];
     function doNotification(options2, notifierOptions, callback) {
-      const is64Bit = os14.arch() === "x64";
+      const is64Bit = os15.arch() === "x64";
       options2 = options2 || {};
       options2 = utils.mapToNotifu(options2);
       options2.p = options2.p || "Node Notification:";
@@ -32942,7 +32942,7 @@ var require_toaster = __commonJS({
     var notifier2 = path28.resolve(__dirname, "../vendor/snoreToast/snoretoast");
     var utils = require_utils3();
     var Balloon = require_balloon();
-    var os14 = __require("os");
+    var os15 = __require("os");
     var { v4: uuid2 } = (init_esm_node(), __toCommonJS(esm_node_exports));
     var EventEmitter2 = __require("events").EventEmitter;
     var util2 = __require("util");
@@ -32981,7 +32981,7 @@ var require_toaster = __commonJS({
     function notifyRaw(options2, callback) {
       options2 = utils.clone(options2 || {});
       callback = callback || noop3;
-      const is64Bit = os14.arch() === "x64";
+      const is64Bit = os15.arch() === "x64";
       let resultBuffer;
       const server = {
         namedPipe: getPipeName()
@@ -33058,7 +33058,7 @@ var require_toaster = __commonJS({
 // node_modules/node-notifier/index.js
 var require_node_notifier = __commonJS({
   "node_modules/node-notifier/index.js"(exports2, module2) {
-    var os14 = __require("os");
+    var os15 = __require("os");
     var utils = require_utils3();
     var NotifySend = require_notifysend();
     var NotificationCenter = require_notificationcenter();
@@ -33066,7 +33066,7 @@ var require_node_notifier = __commonJS({
     var Growl = require_growl();
     var WindowsBalloon = require_balloon();
     var options2 = { withFallback: true };
-    var osType = utils.isWSL() ? "WSL" : os14.type();
+    var osType = utils.isWSL() ? "WSL" : os15.type();
     switch (osType) {
       case "Linux":
         module2.exports = new NotifySend(options2);
@@ -33090,7 +33090,7 @@ var require_node_notifier = __commonJS({
         module2.exports.Notification = WindowsToaster;
         break;
       default:
-        if (os14.type().match(/BSD$/)) {
+        if (os15.type().match(/BSD$/)) {
           module2.exports = new NotifySend(options2);
           module2.exports.Notification = NotifySend;
         } else {
@@ -42064,7 +42064,7 @@ var init_dist = __esm({
 
 // src/setup/clients.ts
 import * as fs24 from "fs";
-import * as os13 from "os";
+import * as os14 from "os";
 import * as path27 from "path";
 import { execSync as execSync2 } from "child_process";
 function existsOnPath(bin) {
@@ -42177,9 +42177,9 @@ var init_clients = __esm({
     codex = {
       name: "codex",
       label: "OpenAI Codex CLI",
-      configPath: () => path27.join(os13.homedir(), ".codex", "config.toml"),
+      configPath: () => path27.join(os14.homedir(), ".codex", "config.toml"),
       detect() {
-        return dirExists(path27.join(os13.homedir(), ".codex")) || existsOnPath("codex");
+        return dirExists(path27.join(os14.homedir(), ".codex")) || existsOnPath("codex");
       },
       install(dryRun) {
         const p = this.configPath();
@@ -42217,16 +42217,16 @@ var init_clients = __esm({
     copilot = makeMcpServersJsonAdapter({
       name: "copilot",
       label: "GitHub Copilot CLI",
-      configPath: () => path27.join(process.env.COPILOT_HOME || path27.join(os13.homedir(), ".copilot"), "mcp-config.json"),
-      detect: () => dirExists(path27.join(process.env.COPILOT_HOME || path27.join(os13.homedir(), ".copilot"))) || existsOnPath("copilot"),
+      configPath: () => path27.join(process.env.COPILOT_HOME || path27.join(os14.homedir(), ".copilot"), "mcp-config.json"),
+      detect: () => dirExists(path27.join(process.env.COPILOT_HOME || path27.join(os14.homedir(), ".copilot"))) || existsOnPath("copilot"),
       entry: { type: "local", command: SERVER_COMMAND, args: [...SERVER_ARGS], tools: ["*"] },
       restartHint: "no restart needed; copilot picks up changes immediately"
     });
     gemini = makeMcpServersJsonAdapter({
       name: "gemini",
       label: "Gemini CLI",
-      configPath: () => path27.join(os13.homedir(), ".gemini", "settings.json"),
-      detect: () => dirExists(path27.join(os13.homedir(), ".gemini")) || existsOnPath("gemini"),
+      configPath: () => path27.join(os14.homedir(), ".gemini", "settings.json"),
+      detect: () => dirExists(path27.join(os14.homedir(), ".gemini")) || existsOnPath("gemini"),
       entry: { command: SERVER_COMMAND, args: [...SERVER_ARGS], timeout: 15e3 },
       restartHint: "restart gemini to pick up the new server"
     });
@@ -42236,8 +42236,8 @@ var init_clients = __esm({
       // Claude Code reads user-scope MCP servers from ~/.claude.json (top-level
       // mcpServers key) — same file `claude mcp add --scope user` writes to.
       // ~/.claude/settings.json is for theme/hooks/permissions, not MCP servers.
-      configPath: () => path27.join(os13.homedir(), ".claude.json"),
-      detect: () => fileExists(path27.join(os13.homedir(), ".claude.json")) || dirExists(path27.join(os13.homedir(), ".claude")) || existsOnPath("claude"),
+      configPath: () => path27.join(os14.homedir(), ".claude.json"),
+      detect: () => fileExists(path27.join(os14.homedir(), ".claude.json")) || dirExists(path27.join(os14.homedir(), ".claude")) || existsOnPath("claude"),
       restartHint: "starts on next claude session"
     });
     claudeDesktop = makeMcpServersJsonAdapter({
@@ -42245,13 +42245,13 @@ var init_clients = __esm({
       label: "Claude Desktop",
       configPath: () => {
         if (process.platform === "darwin") {
-          return path27.join(os13.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
+          return path27.join(os14.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
         }
         if (process.platform === "win32") {
-          const appdata = process.env.APPDATA || path27.join(os13.homedir(), "AppData", "Roaming");
+          const appdata = process.env.APPDATA || path27.join(os14.homedir(), "AppData", "Roaming");
           return path27.join(appdata, "Claude", "claude_desktop_config.json");
         }
-        return path27.join(os13.homedir(), ".config", "Claude", "claude_desktop_config.json");
+        return path27.join(os14.homedir(), ".config", "Claude", "claude_desktop_config.json");
       },
       detect() {
         return dirExists(path27.dirname(this.configPath()));
@@ -42261,9 +42261,9 @@ var init_clients = __esm({
     opencode = {
       name: "opencode",
       label: "OpenCode",
-      configPath: () => path27.join(os13.homedir(), ".config", "opencode", "opencode.json"),
+      configPath: () => path27.join(os14.homedir(), ".config", "opencode", "opencode.json"),
       detect() {
-        return dirExists(path27.join(os13.homedir(), ".config", "opencode")) || existsOnPath("opencode");
+        return dirExists(path27.join(os14.homedir(), ".config", "opencode")) || existsOnPath("opencode");
       },
       install(dryRun) {
         const p = this.configPath();
@@ -42750,14 +42750,14 @@ var Temp = {
     }
   },
   truncate: (filePath) => {
-    const basename = path2.basename(filePath);
-    if (basename.length <= LIMIT_BASENAME_LENGTH)
+    const basename2 = path2.basename(filePath);
+    if (basename2.length <= LIMIT_BASENAME_LENGTH)
       return filePath;
-    const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename);
+    const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename2);
     if (!truncable)
       return filePath;
-    const truncationLength = basename.length - LIMIT_BASENAME_LENGTH;
-    return `${filePath.slice(0, -basename.length)}${truncable[1]}${truncable[2].slice(0, -truncationLength)}${truncable[3]}`;
+    const truncationLength = basename2.length - LIMIT_BASENAME_LENGTH;
+    return `${filePath.slice(0, -basename2.length)}${truncable[1]}${truncable[2].slice(0, -truncationLength)}${truncable[3]}`;
   }
 };
 node_default(Temp.purgeSyncAll);
@@ -52967,6 +52967,7 @@ var TerminalSession = class _TerminalSession {
   terminal;
   disposed = false;
   dataListeners = [];
+  inputListeners = [];
   exitListeners = [];
   resizeListeners = [];
   rcFile = null;
@@ -53180,6 +53181,14 @@ ${bannerCmd}
       if (index !== -1) this.dataListeners.splice(index, 1);
     };
   }
+  /** Subscribe to successfully submitted PTY input. */
+  onInput(listener) {
+    this.inputListeners.push(listener);
+    return () => {
+      const index = this.inputListeners.indexOf(listener);
+      if (index !== -1) this.inputListeners.splice(index, 1);
+    };
+  }
   /**
    * Subscribe to PTY exit
    */
@@ -53204,6 +53213,9 @@ ${bannerCmd}
       throw new Error("Terminal session has been disposed");
     }
     this.ptyProcess.write(data);
+    if (data.length > 0) {
+      for (const listener of this.inputListeners) listener(data);
+    }
   }
   /**
    * Get the current terminal buffer content as plain text
@@ -53914,7 +53926,6 @@ var TerminalManager = class {
     const entry = this.sessions.get(sessionId);
     if (entry) {
       entry.lastActivity = Date.now();
-      entry.metadata.lastActivityAt = (/* @__PURE__ */ new Date()).toISOString();
     }
   }
   cleanupIdleSessions() {
@@ -53932,8 +53943,22 @@ var TerminalManager = class {
    * Wire recording hooks onto a session so its output is captured by any
    * active recordings.
    */
-  wireRecording(session) {
-    session.onData((data) => this.recordingManager.recordOutputToAll(data));
+  wireRecording(session, sessionId) {
+    session.onInput(() => {
+      const entry = this.sessions.get(sessionId);
+      if (entry) {
+        entry.metadata.lastInputAt = (/* @__PURE__ */ new Date()).toISOString();
+        entry.lastActivity = Date.now();
+      }
+    });
+    session.onData((data) => {
+      const entry = this.sessions.get(sessionId);
+      if (entry && data.length > 0) {
+        entry.metadata.lastOutputAt = (/* @__PURE__ */ new Date()).toISOString();
+        entry.lastActivity = Date.now();
+      }
+      this.recordingManager.recordOutputToAll(data);
+    });
     session.onResize((cols, rows) => this.recordingManager.recordResizeToAll(cols, rows));
   }
   // ---------------------------------------------------------------------------
@@ -53974,7 +53999,8 @@ var TerminalManager = class {
           cols: dims.cols,
           rows: dims.rows,
           createdAt: now,
-          lastActivityAt: now,
+          lastInputAt: null,
+          lastOutputAt: null,
           isDefault: true,
           mode: this.options.mode ?? "headless",
           role: this.options.role ?? null,
@@ -53985,7 +54011,7 @@ var TerminalManager = class {
       };
       this.sessions.set(id, entry);
       this.defaultSessionId = id;
-      this.wireRecording(session);
+      this.wireRecording(session, id);
       return session;
     })();
     try {
@@ -54071,7 +54097,8 @@ var TerminalManager = class {
       cols: dims.cols,
       rows: dims.rows,
       createdAt: now,
-      lastActivityAt: now,
+      lastInputAt: null,
+      lastOutputAt: null,
       isDefault: false,
       mode: "headless",
       role: null,
@@ -54083,7 +54110,7 @@ var TerminalManager = class {
       lastActivity: Date.now(),
       isDefault: false
     });
-    this.wireRecording(session);
+    this.wireRecording(session, id);
     this.emitSessionEvent("session.created", id);
     return metadata;
   }
@@ -54115,7 +54142,8 @@ var TerminalManager = class {
         cols: this.options.cols ?? 80,
         rows: this.options.rows ?? 25,
         createdAt: "",
-        lastActivityAt: "",
+        lastInputAt: null,
+        lastOutputAt: null,
         isDefault: true,
         mode: "uninitialized",
         role: this.options.role ?? null,
@@ -55409,6 +55437,81 @@ async function handleNotify(_manager, args2) {
   }
 }
 
+// src/tools/systemInfo.ts
+import os11 from "node:os";
+import { readFileSync as readFileSync3 } from "node:fs";
+import { basename } from "node:path";
+var systemInfoTool = {
+  name: "systemInfo",
+  description: "Get a concise read-only summary of the Terminal Toolkit host OS, distribution, compatibility environment (WSL/MSYS2/Termux), runtime, shell, paths and Primary Session state. Useful when first connecting to an unfamiliar host; does not create a session or probe with shell commands.",
+  inputSchema: { type: "object", properties: {}, required: [] }
+};
+function readOptional(path28) {
+  try {
+    return readFileSync3(path28, "utf8");
+  } catch {
+    return null;
+  }
+}
+function linuxDistribution() {
+  const content = readOptional("/etc/os-release");
+  if (!content) return null;
+  const entries = Object.fromEntries(content.split("\n").flatMap((line) => {
+    const match = line.match(/^([A-Z_]+)=(.*)$/);
+    return match ? [[match[1], match[2].replace(/^['"]|['"]$/g, "")]] : [];
+  }));
+  return { name: entries.PRETTY_NAME ?? entries.NAME ?? "Linux", version: entries.VERSION_ID ?? null };
+}
+function getSystemInfo(manager) {
+  const platform2 = process.platform;
+  const env5 = process.env;
+  const kernel = os11.release();
+  const linux = platform2 === "linux" ? linuxDistribution() : null;
+  const isTermux = platform2 === "android" || Boolean(env5.TERMUX_VERSION || env5.PREFIX?.includes("com.termux"));
+  const isWsl2 = platform2 === "linux" && !isTermux && (Boolean(env5.WSL_DISTRO_NAME || env5.WSL_INTEROP) || /microsoft|wsl/i.test(kernel) || /microsoft|wsl/i.test(readOptional("/proc/version") ?? ""));
+  const isWsl22 = isWsl2 && (/wsl2|microsoft-standard/i.test(kernel) || Boolean(env5.WSL_INTEROP));
+  const isMsys = Boolean(env5.MSYSTEM);
+  const environment = isTermux ? "termux" : isWsl2 ? isWsl22 ? "wsl2" : "wsl" : isMsys ? "msys2" : "native";
+  const shellPath = manager.getConfiguredShell();
+  const sessions = manager.listSessions().sessions;
+  const primary = sessions.find((session) => session.isDefault) ?? null;
+  return {
+    system: {
+      platform: platform2,
+      distribution: linux?.name ?? (platform2 === "darwin" ? "macOS" : platform2 === "win32" ? "Windows" : os11.type()),
+      version: linux?.version ?? (platform2 === "darwin" ? null : os11.release()),
+      kernel,
+      arch: os11.arch(),
+      environment,
+      hostOS: isWsl2 ? "windows" : isTermux ? "android" : platform2,
+      pathStyle: platform2 === "win32" && !isMsys ? "windows" : "posix"
+    },
+    runtime: {
+      node: process.version,
+      bun: typeof process.versions.bun === "string" ? process.versions.bun : null,
+      shell: { name: basename(shellPath), path: shellPath },
+      user: os11.userInfo().username,
+      home: os11.homedir(),
+      cwd: process.cwd(),
+      terminal: env5.TERM ?? null
+    },
+    primarySession: primary ? {
+      connected: primary.mode !== "uninitialized" && (primary.role !== "client" || primary.clientCount > 0),
+      sessionId: primary.mode === "uninitialized" ? null : primary.sessionId,
+      mode: primary.mode,
+      role: primary.role,
+      shell: primary.shell,
+      clientCount: primary.clientCount,
+      createdAt: primary.createdAt || null,
+      lastInputAt: primary.lastInputAt,
+      lastOutputAt: primary.lastOutputAt
+    } : null
+  };
+}
+function handleSystemInfo(manager, _args) {
+  return { content: [{ type: "text", text: JSON.stringify(getSystemInfo(manager), null, 2) }] };
+}
+
 // src/tools/operators.ts
 init_zod();
 import { spawn as spawn3 } from "node:child_process";
@@ -55665,7 +55768,7 @@ var namespaceRegistry = {
   },
   "tools/misc": {
     defaultEnabled: true,
-    toolNames: ["getClipboard", "setClipboard", "notify", "sleep"]
+    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo"]
   }
 };
 var namespaceByTool = new Map(
@@ -55689,7 +55792,8 @@ var toolDefinitions = [
   resizeTool,
   getClipboardTool,
   setClipboardTool,
-  notifyTool
+  notifyTool,
+  systemInfoTool
 ];
 var TOOL_SUMMARIES = {
   type: "Send text input to an interactive terminal session.",
@@ -55707,6 +55811,7 @@ var TOOL_SUMMARIES = {
   getClipboard: "Read the system clipboard.",
   setClipboard: "Write text to the system clipboard.",
   notify: "Send an operating-system notification.",
+  systemInfo: "Summarize host environment and Primary Session state.",
   read: "Read a text file.",
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",
@@ -55729,7 +55834,7 @@ function getMcpToolDefinitions(piExtraOperators = false) {
     description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
-var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep"]);
+var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "ls", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo"]);
 var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
 var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
@@ -57184,6 +57289,8 @@ async function dispatchTool(manager, name, args2, piExtraOperators = false, sign
       return await handleSetClipboard(manager, args2);
     case "notify":
       return await handleNotify(manager, args2);
+    case "systemInfo":
+      return handleSystemInfo(manager, args2);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
@@ -57354,7 +57461,7 @@ var import_yaml = __toESM(require_dist4(), 1);
 import { createHash as createHash2 } from "node:crypto";
 import { readFile as readFile3, readdir as readdir2, realpath, stat } from "node:fs/promises";
 import path21 from "node:path";
-import os11 from "node:os";
+import os12 from "node:os";
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 var SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath9(import.meta.url)), "../skills");
 var listRequest = external_exports.object({ method: external_exports.literal("skills/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
@@ -57383,10 +57490,10 @@ var skillWarnings = /* @__PURE__ */ new Set();
 async function skillDirectories() {
   const roots = [SKILLS_ROOT];
   try {
-    const config3 = JSON.parse(await readFile3(path21.join(os11.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    const config3 = JSON.parse(await readFile3(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
     if (Array.isArray(config3.skills)) for (const value of config3.skills) {
       if (typeof value !== "string" || !value.trim()) continue;
-      const expanded = value === "~" ? os11.homedir() : value.startsWith("~/") ? path21.join(os11.homedir(), value.slice(2)) : value;
+      const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
       roots.push(path21.resolve(expanded));
     }
   } catch (error2) {
@@ -58090,6 +58197,10 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
         stats.recordToolCall("notify");
         result2 = await handleNotify(manager, params);
         break;
+      case "systemInfo":
+        stats.recordToolCall("systemInfo");
+        result2 = handleSystemInfo(manager, params);
+        break;
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
         setClientPiExtraOperators?.(parsed.piExtraOperators === true);
@@ -58659,14 +58770,14 @@ function createClientTitleSetter(write) {
 
 // src/sandbox/config.ts
 import * as fs17 from "fs";
-import * as os12 from "os";
+import * as os13 from "os";
 import * as path22 from "path";
 function expandPath(p) {
   if (p.startsWith("~/")) {
-    return path22.join(os12.homedir(), p.slice(2));
+    return path22.join(os13.homedir(), p.slice(2));
   }
   if (p === "~") {
-    return os12.homedir();
+    return os13.homedir();
   }
   if (p === ".") {
     return process.cwd();

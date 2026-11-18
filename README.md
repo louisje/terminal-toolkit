@@ -519,10 +519,20 @@ All arguments are optional. Returns:
   "cols": 100,
   "rows": 30,
   "createdAt": "2026-04-25T12:58:01.072Z",
-  "lastActivityAt": "2026-04-25T12:58:01.072Z",
+  "lastInputAt": null,
+  "lastOutputAt": null,
   "isDefault": false
 }
 ```
+
+### `systemInfo`
+Get a read-only summary of the Terminal Toolkit host and Primary Session without creating a PTY:
+
+```json
+{ "name": "systemInfo", "arguments": {} }
+```
+
+The response includes `system` (platform, distribution, kernel, architecture, WSL/MSYS2/Termux detection), `runtime` (Node/Bun, configured shell, user and paths), and `primarySession` (connection, mode, client count, and `lastInputAt` / `lastOutputAt`). Unknown PTY activity timestamps are `null`. The runtime working directory is the Toolkit process directory, not necessarily the shell's current directory.
 
 ### `listSessions`
 List all active sessions including the default. Reports configured limits.

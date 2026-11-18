@@ -7,7 +7,7 @@ import { getToolDefinitions } from "../src/tools/definitions.ts";
 import { handleExtraOperatorTool } from "../src/tools/extra-operators.ts";
 
 test("core operators are always enabled; extra operators are optional", () => {
-  for (const [extra, expected] of [[false, 19], [true, 22]] as const) {
+  for (const [extra, expected] of [[false, 20], [true, 23]] as const) {
     const names = getToolDefinitions(extra).map((tool) => tool.name);
     assert.equal(names.length, expected);
     for (const name of ["read", "write", "edit", "shell"]) assert.ok(names.includes(name));

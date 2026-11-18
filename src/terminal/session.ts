@@ -64,6 +64,7 @@ export class TerminalSession {
   private terminal!: InstanceType<typeof Terminal>;
   private disposed = false;
   private dataListeners: Array<(data: string) => void> = [];
+  private inputListeners: Array<(data: string) => void> = [];
   private exitListeners: Array<(code: number) => void> = [];
   private resizeListeners: Array<(cols: number, rows: number) => void> = [];
 
@@ -340,6 +341,15 @@ ${bannerCmd}
     };
   }
 
+  /** Subscribe to successfully submitted PTY input. */
+  onInput(listener: (data: string) => void): () => void {
+    this.inputListeners.push(listener);
+    return () => {
+      const index = this.inputListeners.indexOf(listener);
+      if (index !== -1) this.inputListeners.splice(index, 1);
+    };
+  }
+
   /**
    * Subscribe to PTY exit
    */
@@ -366,6 +376,9 @@ ${bannerCmd}
       throw new Error("Terminal session has been disposed");
     }
     this.ptyProcess.write(data);
+    if (data.length > 0) {
+      for (const listener of this.inputListeners) listener(data);
+    }
   }
 
   /**

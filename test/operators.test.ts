@@ -6,9 +6,9 @@ import { join } from "node:path";
 import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, namespaceRegistry } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
-test("tool definitions expose 19 core operators by default", () => {
-  assert.equal(getToolDefinitions().length, 19);
-  assert.equal(getToolDefinitions(true).length, 22);
+test("tool definitions expose 20 core operators by default", () => {
+  assert.equal(getToolDefinitions().length, 20);
+  assert.equal(getToolDefinitions(true).length, 23);
   assert.deepEqual(getToolDefinitions().slice(-4).map((tool) => tool.name), ["read", "write", "edit", "shell"]);
 });
 

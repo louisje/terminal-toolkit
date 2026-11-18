@@ -25,6 +25,7 @@ import { handleResize } from "../tools/resize.js";
 import { handleGetClipboard } from "../tools/getClipboard.js";
 import { handleSetClipboard } from "../tools/setClipboard.js";
 import { handleNotify } from "../tools/notify.js";
+import { handleSystemInfo } from "../tools/systemInfo.js";
 import { handleOperatorTool } from "../tools/operators.js";
 import { handleExtraOperatorTool } from "../tools/extra-operators.js";
 
@@ -463,6 +464,11 @@ async function handleToolRequest(
       case "notify":
         stats.recordToolCall("notify");
         result = await handleNotify(manager, params);
+        break;
+
+      case "systemInfo":
+        stats.recordToolCall("systemInfo");
+        result = handleSystemInfo(manager, params);
         break;
 
       case "clientConnected": {
