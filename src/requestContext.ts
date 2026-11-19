@@ -6,6 +6,7 @@ export interface RequestContext {
   organizationId?: string;
   subjectId?: string;
   conversationId?: string;
+  responseDeadline?: { timeoutMs: number; deadlineAt: number; receivedAt: number; upstreamDeadline?: string };
 }
 
 // Set TERMINAL_TOOLKIT_IDENTITY_KEY to a shared secret for stable identifiers
@@ -24,6 +25,17 @@ export function createRequestContext(meta: unknown): RequestContext {
   const organizationId = fingerprint("openai/organization", fields["openai/organization"]);
   const subjectId = fingerprint("openai/subject", fields["openai/subject"]);
   const conversationId = fingerprint("openai/session", fields["openai/session"]);
-  if (!organizationId && !subjectId && !conversationId) return {};
-  return { provider: "openai", ...(organizationId ? { organizationId } : {}), ...(subjectId ? { subjectId } : {}), ...(conversationId ? { conversationId } : {}) };
+  const rawDeadline = fields["terminal-toolkit/responseDeadline"];
+  let responseDeadline: RequestContext["responseDeadline"];
+  if (rawDeadline && typeof rawDeadline === "object" && !Array.isArray(rawDeadline)) {
+    const hint = rawDeadline as Record<string, unknown>;
+    if (typeof hint.remainingMs === "number" && Number.isSafeInteger(hint.remainingMs) && hint.remainingMs >= 0 && hint.remainingMs <= 86400000 &&
+        typeof hint.timeoutMs === "number" && Number.isSafeInteger(hint.timeoutMs) && hint.timeoutMs >= 0) {
+      const receivedAt = Date.now();
+      responseDeadline = { timeoutMs: hint.timeoutMs, receivedAt, deadlineAt: receivedAt + hint.remainingMs,
+        ...(typeof hint.deadline === "string" ? { upstreamDeadline: hint.deadline } : {}) };
+    }
+  }
+  if (!organizationId && !subjectId && !conversationId && !responseDeadline) return {};
+  return { ...(organizationId || subjectId || conversationId ? { provider: "openai" as const } : {}), ...(organizationId ? { organizationId } : {}), ...(subjectId ? { subjectId } : {}), ...(conversationId ? { conversationId } : {}), ...(responseDeadline ? { responseDeadline } : {}) };
 }

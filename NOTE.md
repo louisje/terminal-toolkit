@@ -39,3 +39,9 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - [ ] 後續評估在 `codemode()` 回傳探索提示／版本或狀態摘要，並以實際工具呼叫統計驗證 Agent 是否使用；避免每次輸出大量固定指示。
 - [ ] 研究 `tools/list` 動態揭露的可行性：ChatGPT 可能只在 Plugin 更新時快取工具定義，執行階段即使重複 `initialize` 也未必重新取得工具清單；驗證 `notifications/tools/list_changed` 的支援情況後，再決定是否採用動態清單或固定入口搭配 Codemode `searchTools()` 等執行期探索機制。
 - 區分協定規範與觀察：MCP 初始化是一般操作前的必要流程；ChatGPT 的快取、Session 生命週期與 instructions 使用方式尚待實測，不應視為已確認的實作保證。
+
+## MCP Response Deadline 後續待辦（第二階段）
+
+- [ ] 研究 Deadline 到期時的工具取消策略；區分回覆有效期限與工具執行期限，不得直接將前者視為強制停止指令。
+- [ ] 對 read/find/grep 等唯讀工具評估協作式取消；對 write/edit 考慮原子性與部分完成；對 shell/type/codemode 特別保護 Primary Session，避免逾時直接送 Ctrl+C 或殺死持續工作的程序。
+- [ ] 研究 MCP 取消通知、Socket AbortSignal 傳遞、逾時後狀態查詢及重試冪等性；先實測再啟用自動取消。

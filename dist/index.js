@@ -54306,8 +54306,22 @@ function createRequestContext(meta) {
   const organizationId = fingerprint("openai/organization", fields["openai/organization"]);
   const subjectId = fingerprint("openai/subject", fields["openai/subject"]);
   const conversationId = fingerprint("openai/session", fields["openai/session"]);
-  if (!organizationId && !subjectId && !conversationId) return {};
-  return { provider: "openai", ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {} };
+  const rawDeadline = fields["terminal-toolkit/responseDeadline"];
+  let responseDeadline;
+  if (rawDeadline && typeof rawDeadline === "object" && !Array.isArray(rawDeadline)) {
+    const hint2 = rawDeadline;
+    if (typeof hint2.remainingMs === "number" && Number.isSafeInteger(hint2.remainingMs) && hint2.remainingMs >= 0 && hint2.remainingMs <= 864e5 && typeof hint2.timeoutMs === "number" && Number.isSafeInteger(hint2.timeoutMs) && hint2.timeoutMs >= 0) {
+      const receivedAt = Date.now();
+      responseDeadline = {
+        timeoutMs: hint2.timeoutMs,
+        receivedAt,
+        deadlineAt: receivedAt + hint2.remainingMs,
+        ...typeof hint2.deadline === "string" ? { upstreamDeadline: hint2.deadline } : {}
+      };
+    }
+  }
+  if (!organizationId && !subjectId && !conversationId && !responseDeadline) return {};
+  return { ...organizationId || subjectId || conversationId ? { provider: "openai" } : {}, ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {}, ...responseDeadline ? { responseDeadline } : {} };
 }
 
 // src/tools/type.ts
@@ -58142,6 +58156,15 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
               }) + "\n");
               continue;
             }
+            if (request.requestContext?.responseDeadline) {
+              const deadline = request.requestContext.responseDeadline;
+              console.error("[terminal-toolkit] Socket MCP response deadline", JSON.stringify({
+                method: request.method,
+                timeoutMs: deadline.timeoutMs,
+                remainingMs: Math.max(0, deadline.deadlineAt - Date.now()),
+                upstreamDeadline: deadline.upstreamDeadline
+              }));
+            }
             const controller = new AbortController();
             inflight.set(request.id, controller);
             void (async () => {
@@ -58546,6 +58569,14 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
     const context = createRequestContext(request.params._meta);
+    if (context.responseDeadline) {
+      console.error("[terminal-toolkit] MCP response deadline", JSON.stringify({
+        tool: name,
+        timeoutMs: context.responseDeadline.timeoutMs,
+        remainingMs: Math.max(0, context.responseDeadline.deadlineAt - Date.now()),
+        upstreamDeadline: context.responseDeadline.upstreamDeadline
+      }));
+    }
     return requestContextStorage.run(context, async () => {
       try {
         const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(

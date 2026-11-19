@@ -299,6 +299,14 @@ export function createToolProxyServer(
               }) + "\n");
               continue;
             }
+            if (request.requestContext?.responseDeadline) {
+              const deadline = request.requestContext.responseDeadline;
+              console.error("[terminal-toolkit] Socket MCP response deadline", JSON.stringify({
+                method: request.method, timeoutMs: deadline.timeoutMs,
+                remainingMs: Math.max(0, deadline.deadlineAt - Date.now()),
+                upstreamDeadline: deadline.upstreamDeadline,
+              }));
+            }
             const controller = new AbortController();
             inflight.set(request.id, controller);
             // Do not block later NDJSON frames while a tool is running.

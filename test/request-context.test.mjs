@@ -45,6 +45,18 @@ test("invalid identifiers are ignored independently", () => {
   assert.deepEqual(createRequestContext({ "openai/session": "", "openai/subject": null }), {});
 });
 
+test("response deadline hint is parsed without inventing an OpenAI identity", () => {
+  const context = createRequestContext({ "terminal-toolkit/responseDeadline": {
+    timeoutMs: 30000, remainingMs: 25000, deadline: "2026-11-19T12:00:00Z",
+  } });
+  assert.equal(context.provider, undefined);
+  assert.equal(context.responseDeadline.timeoutMs, 30000);
+  assert.equal(context.responseDeadline.upstreamDeadline, "2026-11-19T12:00:00Z");
+  assert.ok(context.responseDeadline.deadlineAt - Date.now() <= 25000);
+  assert.ok(context.responseDeadline.deadlineAt - Date.now() >= 24000);
+  assert.deepEqual(createRequestContext({ "terminal-toolkit/responseDeadline": { timeoutMs: 30000, remainingMs: -1 } }), {});
+});
+
 test("request context stays isolated across concurrent asynchronous operations", async () => {
   const a = createRequestContext({ "openai/session": "A" });
   const b = createRequestContext({ "openai/session": "B" });
