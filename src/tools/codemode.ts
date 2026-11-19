@@ -17,6 +17,8 @@ export const codemodeDefinition: ToolDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
+- At the beginning of each conversation, run await search({namespace: "skills/*"}) once to check for available Skills; if any are returned, inspect relevant Skills and read their SKILL.md as needed. If none are returned (--skills may be disabled), proceed with ordinary tool discovery. Do not repeat initial Skills discovery on every call.
+- Discovery search() returns at most 100 matches per call (default 100; larger limits are capped). Narrow filters when more matches exist.
 - Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
@@ -82,7 +84,7 @@ export async function runCodemodeWithDispatch(
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         const found = entries.filter(item => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every(w => (item.name + " " + item.description).toLowerCase().includes(w)));
         recordSearch(query ?? "", found.length);
-        return limit ? found.slice(0,limit) : found;
+        return found.slice(0, Math.min(limit ?? 100, 100));
       }),
     },
     {

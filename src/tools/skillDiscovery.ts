@@ -4,7 +4,7 @@ import { skillCatalog } from "../skills.js";
 import type { ToolDefinition } from "./definitions.js";
 
 export const skillDiscoveryDefinitions: ToolDefinition[] = [
-  { name: "searchSkills", description: "Search available Skills by keywords or globbed full name. Use describeSkill({name}) to inspect metadata; read the returned SKILL.md path using read().", annotations: {readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}, inputSchema: {type:"object",properties:{query:{type:"string"},name:{type:"string",description:"Glob pattern matching the full unique Skill name"},limit:{type:"integer",minimum:1}},required:[]} },
+  { name: "searchSkills", description: "When this tool is exposed (--skills enabled), call searchSkills() once at the beginning of each conversation to discover available Skills before choosing tools for the task. Search by keywords or globbed full name as needed; use describeSkill({name}) to inspect relevant metadata and read the returned SKILL.md path using read(). Search results are capped at 100 per call (default 100); narrow the query if needed. Do not repeat initial discovery on every tool call.", annotations: {readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}, inputSchema: {type:"object",properties:{query:{type:"string"},name:{type:"string",description:"Glob pattern matching the full unique Skill name"},limit:{type:"integer",minimum:1}},required:[]} },
   { name: "describeSkill", description: "Describe one Skill by its full unique name. Returns metadata and SKILL.md path, not its contents. Read the path using read({path,offset?,limit?}).", annotations: {readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}, inputSchema: {type:"object",properties:{name:{type:"string",description:"Full unique Skill name, e.g. mattpocock/engineering/code-review"}},required:["name"]} },
 ];
 
@@ -20,7 +20,7 @@ export async function handleSkillDiscovery(name:string,args:unknown) {
     const options = searchSchema.parse(args ?? {});
     const words = (options.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
     const found = entries.filter(s=>glob(s.name,options.name) && words.every(w=>(s.name+" "+s.description).toLowerCase().includes(w)));
-    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,options.limit),total:found.length})}]};
+    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,Math.min(options.limit ?? 100,100)),total:found.length})}]};
   }
   if(name==="describeSkill") {
     const {name:target} = describeSchema.parse(args);

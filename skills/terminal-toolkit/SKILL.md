@@ -9,6 +9,10 @@ description: |
 
 # Terminal Toolkit: When to Use the User's Real Shell Instead of Bash
 
+## Skill discovery at the start of a conversation
+
+At the beginning of each conversation, discover Skills once **only if Skills discovery is available** (`--skills` may be disabled). In standard MCP, call `searchSkills()` only when that tool is exposed; in Codemode, use `search({namespace: "skills/*"})` to discover Skills (an empty result means none are available). Inspect relevant Skill metadata and read its `SKILL.md` only when needed. If Skills discovery is not exposed, skip this step and continue with ordinary tool discovery. Do not repeat the initial Skills discovery on every tool call.
+
 ## Default rule
 
 Discover `read`, `write`, and `edit` under `tools/core` before choosing `shell`. Use these for direct text-file

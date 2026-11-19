@@ -57308,6 +57308,8 @@ var codemodeDefinition = {
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
 - tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
+- At the beginning of each conversation, run await search({namespace: "skills/*"}) once to check for available Skills; if any are returned, inspect relevant Skills and read their SKILL.md as needed. If none are returned (--skills may be disabled), proceed with ordinary tool discovery. Do not repeat initial Skills discovery on every call.
+- Discovery search() returns at most 100 matches per call (default 100; larger limits are capped). Narrow filters when more matches exist.
 - Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
@@ -57365,7 +57367,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
         const found = entries.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
         recordSearch(query ?? "", found.length);
-        return limit ? found.slice(0, limit) : found;
+        return found.slice(0, Math.min(limit ?? 100, 100));
       })
     },
     {
@@ -57431,7 +57433,7 @@ function runCodemode(manager, args2, piExtraOperators, signal, skillsEnabled = f
 // src/tools/skillDiscovery.ts
 init_zod();
 var skillDiscoveryDefinitions = [
-  { name: "searchSkills", description: "Search available Skills by keywords or globbed full name. Use describeSkill({name}) to inspect metadata; read the returned SKILL.md path using read().", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { query: { type: "string" }, name: { type: "string", description: "Glob pattern matching the full unique Skill name" }, limit: { type: "integer", minimum: 1 } }, required: [] } },
+  { name: "searchSkills", description: "When this tool is exposed (--skills enabled), call searchSkills() once at the beginning of each conversation to discover available Skills before choosing tools for the task. Search by keywords or globbed full name as needed; use describeSkill({name}) to inspect relevant metadata and read the returned SKILL.md path using read(). Search results are capped at 100 per call (default 100); narrow the query if needed. Do not repeat initial discovery on every tool call.", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { query: { type: "string" }, name: { type: "string", description: "Glob pattern matching the full unique Skill name" }, limit: { type: "integer", minimum: 1 } }, required: [] } },
   { name: "describeSkill", description: "Describe one Skill by its full unique name. Returns metadata and SKILL.md path, not its contents. Read the path using read({path,offset?,limit?}).", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { name: { type: "string", description: "Full unique Skill name, e.g. mattpocock/engineering/code-review" } }, required: ["name"] } }
 ];
 var searchSchema = external_exports.object({ query: external_exports.string().optional(), name: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
@@ -57445,7 +57447,7 @@ async function handleSkillDiscovery(name, args2) {
     const options2 = searchSchema.parse(args2 ?? {});
     const words = (options2.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
     const found = entries.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
-    return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, options2.limit), total: found.length }) }] };
+    return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, Math.min(options2.limit ?? 100, 100)), total: found.length }) }] };
   }
   if (name === "describeSkill") {
     const { name: target } = describeSchema.parse(args2);
