@@ -17,6 +17,13 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - 應重用現有 `skills/list`、`skills/get`、`resources/read` 與外部 Skills 設定的清單、驗證及讀取邏輯；先確認 ChatGPT 對 MCP Skills 的實際支援行為，再決定預設／opt-in、Codemode 揭露及避免功能重複的方式。
 - 一般 MCP Tool 讀取 `SKILL.md` 不等於原生安裝、啟用或自動觸發 Skill。
 
+## 虛擬檔案系統（VFS）待辦
+
+- [ ] 建立共用 Virtual File System（VFS）抽象層，統一虛擬路徑解析、檔案與目錄存取及權限判斷；保留既有 `builtin://skills/...` 路徑相容性，並支援未來其他虛擬檔案來源。
+- [ ] 確保 `read()`、`list()`、`grep()`、`find()` 可操作虛擬檔案／目錄：讀取、列目錄、搜尋內容及路徑；搜尋結果使用虛擬路徑，不應直接暴露背後實體路徑。
+- [ ] 預留 `write()`、`edit()` 的 VFS 寫入／編輯介面及來源權限模型；目前內建 Skills 維持唯讀，未來僅對明確允許寫入的虛擬來源開放修改。
+- [ ] 補齊跨工具測試：虛擬路徑、目錄與檔案、搜尋、路徑穿越防護、唯讀限制及實體檔案操作相容性。
+
 ## Codemode 探索體驗
 
 - [x] 頂層 `codemode()` description 已揭露 `tools/core` 的 `read`、`write`、`edit`、`shell` 與 PTY/Misc 分工；namespace 與工具描述也加入檔案操作優先規則。後續仍可觀察 Agent 實際選擇行為。
