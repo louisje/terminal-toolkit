@@ -37,13 +37,13 @@ test('unified search and describe discover tools and skills without loading skil
 test('codemode discovery functions identify tools, schemas and namespace', {timeout:60000}, async () => {
   const found = await evaluate('text(await search({query:"type",limit:3,namespace:"tools/pty"}))');
   assert.ok(found.length <= 3 && found.length > 0);
-  const tool = await evaluate('text(await describe({namespace:"tools/core",name:"shell"}))', true);
+  const tool = await evaluate('text(await describe({namespace:"tools/runtime",name:"shell"}))', true);
   assert.equal(tool.name, 'shell');
   assert.ok(tool.inputSchema.required.includes('command'));
-  assert.equal(tool.namespace, 'tools/core');
+  assert.equal(tool.namespace, 'tools/runtime');
   assert.equal(Object.hasOwn(tool, 'description'), false);
   assert.equal(found[0].namespace, 'tools/pty');
-  assert.equal((await evaluate('text(await describe({namespace:"tools/core",name:"shell"}))')).name, 'shell');
+  assert.equal((await evaluate('text(await describe({namespace:"tools/runtime",name:"shell"}))')).name, 'shell');
   const ns = await evaluate('text(await describe({namespace:"tools/pty"}))');
   assert.equal(ns.namespace, 'tools/pty');
   assert.equal(ns.tools.some(t => t.name === 'shell'), false);
@@ -80,8 +80,8 @@ test('discovery descriptions stay short and detailed guidance appears only on de
 
 test('search({namespace:"tools/*"}) with no arguments returns every enabled tool without the default search limit', {timeout:20000}, async () => {
   const all = await evaluate('text(await search({namespace:"tools/*"}))', true);
-  assert.equal(all.length, 21);
-  assert.ok(all.every(t => ['tools/core','tools/pty','tools/misc'].includes(t.namespace) && t.name && t.description));
+  assert.equal(all.length, 22);
+  assert.ok(all.every(t => ['tools/core','tools/runtime','tools/pty','tools/misc'].includes(t.namespace) && t.name && t.description));
   assert.ok(all.some(t => t.name === 'shell'));
   assert.deepEqual(await evaluate('text(await search({namespace:"tools/*"}))', true), all);
   const limited = await evaluate('text(await search({namespace:"tools/*",limit:5}))', true);
@@ -90,7 +90,7 @@ test('search({namespace:"tools/*"}) with no arguments returns every enabled tool
 
 test('namespace discovery lists categories and filters tools', {timeout:20000}, async () => {
   const result = await evaluate('text({categories:(await search({namespace:"tools/*"})).map(x=>x.namespace).filter((x,i,a)=>a.indexOf(x)===i).map(name=>({name})),pty:await describe({namespace:"tools/pty"}),misc:await describe({namespace:"tools/misc"}),pi:await describe({namespace:"tools/core"}),filtered:await search({namespace:"tools/misc"})})', true);
-  assert.deepEqual(new Set(result.categories.map(n => n.name)), new Set(['tools/core','tools/pty','tools/misc']));
+  assert.deepEqual(new Set(result.categories.map(n => n.name)), new Set(['tools/core','tools/runtime','tools/pty','tools/misc']));
   assert.ok(result.pi.tools.some(t => t.name === 'write'));
   assert.ok(result.pty.tools.some(t => t.name === 'createSession'));
   assert.ok(result.misc.tools.some(t => t.name === 'notify'));
@@ -106,5 +106,5 @@ test('extra Pi operators appear only when enabled and belong to tools/core', {ti
   assert.ok(['list','grep','find'].every(name => extra.pi.tools.some(t => t.name === name)));
   assert.equal(extra.all.some(t => t.name === 'shell'), true);
   const both = await evaluate('text((await search({namespace:"tools/*"})).filter(t=>t.namespace==="tools/core").map(t=>t.name))', true, true);
-  assert.ok(['read','write','edit','shell','list','grep','find'].every(name => both.includes(name)));
+  assert.ok(['read','write','edit','list','grep','find'].every(name => both.includes(name)));
 });

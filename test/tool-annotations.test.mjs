@@ -34,7 +34,7 @@ test('codemode is non-read-only and describe exposes nested annotations', { time
     assert.equal(tools[0].name, 'codemode');
     assert.equal(tools[0].annotations.readOnlyHint, false);
     assert.equal(tools[0].annotations.openWorldHint, true);
-    const result = await client.callTool({ name: 'codemode', arguments: { code: 'text({read:await describe({namespace:"tools/core",name:"read"}),shell:await describe({namespace:"tools/core",name:"shell"})})' } });
+    const result = await client.callTool({ name: 'codemode', arguments: { code: 'text({read:await describe({namespace:"tools/core",name:"read"}),shell:await describe({namespace:"tools/runtime",name:"shell"})})' } });
     assert.equal(result.isError, false, JSON.stringify(result));
     const details = JSON.parse(result.content[0].text);
     assert.equal(details.read.annotations.readOnlyHint, true);

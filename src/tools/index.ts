@@ -81,6 +81,7 @@ async function dispatchToolUntracked(manager: TerminalManager, name: string, arg
     case "write":
     case "edit":
     case "shell":
+    case "python":
             return await handleOperatorTool(name, args, manager.getConfiguredShell(), signal);
     case "type":
       return await handleType(manager, args);

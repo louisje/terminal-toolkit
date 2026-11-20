@@ -15,7 +15,8 @@ export const codemodeDefinition: ToolDefinition = {
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
-- tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
+- tools/core: read files with read, create/replace with write, modify existing files with edit; prefer these over scripts for routine file edits.
+- tools/runtime: shell for one-shot commands, python for direct Python code execution.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
 - At the beginning of each conversation, run await search({namespace: "skills/*"}) once to check for available Skills; if any are returned, inspect relevant Skills and read their SKILL.md as needed. If none are returned (--skills may be disabled), proceed with ordinary tool discovery. Do not repeat initial Skills discovery on every call.
 - Discovery search() returns at most 100 matches per call (default 100; larger limits are capped). Narrow filters when more matches exist.

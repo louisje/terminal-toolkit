@@ -6,15 +6,15 @@ import { join } from "node:path";
 import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, namespaceRegistry } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
-test("tool definitions expose 21 core operators by default", () => {
-  assert.equal(getToolDefinitions().length, 21);
-  assert.equal(getToolDefinitions(true).length, 24);
-  assert.deepEqual(getToolDefinitions().slice(-4).map((tool) => tool.name), ["read", "write", "edit", "shell"]);
+test("tool definitions expose 22 core operators by default", () => {
+  assert.equal(getToolDefinitions().length, 22);
+  assert.equal(getToolDefinitions(true).length, 25);
+  assert.deepEqual(getToolDefinitions().slice(-5).map((tool) => tool.name), ["read", "write", "edit", "python", "shell"]);
 });
 
 test("namespace registry covers every tool and preserves enabled defaults", () => {
   const namespaces = Object.keys(namespaceRegistry);
-  assert.deepEqual(namespaces, ["tools/core", "tools/pty", "tools/misc"]);
+  assert.deepEqual(namespaces, ["tools/core", "tools/runtime", "tools/pty", "tools/misc"]);
   assert.ok(Object.values(namespaceRegistry).every(config => config.defaultEnabled));
   const names = Object.values(namespaceRegistry).flatMap(config => [...config.toolNames]);
   assert.equal(new Set(names).size, names.length);
@@ -47,6 +47,17 @@ test("read, write, and edit implement the basic operator semantics", async () =>
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test("python runs source via stdin and reports failures", async () => {
+  const ok = await handleOperatorTool("python", { code: "print(sum(range(100)))" });
+  assert.equal(ok.content[0]?.text.trim(), "4950");
+  const failed = await handleOperatorTool("python", { code: "raise ValueError('test failure')" });
+  assert.equal(failed.isError, true);
+  assert.match(failed.content[0]?.text ?? "", /ValueError: test failure/);
+  const timedOut = await handleOperatorTool("python", { code: "import time; time.sleep(2)", timeout: 0.05 });
+  assert.equal(timedOut.isError, true);
+  assert.match(timedOut.content[0]?.text ?? "", /timed out/);
 });
 
 test("shell returns output, exit failures, and timeout failures", async () => {

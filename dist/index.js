@@ -47662,17 +47662,14 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
       await writeFile(target, updated, "utf8");
       return result(`Edited ${parsed.path}`);
     }
-    case "shell": {
-      const parsed = shellSchema.parse(args2);
+    case "shell":
+    case "python": {
+      const parsed = name === "python" ? pythonSchema.parse(args2) : shellSchema.parse(args2);
       if (signal?.aborted) throw new Error("Command aborted");
       let timedOut = false;
-      const child = spawn3(parsed.command, {
-        cwd: operatorCwd,
-        shell,
-        detached: process.platform !== "win32",
-        windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"]
-      });
+      const isPython = name === "python";
+      const child = isPython ? spawn3("python3", ["-"], { cwd: operatorCwd, detached: process.platform !== "win32", windowsHide: true, stdio: ["pipe", "pipe", "pipe"] }) : spawn3(parsed.command, { cwd: operatorCwd, shell, detached: process.platform !== "win32", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
+      if (isPython) child.stdin?.end(parsed.code);
       const stop2 = () => {
         if (child.pid) killProcessTree(child.pid);
       };
@@ -47717,7 +47714,7 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
       throw new Error(`Unknown operator tool: ${name}`);
   }
 }
-var operatorCwd, readSchema, writeSchema, editSchema, shellSchema, result, operatorToolDefinitions, localPath;
+var operatorCwd, readSchema, writeSchema, editSchema, shellSchema, pythonSchema, result, operatorToolDefinitions, localPath;
 var init_operators = __esm({
   "src/tools/operators.ts"() {
     "use strict";
@@ -47729,11 +47726,13 @@ var init_operators = __esm({
     writeSchema = external_exports.object({ path: external_exports.string(), content: external_exports.string() });
     editSchema = external_exports.object({ path: external_exports.string(), edits: external_exports.array(external_exports.object({ oldText: external_exports.string(), newText: external_exports.string() })).min(1) });
     shellSchema = external_exports.object({ command: external_exports.string(), timeout: external_exports.number().positive().optional() });
+    pythonSchema = external_exports.object({ code: external_exports.string(), timeout: external_exports.number().positive().optional() });
     result = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
     operatorToolDefinitions = [
       { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
       { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
       { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
+      { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Supports timeout and cancellation; returns output and errors. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["code"] } },
       { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
     ];
     localPath = (path28) => resolve(operatorCwd, path28);
@@ -47913,8 +47912,9 @@ var init_definitions = __esm({
     namespaceRegistry = {
       "tools/core": {
         defaultEnabled: true,
-        toolNames: ["read", "write", "edit", "shell", "list", "grep", "find"]
+        toolNames: ["read", "write", "edit", "list", "grep", "find"]
       },
+      "tools/runtime": { defaultEnabled: true, toolNames: ["shell", "python"] },
       "tools/pty": {
         defaultEnabled: true,
         toolNames: [
@@ -47979,15 +47979,16 @@ var init_definitions = __esm({
       read: "Read a text file.",
       write: "Write a text file.",
       edit: "Edit a file by exact string replacement.",
+      python: "Run Python code in a fresh subprocess.",
       shell: "Run a quick one-shot non-interactive command with the configured shell; prefer PTY for long builds and tests.",
       list: "List directory entries.",
       grep: "Search file contents using ripgrep.",
       find: "Find files using fd or fdfind."
     };
     READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
-    DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
+    DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "python", "type", "sendKey", "destroySession"]);
     IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
-    OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
+    OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "python", "type", "sendKey"]);
   }
 });
 
@@ -57713,7 +57714,8 @@ import { fileURLToPath as fileURLToPath9 } from "node:url";
 
 // src/tools/namespaceGuidance.ts
 var namespaceRegistryGuidance = {
-  "tools/core": { description: "Dedicated file read/write/edit, search, and one-shot command execution.", instruction: "Prefer read/write/edit for routine file operations instead of shell redirection or sed -i. Use shell for short non-interactive commands; use tools/pty for interactive commands and long-running builds or tests. edit performs exact unique replacements, not arbitrary append/prepend." },
+  "tools/core": { description: "Dedicated file read/write/edit and search.", instruction: "Prefer read/write/edit for routine file operations instead of shell redirection or sed -i. Use tools/runtime for one-shot commands or Python code; use tools/pty for interactive commands and long-running builds or tests. edit performs exact unique replacements, not arbitrary append/prepend." },
+  "tools/runtime": { description: "One-shot shell and Python execution.", instruction: "Use python for Python code instead of shell heredocs; use shell for other short commands. Both are stateless subprocesses. Prefer core read/write/edit for routine file changes; use tools/pty for interactive or long-running commands." },
   "tools/pty": { description: "Interactive PTY and terminal session management.", instruction: `Terminal Toolkit exposes a real PTY-backed shell to AI assistants.
 
 Prefer this server over plain non-interactive shell tools whenever the command:
@@ -57770,7 +57772,8 @@ var codemodeDefinition = {
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
   description: `Run JavaScript as an async function body in an isolated QuickJS sandbox (not JSON or a code fence). Top-level await works.
 - Call tools with await tools.<name>({ ...args }); calls resolve to text or structured output and throw on failure.
-- tools/core: read files with read, create/replace with write, modify existing files with edit; use shell for commands, not routine file edits.
+- tools/core: read files with read, create/replace with write, modify existing files with edit; prefer these over scripts for routine file edits.
+- tools/runtime: shell for one-shot commands, python for direct Python code execution.
 - tools/pty: persistent interactive terminal sessions and long-running work; tools/misc: clipboard, notifications, and timing.
 - At the beginning of each conversation, run await search({namespace: "skills/*"}) once to check for available Skills; if any are returned, inspect relevant Skills and read their SKILL.md as needed. If none are returned (--skills may be disabled), proceed with ordinary tool discovery. Do not repeat initial Skills discovery on every call.
 - Discovery search() returns at most 100 matches per call (default 100; larger limits are capped). Narrow filters when more matches exist.
@@ -57977,6 +57980,7 @@ async function dispatchToolUntracked(manager, name, args2, piExtraOperators = fa
     case "write":
     case "edit":
     case "shell":
+    case "python":
       return await handleOperatorTool(name, args2, manager.getConfiguredShell(), signal);
     case "type":
       return await handleType(manager, args2);

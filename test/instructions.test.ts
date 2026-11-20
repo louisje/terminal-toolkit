@@ -6,7 +6,7 @@ import { getCodemodeToolDefinitions, getMcpToolDefinitions } from '../src/tools/
 
 test('namespace instructions are independent of MCP initialize', () => {
   assert.match(namespaceRegistryGuidance['tools/pty'].instruction, /Primary Session/);
-  assert.match(namespaceRegistryGuidance['tools/core'].instruction, /non-interactive/);
+  assert.match(namespaceRegistryGuidance['tools/runtime'].instruction, /stateless/);
   assert.match(codemodeDefinition.description, /search\(\{query\?/);
 });
 

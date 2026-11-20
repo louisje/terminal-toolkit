@@ -30,8 +30,9 @@ import { extraOperatorToolDefinitions } from "./extra-operators.js";
 export const namespaceRegistry = {
   "tools/core": {
     defaultEnabled: true,
-    toolNames: ["read", "write", "edit", "shell", "list", "grep", "find"],
+    toolNames: ["read", "write", "edit", "list", "grep", "find"],
   },
+  "tools/runtime": { defaultEnabled: true, toolNames: ["shell", "python"] },
   "tools/pty": {
     defaultEnabled: true,
     toolNames: [
@@ -121,6 +122,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
   read: "Read a text file.",
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",
+  python: "Run Python code in a fresh subprocess.",
   shell: "Run a quick one-shot non-interactive command with the configured shell; prefer PTY for long builds and tests.",
   list: "List directory entries.",
   grep: "Search file contents using ripgrep.",
@@ -148,9 +150,9 @@ export function getMcpToolDefinitions(piExtraOperators = false): ToolDefinition[
 
 // MCP safety hints for each tool.
 const READ_ONLY_TOOLS = new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
-const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
+const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "python", "type", "sendKey", "destroySession"]);
 const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
-const OPEN_WORLD_TOOLS = new Set(["shell", "type", "sendKey"]);
+const OPEN_WORLD_TOOLS = new Set(["shell", "python", "type", "sendKey"]);
 
 export function getToolDefinitions(piExtraOperators = false): ToolDefinition[] {
   return [...toolDefinitions, ...operatorToolDefinitions, ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({

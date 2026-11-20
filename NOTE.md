@@ -24,9 +24,20 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - [ ] 預留 `write()`、`edit()` 的 VFS 寫入／編輯介面及來源權限模型；目前內建 Skills 維持唯讀，未來僅對明確允許寫入的虛擬來源開放修改。
 - [ ] 補齊跨工具測試：虛擬路徑、目錄與檔案、搜尋、路徑穿越防護、唯讀限制及實體檔案操作相容性。
 
+## Runtime / Python 後續擴充方向
+
+目前 `tools/runtime` 提供 `shell()` 與 `python()`；`python()` 使用獨立 `python3` 子程序、stdin 傳入程式碼，不保留跨呼叫狀態。以下均為研究／待辦，非已承諾的介面。
+
+- [ ] **V2：執行環境設定與可觀測性**：支援指定 Python executable、工作目錄及環境變數；評估專案 `.venv`、uv、Conda 與跨平台 Python 探測。回傳明確的 exit code、stdout、stderr、逾時／取消狀態，避免混合輸出造成誤判；不應自動安裝套件或擅自改變環境。
+- [ ] **V3：結構化結果與大型輸出**：研究 JSON、表格／DataFrame、圖片、檔案等輸出型別，以及類似 Jupyter 最後運算式的結果擷取；避免任意物件序列化造成安全與相容問題。超過 MCP 單次輸出限制時，將結果存入共用 VFS，以虛擬路徑／識別碼回傳，供 `read()` 等工具分段存取；規劃容量、存活期限及清理策略。
+- [ ] **V4：Persistent Python Runtime**：研究跨呼叫保留 globals、import 與記憶體物件的常駐 Interpreter／Kernel；支援 runtimeId、建立／重設／關閉、閒置逾時回收及錯誤恢復。先驗證 `RequestContext`／`openai/subject` 雜湊能否可靠區分對話；若無法可靠識別，維持獨立 Process，避免不同 Agent／對話共享狀態。評估同一 Runtime 的執行序列化與資源上限。
+- [ ] **V5：長時間任務與資源管理**：背景執行、taskId、進度與部分輸出查詢、取消、結果保存；研究與現有 PTY／程序樹終止／Sandbox 機制共用，並評估 CPU、記憶體、檔案及網路權限限制。注意 MCP response deadline 不等於工具應被強制終止。
+- [ ] **共用 Runtime 架構**：研究 Python Persistent Runtime 與 Codemode QuickJS 持續狀態能否共用 Session 身分、生命週期、隔離與回收管理。`tools/runtime` 未來可加入 JavaScript、Ruby 等獨立工具，但目前不急於抽象成 `execute({language,code})`；優先保留語言專屬介面、共用底層程序管理。
+- 建議順序：先完善獨立 Process 的執行環境與回覆語意，再結合 VFS 解決大型輸出；對話隔離可驗證後才考慮持續狀態，最後擴充背景任務與多語言 Runtime。
+
 ## Codemode 探索體驗
 
-- [x] 頂層 `codemode()` description 已揭露 `tools/core` 的 `read`、`write`、`edit`、`shell` 與 PTY/Misc 分工；namespace 與工具描述也加入檔案操作優先規則。後續仍可觀察 Agent 實際選擇行為。
+- [x] 頂層 `codemode()` description 已揭露 `tools/core` 的 `read`、`write`、`edit`、`tools/runtime` 的 `shell`、`python` 與 PTY/Misc 分工；namespace 與工具描述也加入檔案操作優先規則。後續仍可觀察 Agent 實際選擇行為。
 - [ ] P2：工具數量增加或搜尋品質不足時，評估將 `searchTools()` 的字串比對升級為 BM25；目前非必要。
 - [ ] 研究依 ChatGPT 對話識別保留 Codemode QuickJS 全域狀態：先驗證 `RequestContext`／MCP `_meta` 能否穩定區分同一對話的多次 `tools/call`，以及 `@earendil-works/pi-codemode` 是否支援重複 `execute()` 並保留 JavaScript Context。若可行，評估以識別雜湊隔離每個對話的 Sandbox、同一對話呼叫序列化、閒置逾時回收、錯誤／取消時重建；無法可靠識別時維持每次獨立 Sandbox。此項僅供研究，暫不改變現行 `--codemode` 行為。
 
