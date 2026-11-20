@@ -131,7 +131,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
 
 /** Canonical split fields for codemode. Legacy MCP descriptions are retained
  * unchanged as instruction text, avoiding a second copy of usage guidance. */
-export function getCodemodeToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+export function getCodemodeToolDefinitions(piExtraOperators = true): ToolDefinition[] {
   return getToolDefinitions(piExtraOperators).map(tool => ({
     ...tool,
     namespace: getToolNamespace(tool.name),
@@ -141,7 +141,7 @@ export function getCodemodeToolDefinitions(piExtraOperators = false): ToolDefini
 }
 
 /** Standard MCP clients only see tools/list; include namespace guidance there. */
-export function getMcpToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+export function getMcpToolDefinitions(piExtraOperators = true): ToolDefinition[] {
   return getToolDefinitions(piExtraOperators).map(tool => ({
     ...tool,
     description: [tool.description, ...(tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : [])].join("\n\n"),
@@ -154,7 +154,7 @@ const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "python", "type", "
 const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 const OPEN_WORLD_TOOLS = new Set(["shell", "python", "type", "sendKey"]);
 
-export function getToolDefinitions(piExtraOperators = false): ToolDefinition[] {
+export function getToolDefinitions(piExtraOperators = true): ToolDefinition[] {
   return [...toolDefinitions, ...operatorToolDefinitions, ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
     ...tool,
     annotations: {

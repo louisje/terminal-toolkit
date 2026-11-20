@@ -80,7 +80,7 @@ test('discovery descriptions stay short and detailed guidance appears only on de
 
 test('search({namespace:"tools/*"}) with no arguments returns every enabled tool without the default search limit', {timeout:20000}, async () => {
   const all = await evaluate('text(await search({namespace:"tools/*"}))', true);
-  assert.equal(all.length, 22);
+  assert.equal(all.length, 25);
   assert.ok(all.every(t => ['tools/core','tools/runtime','tools/pty','tools/misc'].includes(t.namespace) && t.name && t.description));
   assert.ok(all.some(t => t.name === 'shell'));
   assert.deepEqual(await evaluate('text(await search({namespace:"tools/*"}))', true), all);
@@ -98,9 +98,9 @@ test('namespace discovery lists categories and filters tools', {timeout:20000}, 
   assert.ok(result.pty.tools.every(t => !['write','shell','notify'].includes(t.name)));
 });
 
-test('extra Pi operators appear only when enabled and belong to tools/core', {timeout:20000}, async () => {
+test('extra core operators are available by default and belong to tools/core', {timeout:20000}, async () => {
   const disabled = await evaluate('text((await search({namespace:"tools/*"})).map(t=>t.name))');
-  assert.ok(['list','grep','find'].every(name => !disabled.includes(name)));
+  assert.ok(['list','grep','find'].every(name => disabled.includes(name)));
   const extra = await evaluate('text({all:await search({namespace:"tools/*"}),pi:await describe({namespace:"tools/core"})})', false, true);
   assert.ok(['list','grep','find'].every(name => extra.all.some(t => t.name === name && t.namespace === 'tools/core')));
   assert.ok(['list','grep','find'].every(name => extra.pi.tools.some(t => t.name === name)));

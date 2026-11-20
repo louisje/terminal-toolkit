@@ -93,10 +93,17 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
         : spawn((parsed as z.infer<typeof shellSchema>).command, { cwd: operatorCwd, shell, detached: process.platform !== "win32", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
       if (isPython) child.stdin?.end((parsed as z.infer<typeof pythonSchema>).code);
       const stop = () => { if (child.pid) killProcessTree(child.pid); };
-      const onAbort = () => stop();
+      const onAbort = () => {
+        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${new Date().toISOString()} ${name} abort pid=${child.pid ?? "unknown"}`);
+        stop();
+      };
       signal?.addEventListener("abort", onAbort, { once: true });
       if (signal?.aborted) stop();
-      const timer = parsed.timeout === undefined ? undefined : setTimeout(() => { timedOut = true; stop(); }, parsed.timeout * 1000);
+      const timer = parsed.timeout === undefined ? undefined : setTimeout(() => {
+        timedOut = true;
+        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${new Date().toISOString()} ${name} timeout pid=${child.pid ?? "unknown"}`);
+        stop();
+      }, parsed.timeout * 1000);
       let stdout = "";
       let stderr = "";
       let exceeded = false;

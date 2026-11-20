@@ -215,7 +215,7 @@ terminal-toolkit [OPTIONS]
 Options:
   --mcp                  Use MCP mode (connects to existing session or creates new PTY)
   --pi-operators         Deprecated; core operators are already enabled
-  --extra-core-operators Expose optional list, grep, and find (22 tools total)
+  --extra-core-operators Deprecated no-op; list, grep, find are enabled by default
   --title <label>        Set the interactive terminal title when connecting as a client
   --cols <number>        Terminal width in columns (default: $TERMINAL_TOOLKIT_COLS or 120)
   --rows <number>        Terminal height in rows (default: $TERMINAL_TOOLKIT_ROWS or 40)
@@ -266,7 +266,7 @@ Long-running builds and tests should use PTY even when no interaction is expecte
 
 ### Extra Core Operators
 
-The optional `--extra-core-operators` flag adds `list`, `grep`, and `find` for 22 tools total. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. list uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
+`list`, `grep`, and `find` are enabled by default (25 tools total). The `--extra-core-operators` flag is a deprecated no-op. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. list uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
 
 
 Environment variables:
@@ -831,4 +831,4 @@ Example `codemode` input:
 
 The Claude Code plugin bootstrap does not automatically download optional resvg at startup; set `TERMINAL_TOOLKIT_INSTALL_OPTIONAL_RESVG=1` when launching it to request installation for PNG screenshot support. The required native `node-pty` remains auto-installed if unavailable.
 
-The flag works with both headless servers and socket-connected MCP clients. Core Operators are always enabled; `--extra-core-operators` enables list, grep, and find. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).
+The flag works with both headless servers and socket-connected MCP clients. Core Operators, including list, grep, and find, are always enabled; `--extra-core-operators` is a deprecated no-op. Node.js >= 22.19.0 is required for all modes. Existing non-codemode operation remains the default. The bundled distribution includes `dist/codemode-worker.js` and `dist/quickjs.wasm`; both must be shipped alongside `dist/index.js`. JavaScript isolation does **not** sandbox the capabilities of injected tools (e.g. `shell`).

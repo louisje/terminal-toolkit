@@ -115,7 +115,7 @@ const options: {
     piExtraOperators?: boolean;
   codemode?: boolean;
   skills?: boolean;
-} = {};
+} = { piExtraOperators: true };
 
 for (let i = 0; i < args.length; i++) {
   const arg = args[i];
@@ -286,8 +286,8 @@ Options:
   --skills               Enable compatibility skill discovery tools
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
-  --extra-core-operators Expose optional list, grep, and find tools
-  --pi-extra-operators   Deprecated alias for --extra-core-operators
+  --extra-core-operators Deprecated no-op (list, grep, find enabled by default)
+  --pi-extra-operators   Deprecated no-op (compatibility)
   --title <label>        Set the interactive terminal title when connecting as a client
   --headless             Run in headless mode (MCP server with embedded terminal, no TTY needed)
   --tmux [session]       Auto-connect to tmux (implies --headless; default target session: 0)

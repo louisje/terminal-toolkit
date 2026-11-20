@@ -32,7 +32,7 @@ import { trackCall } from "./stats.js";
 import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscovery.js';
 import { limitToolResponse } from "./outputLimit.js";
 
-export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = false, codemode = false, skills = false): void {
+export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = true, codemode = false, skills = false): void {
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...(skills ? skillDiscoveryDefinitions : [])],
@@ -65,11 +65,11 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
   });
 }
 
-export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
+export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = true, signal?: AbortSignal) {
   return trackCall(name, () => dispatchToolUntracked(manager, name, args, piExtraOperators, signal), signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
 }
 
-async function dispatchToolUntracked(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
+async function dispatchToolUntracked(manager: TerminalManager, name: string, args: unknown, piExtraOperators = true, signal?: AbortSignal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "list":

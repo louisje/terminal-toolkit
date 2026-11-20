@@ -7,7 +7,7 @@ import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, names
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
 test("tool definitions expose 22 core operators by default", () => {
-  assert.equal(getToolDefinitions().length, 22);
+  assert.equal(getToolDefinitions().length, 25);
   assert.equal(getToolDefinitions(true).length, 25);
   assert.deepEqual(getToolDefinitions().slice(-5).map((tool) => tool.name), ["read", "write", "edit", "python", "shell"]);
 });

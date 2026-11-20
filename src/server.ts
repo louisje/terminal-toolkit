@@ -29,7 +29,7 @@ export interface ServerOptions {
   skills?: boolean;
 }
 
-export function createServerWithManager(manager: TerminalManager, piExtraOperators = false, codemode = false, skills = false): Server {
+export function createServerWithManager(manager: TerminalManager, piExtraOperators = true, codemode = false, skills = false): Server {
   const server = new Server(
     {
       name: "terminal-toolkit",

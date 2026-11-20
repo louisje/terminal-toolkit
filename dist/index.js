@@ -47673,11 +47673,15 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
       const stop2 = () => {
         if (child.pid) killProcessTree(child.pid);
       };
-      const onAbort = () => stop2();
+      const onAbort = () => {
+        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} ${name} abort pid=${child.pid ?? "unknown"}`);
+        stop2();
+      };
       signal?.addEventListener("abort", onAbort, { once: true });
       if (signal?.aborted) stop2();
       const timer = parsed.timeout === void 0 ? void 0 : setTimeout(() => {
         timedOut = true;
+        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} ${name} timeout pid=${child.pid ?? "unknown"}`);
         stop2();
       }, parsed.timeout * 1e3);
       let stdout = "";
@@ -47858,7 +47862,7 @@ __export(definitions_exports, {
 function getToolNamespace(name) {
   return namespaceByTool.get(name) ?? "tools/pty";
 }
-function getCodemodeToolDefinitions(piExtraOperators = false) {
+function getCodemodeToolDefinitions(piExtraOperators = true) {
   return getToolDefinitions(piExtraOperators).map((tool) => ({
     ...tool,
     namespace: getToolNamespace(tool.name),
@@ -47866,13 +47870,13 @@ function getCodemodeToolDefinitions(piExtraOperators = false) {
     instruction: tool.description
   }));
 }
-function getMcpToolDefinitions(piExtraOperators = false) {
+function getMcpToolDefinitions(piExtraOperators = true) {
   return getToolDefinitions(piExtraOperators).map((tool) => ({
     ...tool,
     description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
-function getToolDefinitions(piExtraOperators = false) {
+function getToolDefinitions(piExtraOperators = true) {
   return [...toolDefinitions, ...operatorToolDefinitions, ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
     ...tool,
     annotations: {
@@ -57936,7 +57940,7 @@ async function handleSkillDiscovery(name, args2) {
 }
 
 // src/tools/index.ts
-function registerTools(server, manager, piExtraOperators = false, codemode = false, skills2 = false) {
+function registerTools(server, manager, piExtraOperators = true, codemode = false, skills2 = false) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...skills2 ? skillDiscoveryDefinitions : []]
   }));
@@ -57965,10 +57969,10 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
     });
   });
 }
-async function dispatchTool(manager, name, args2, piExtraOperators = false, signal) {
+async function dispatchTool(manager, name, args2, piExtraOperators = true, signal) {
   return trackCall(name, () => dispatchToolUntracked(manager, name, args2, piExtraOperators, signal), signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
 }
-async function dispatchToolUntracked(manager, name, args2, piExtraOperators = false, signal) {
+async function dispatchToolUntracked(manager, name, args2, piExtraOperators = true, signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "list":
@@ -58218,7 +58222,7 @@ function installStdioShutdownHandlers({ cleanup }) {
 }
 
 // src/server.ts
-function createServerWithManager(manager, piExtraOperators = false, codemode = false, skills2 = false) {
+function createServerWithManager(manager, piExtraOperators = true, codemode = false, skills2 = false) {
   const server = new Server(
     {
       name: "terminal-toolkit",
@@ -58499,7 +58503,7 @@ var clientConnectedSchema = external_exports.object({
   // Deprecated socket field; ignored (Core is always enabled).
   piExtraOperators: external_exports.boolean().optional()
 });
-function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOperators = false) {
+function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOperators = true) {
   let clientCount = 0;
   let nextConnectionId = 0;
   const connections = /* @__PURE__ */ new Map();
@@ -58638,7 +58642,10 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
             }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
-              if (typeof target === "number") inflight.get(target)?.abort();
+              if (typeof target === "number") {
+                if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} socket cancel requestId=${target} found=${inflight.has(target)}`);
+                inflight.get(target)?.abort();
+              }
               continue;
             }
             if (inflight.has(request.id)) {
@@ -58649,6 +58656,10 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
               continue;
             }
             const controller = new AbortController();
+            if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE && (request.method === "shell" || request.method === "python")) {
+              console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} socket start requestId=${request.id} method=${request.method}`);
+              controller.signal.addEventListener("abort", () => console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} socket aborted requestId=${request.id}`), { once: true });
+            }
             inflight.set(request.id, controller);
             void (async () => {
               try {
@@ -58696,7 +58707,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
   server.listen(socketPath);
   return server;
 }
-async function handleToolRequest(manager, request, onClientConnected, piExtraOperators = false, setClientPiExtraOperators, signal) {
+async function handleToolRequest(manager, request, onClientConnected, piExtraOperators = true, setClientPiExtraOperators, signal) {
   const { id, method, params } = request;
   const stats = getStats();
   try {
@@ -58796,7 +58807,7 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
         break;
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
-        setClientPiExtraOperators?.(parsed.piExtraOperators === true);
+        setClientPiExtraOperators?.(parsed.piExtraOperators !== false);
         onClientConnected?.(parsed);
         result2 = { ok: true };
         break;
@@ -63530,7 +63541,7 @@ Examples:
   process.exit(await runSetup2(setupOpts));
 }
 var args = process.argv.slice(2);
-var options = {};
+var options = { piExtraOperators: true };
 for (let i2 = 0; i2 < args.length; i2++) {
   const arg = args[i2];
   const next = args[i2 + 1];
@@ -63696,8 +63707,8 @@ Options:
   --skills               Enable compatibility skill discovery tools
   --codemode             Expose a single QuickJS codemode tool (Node >=22.19)
   --pi-operators         Deprecated (core operators are enabled by default)
-  --extra-core-operators Expose optional list, grep, and find tools
-  --pi-extra-operators   Deprecated alias for --extra-core-operators
+  --extra-core-operators Deprecated no-op (list, grep, find enabled by default)
+  --pi-extra-operators   Deprecated no-op (compatibility)
   --title <label>        Set the interactive terminal title when connecting as a client
   --headless             Run in headless mode (MCP server with embedded terminal, no TTY needed)
   --tmux [session]       Auto-connect to tmux (implies --headless; default target session: 0)

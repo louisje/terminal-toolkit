@@ -150,7 +150,7 @@ export function createToolProxyServer(
   socketPath: string,
   manager: TerminalManager,
   onClientConnected?: (params: ClientConnectedParams) => void,
-    piExtraOperators = false
+    piExtraOperators = true
 ): NetServer {
   let clientCount = 0;
   let nextConnectionId = 0;
@@ -291,7 +291,10 @@ export function createToolProxyServer(
             }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
-              if (typeof target === "number") inflight.get(target)?.abort();
+              if (typeof target === "number") {
+                if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${new Date().toISOString()} socket cancel requestId=${target} found=${inflight.has(target)}`);
+                inflight.get(target)?.abort();
+              }
               continue;
             }
             if (inflight.has(request.id)) {
@@ -301,6 +304,10 @@ export function createToolProxyServer(
               continue;
             }
             const controller = new AbortController();
+            if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE && (request.method === "shell" || request.method === "python")) {
+              console.error(`[cancel-trace] ${new Date().toISOString()} socket start requestId=${request.id} method=${request.method}`);
+              controller.signal.addEventListener("abort", () => console.error(`[cancel-trace] ${new Date().toISOString()} socket aborted requestId=${request.id}`), { once: true });
+            }
             inflight.set(request.id, controller);
             // Do not block later NDJSON frames while a tool is running.
             // In particular, cancel must work even in the same data chunk.
@@ -360,7 +367,7 @@ async function handleToolRequest(
   manager: TerminalManager,
   request: SocketRequest,
   onClientConnected?: (params: ClientConnectedParams) => void,
-    piExtraOperators = false,
+    piExtraOperators = true,
     setClientPiExtraOperators?: (enabled: boolean) => void,
   signal?: AbortSignal
 ): Promise<SocketResponse> {
@@ -478,7 +485,7 @@ async function handleToolRequest(
 
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
-        setClientPiExtraOperators?.(parsed.piExtraOperators === true);
+        setClientPiExtraOperators?.(parsed.piExtraOperators !== false);
         onClientConnected?.(parsed);
         result = { ok: true };
         break;
