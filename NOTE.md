@@ -13,6 +13,8 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 
 ## MCP Skills 相容層
 
+- [ ] **`searchSkills()` 分頁與輸出容量控制**：目前應急版只回傳 `name`、完整 `description` 與 `total`，`describeSkill()` 保留完整 metadata。實測 50 筆為 15,845 bytes，接近 16 KiB text block 限制；新增 Skills 後可能再次超限。後續設計 `offset`／`cursor` 等分頁參數及 `nextCursor`／`hasMore`，保留現有 `query`、`name`、`limit` 語意；按實際 UTF-8 JSON bytes 預留封裝空間並限制每頁結果，避免超限時整個 text block 被抑制。需保證排序穩定、可逐頁取完、過濾與分頁一致，並測試多位元組 description、單筆過大、空結果、邊界值與新增 Skills 的情況。
+
 - [ ] 評估是否提供選用的 MCP Tools 相容層，例如 `listSkills()`、`getSkill(name)`，供尚未原生支援 MCP Skills Extension（SEP-2640）的 AI Client 探索、讀取 Skills。
 - 應重用現有 `skills/list`、`skills/get`、`resources/read` 與外部 Skills 設定的清單、驗證及讀取邏輯；先確認 ChatGPT 對 MCP Skills 的實際支援行為，再決定預設／opt-in、Codemode 揭露及避免功能重複的方式。
 - 一般 MCP Tool 讀取 `SKILL.md` 不等於原生安裝、啟用或自動觸發 Skill。

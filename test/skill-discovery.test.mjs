@@ -30,6 +30,8 @@ test("non-codemode Skill discovery uses full names and metadata only",{timeout:9
     const result=await client.callTool({name:"searchSkills",arguments:{name:"builtin/*"}});
     const found=JSON.parse(result.content[0].text).skills;
     assert.ok(found.some(x=>x.name==="builtin/terminal-toolkit"));
+    assert.deepEqual(Object.keys(found[0]).sort(),["description","name"]);
+    assert.ok(found[0].description);
     const detail=await client.callTool({name:"describeSkill",arguments:{name:"builtin/terminal-toolkit"}});
     const metadata=JSON.parse(detail.content[0].text);
     assert.equal(metadata.path,"builtin://skills/terminal-toolkit/");

@@ -20,7 +20,7 @@ export async function handleSkillDiscovery(name:string,args:unknown) {
     const options = searchSchema.parse(args ?? {});
     const words = (options.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
     const found = entries.filter(s=>glob(s.name,options.name) && words.every(w=>(s.name+" "+s.description).toLowerCase().includes(w)));
-    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,Math.min(options.limit ?? 100,100)),total:found.length})}]};
+    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,Math.min(options.limit ?? 100,100)).map(({name,description})=>({name,description})),total:found.length})}]};
   }
   if(name==="describeSkill") {
     const {name:target} = describeSchema.parse(args);
