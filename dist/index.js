@@ -58818,6 +58818,8 @@ init_mcpEventsExperiment();
 init_skills();
 init_types();
 init_definitions();
+init_getToolStat();
+init_stats();
 async function notifyClientConnected(sendRequest, options2) {
   const params = options2.title === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
     ...options2.title === void 0 ? {} : { title: options2.title },
@@ -59031,21 +59033,26 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     });
   }
   async function dispatchTool2(method, params, signal) {
-    const result2 = await sendRequest(method, params, signal);
-    if (method !== "listSessions" || !isRemoteClient()) return result2;
-    const response = result2;
-    return { ...response, content: response.content?.map((item) => {
-      if (item.type !== "text" || !item.text) return item;
-      try {
-        const listing = JSON.parse(item.text);
-        for (const session of listing.sessions ?? []) {
-          if (session.isDefault) session.role = "client";
-        }
-        return { ...item, text: JSON.stringify(listing, null, 2) };
-      } catch {
-        return item;
+    return trackCall(method, async () => {
+      if (method === "getToolStat") {
+        return { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
       }
-    }) };
+      const result2 = await sendRequest(method, params, signal);
+      if (method !== "listSessions" || !isRemoteClient()) return result2;
+      const response = result2;
+      return { ...response, content: response.content?.map((item) => {
+        if (item.type !== "text" || !item.text) return item;
+        try {
+          const listing = JSON.parse(item.text);
+          for (const session of listing.sessions ?? []) {
+            if (session.isDefault) session.role = "client";
+          }
+          return { ...item, text: JSON.stringify(listing, null, 2) };
+        } catch {
+          return item;
+        }
+      }) };
+    }, signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
   }
   registerSkills(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -59056,15 +59063,15 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     const context = createRequestContext(request.params._meta);
     return requestContextStorage.run(context, async () => {
       try {
-        const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
+        const result2 = options2.codemode ? name === "codemode" ? await trackCall("codemode", () => runCodemodeWithDispatch(
           args2,
           getCodemodeToolDefinitions(options2.piExtraOperators),
           (tool, params, signal) => dispatchTool2(tool, params, signal),
           extra.signal,
           options2.skills
-        ) : (() => {
+        ), extra.signal, (result3) => result3.isError === true) : (() => {
           throw new Error(`Unknown tool: ${name}`);
-        })() : limitToolResponse(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? handleSkillDiscovery(name, args2) : dispatchTool2(name, args2, extra.signal)));
+        })() : limitToolResponse(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
         return result2;
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);

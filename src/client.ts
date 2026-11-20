@@ -18,6 +18,8 @@ import {
 import { getMcpToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
 import { runCodemodeWithDispatch, codemodeDefinition } from "./tools/codemode.js";
 import { limitToolResponse } from "./tools/outputLimit.js";
+import { handleGetToolStat } from "./tools/getToolStat.js";
+import { trackCall } from "./tools/stats.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
 
 interface SocketRequest {
@@ -266,6 +268,10 @@ export async function startMcpClientMode(
 
   // Adapt session metadata for this MCP endpoint, including codemode dispatch.
   async function dispatchTool(method: string, params?: Record<string, unknown>, signal?: AbortSignal): Promise<unknown> {
+    return trackCall(method, async () => {
+    if (method === "getToolStat") {
+      return { content: [{ type: "text" as const, text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
+    }
     const result = await sendRequest(method, params, signal);
     if (method !== "listSessions" || !isRemoteClient()) return result;
     const response = result as { content?: Array<{ type: string; text?: string }> };
@@ -279,6 +285,7 @@ export async function startMcpClientMode(
         return { ...item, text: JSON.stringify(listing, null, 2) };
       } catch { return item; }
     }) };
+    }, signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
   }
 
   registerSkills(server);
@@ -297,10 +304,10 @@ export async function startMcpClientMode(
     try {
       const result = options.codemode
         ? name === "codemode"
-          ? await runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
-              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal, options.skills)
+          ? await trackCall("codemode", () => runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
+              (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal, options.skills), extra.signal, result => result.isError === true)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : limitToolResponse(await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? handleSkillDiscovery(name, args) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
+        : limitToolResponse(await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? trackCall(name, () => handleSkillDiscovery(name, args), extra.signal) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;
