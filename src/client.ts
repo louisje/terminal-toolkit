@@ -292,13 +292,6 @@ export async function startMcpClientMode(
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args } = request.params;
     const context = createRequestContext(request.params._meta);
-    if (context.responseDeadline) {
-      console.error("[terminal-toolkit] MCP response deadline", JSON.stringify({
-        tool: name, timeoutMs: context.responseDeadline.timeoutMs,
-        remainingMs: Math.max(0, context.responseDeadline.deadlineAt - Date.now()),
-        upstreamDeadline: context.responseDeadline.upstreamDeadline,
-      }));
-    }
 
     return requestContextStorage.run(context, async () => {
     try {

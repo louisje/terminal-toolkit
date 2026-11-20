@@ -58156,15 +58156,6 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
               }) + "\n");
               continue;
             }
-            if (request.requestContext?.responseDeadline) {
-              const deadline = request.requestContext.responseDeadline;
-              console.error("[terminal-toolkit] Socket MCP response deadline", JSON.stringify({
-                method: request.method,
-                timeoutMs: deadline.timeoutMs,
-                remainingMs: Math.max(0, deadline.deadlineAt - Date.now()),
-                upstreamDeadline: deadline.upstreamDeadline
-              }));
-            }
             const controller = new AbortController();
             inflight.set(request.id, controller);
             void (async () => {
@@ -58569,14 +58560,6 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
     const context = createRequestContext(request.params._meta);
-    if (context.responseDeadline) {
-      console.error("[terminal-toolkit] MCP response deadline", JSON.stringify({
-        tool: name,
-        timeoutMs: context.responseDeadline.timeoutMs,
-        remainingMs: Math.max(0, context.responseDeadline.deadlineAt - Date.now()),
-        upstreamDeadline: context.responseDeadline.upstreamDeadline
-      }));
-    }
     return requestContextStorage.run(context, async () => {
       try {
         const result2 = options2.codemode ? name === "codemode" ? await runCodemodeWithDispatch(
