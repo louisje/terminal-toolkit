@@ -6053,9 +6053,5464 @@ var require_ansi_align = __commonJS({
   }
 });
 
+// node_modules/zod/v4/core/core.js
+// @__NO_SIDE_EFFECTS__
+function $constructor(name, initializer3, params) {
+  function init(inst, def) {
+    var _a;
+    Object.defineProperty(inst, "_zod", {
+      value: inst._zod ?? {},
+      enumerable: false
+    });
+    (_a = inst._zod).traits ?? (_a.traits = /* @__PURE__ */ new Set());
+    inst._zod.traits.add(name);
+    initializer3(inst, def);
+    for (const k in _.prototype) {
+      if (!(k in inst))
+        Object.defineProperty(inst, k, { value: _.prototype[k].bind(inst) });
+    }
+    inst._zod.constr = _;
+    inst._zod.def = def;
+  }
+  const Parent = params?.Parent ?? Object;
+  class Definition extends Parent {
+  }
+  Object.defineProperty(Definition, "name", { value: name });
+  function _(def) {
+    var _a;
+    const inst = params?.Parent ? new Definition() : this;
+    init(inst, def);
+    (_a = inst._zod).deferred ?? (_a.deferred = []);
+    for (const fn2 of inst._zod.deferred) {
+      fn2();
+    }
+    return inst;
+  }
+  Object.defineProperty(_, "init", { value: init });
+  Object.defineProperty(_, Symbol.hasInstance, {
+    value: (inst) => {
+      if (params?.Parent && inst instanceof params.Parent)
+        return true;
+      return inst?._zod?.traits?.has(name);
+    }
+  });
+  Object.defineProperty(_, "name", { value: name });
+  return _;
+}
+function config(newConfig) {
+  if (newConfig)
+    Object.assign(globalConfig, newConfig);
+  return globalConfig;
+}
+var NEVER, $ZodAsyncError, globalConfig;
+var init_core = __esm({
+  "node_modules/zod/v4/core/core.js"() {
+    NEVER = Object.freeze({
+      status: "aborted"
+    });
+    $ZodAsyncError = class extends Error {
+      constructor() {
+        super(`Encountered Promise during synchronous parse. Use .parseAsync() instead.`);
+      }
+    };
+    globalConfig = {};
+  }
+});
+
+// node_modules/zod/v4/core/util.js
+var util_exports = {};
+__export(util_exports, {
+  BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
+  Class: () => Class,
+  NUMBER_FORMAT_RANGES: () => NUMBER_FORMAT_RANGES,
+  aborted: () => aborted,
+  allowsEval: () => allowsEval,
+  assert: () => assert,
+  assertEqual: () => assertEqual,
+  assertIs: () => assertIs,
+  assertNever: () => assertNever,
+  assertNotEqual: () => assertNotEqual,
+  assignProp: () => assignProp,
+  cached: () => cached,
+  captureStackTrace: () => captureStackTrace,
+  cleanEnum: () => cleanEnum,
+  cleanRegex: () => cleanRegex,
+  clone: () => clone,
+  createTransparentProxy: () => createTransparentProxy,
+  defineLazy: () => defineLazy,
+  esc: () => esc,
+  escapeRegex: () => escapeRegex,
+  extend: () => extend,
+  finalizeIssue: () => finalizeIssue,
+  floatSafeRemainder: () => floatSafeRemainder,
+  getElementAtPath: () => getElementAtPath,
+  getEnumValues: () => getEnumValues,
+  getLengthableOrigin: () => getLengthableOrigin,
+  getParsedType: () => getParsedType,
+  getSizableOrigin: () => getSizableOrigin,
+  isObject: () => isObject3,
+  isPlainObject: () => isPlainObject,
+  issue: () => issue,
+  joinValues: () => joinValues,
+  jsonStringifyReplacer: () => jsonStringifyReplacer,
+  merge: () => merge,
+  normalizeParams: () => normalizeParams,
+  nullish: () => nullish,
+  numKeys: () => numKeys,
+  omit: () => omit,
+  optionalKeys: () => optionalKeys,
+  partial: () => partial,
+  pick: () => pick,
+  prefixIssues: () => prefixIssues,
+  primitiveTypes: () => primitiveTypes,
+  promiseAllObject: () => promiseAllObject,
+  propertyKeyTypes: () => propertyKeyTypes,
+  randomString: () => randomString,
+  required: () => required,
+  stringifyPrimitive: () => stringifyPrimitive,
+  unwrapMessage: () => unwrapMessage
+});
+function assertEqual(val) {
+  return val;
+}
+function assertNotEqual(val) {
+  return val;
+}
+function assertIs(_arg) {
+}
+function assertNever(_x) {
+  throw new Error();
+}
+function assert(_) {
+}
+function getEnumValues(entries) {
+  const numericValues = Object.values(entries).filter((v) => typeof v === "number");
+  const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
+  return values;
+}
+function joinValues(array2, separator = "|") {
+  return array2.map((val) => stringifyPrimitive(val)).join(separator);
+}
+function jsonStringifyReplacer(_, value) {
+  if (typeof value === "bigint")
+    return value.toString();
+  return value;
+}
+function cached(getter) {
+  const set = false;
+  return {
+    get value() {
+      if (!set) {
+        const value = getter();
+        Object.defineProperty(this, "value", { value });
+        return value;
+      }
+      throw new Error("cached value already set");
+    }
+  };
+}
+function nullish(input) {
+  return input === null || input === void 0;
+}
+function cleanRegex(source) {
+  const start = source.startsWith("^") ? 1 : 0;
+  const end = source.endsWith("$") ? source.length - 1 : source.length;
+  return source.slice(start, end);
+}
+function floatSafeRemainder(val, step) {
+  const valDecCount = (val.toString().split(".")[1] || "").length;
+  const stepDecCount = (step.toString().split(".")[1] || "").length;
+  const decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
+  const valInt = Number.parseInt(val.toFixed(decCount).replace(".", ""));
+  const stepInt = Number.parseInt(step.toFixed(decCount).replace(".", ""));
+  return valInt % stepInt / 10 ** decCount;
+}
+function defineLazy(object3, key, getter) {
+  const set = false;
+  Object.defineProperty(object3, key, {
+    get() {
+      if (!set) {
+        const value = getter();
+        object3[key] = value;
+        return value;
+      }
+      throw new Error("cached value already set");
+    },
+    set(v) {
+      Object.defineProperty(object3, key, {
+        value: v
+        // configurable: true,
+      });
+    },
+    configurable: true
+  });
+}
+function assignProp(target, prop, value) {
+  Object.defineProperty(target, prop, {
+    value,
+    writable: true,
+    enumerable: true,
+    configurable: true
+  });
+}
+function getElementAtPath(obj, path28) {
+  if (!path28)
+    return obj;
+  return path28.reduce((acc, key) => acc?.[key], obj);
+}
+function promiseAllObject(promisesObj) {
+  const keys2 = Object.keys(promisesObj);
+  const promises = keys2.map((key) => promisesObj[key]);
+  return Promise.all(promises).then((results) => {
+    const resolvedObj = {};
+    for (let i2 = 0; i2 < keys2.length; i2++) {
+      resolvedObj[keys2[i2]] = results[i2];
+    }
+    return resolvedObj;
+  });
+}
+function randomString(length = 10) {
+  const chars = "abcdefghijklmnopqrstuvwxyz";
+  let str = "";
+  for (let i2 = 0; i2 < length; i2++) {
+    str += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return str;
+}
+function esc(str) {
+  return JSON.stringify(str);
+}
+function isObject3(data) {
+  return typeof data === "object" && data !== null && !Array.isArray(data);
+}
+function isPlainObject(o2) {
+  if (isObject3(o2) === false)
+    return false;
+  const ctor = o2.constructor;
+  if (ctor === void 0)
+    return true;
+  const prot = ctor.prototype;
+  if (isObject3(prot) === false)
+    return false;
+  if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
+    return false;
+  }
+  return true;
+}
+function numKeys(data) {
+  let keyCount = 0;
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      keyCount++;
+    }
+  }
+  return keyCount;
+}
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function clone(inst, def, params) {
+  const cl = new inst._zod.constr(def ?? inst._zod.def);
+  if (!def || params?.parent)
+    cl._zod.parent = inst;
+  return cl;
+}
+function normalizeParams(_params) {
+  const params = _params;
+  if (!params)
+    return {};
+  if (typeof params === "string")
+    return { error: () => params };
+  if (params?.message !== void 0) {
+    if (params?.error !== void 0)
+      throw new Error("Cannot specify both `message` and `error` params");
+    params.error = params.message;
+  }
+  delete params.message;
+  if (typeof params.error === "string")
+    return { ...params, error: () => params.error };
+  return params;
+}
+function createTransparentProxy(getter) {
+  let target;
+  return new Proxy({}, {
+    get(_, prop, receiver) {
+      target ?? (target = getter());
+      return Reflect.get(target, prop, receiver);
+    },
+    set(_, prop, value, receiver) {
+      target ?? (target = getter());
+      return Reflect.set(target, prop, value, receiver);
+    },
+    has(_, prop) {
+      target ?? (target = getter());
+      return Reflect.has(target, prop);
+    },
+    deleteProperty(_, prop) {
+      target ?? (target = getter());
+      return Reflect.deleteProperty(target, prop);
+    },
+    ownKeys(_) {
+      target ?? (target = getter());
+      return Reflect.ownKeys(target);
+    },
+    getOwnPropertyDescriptor(_, prop) {
+      target ?? (target = getter());
+      return Reflect.getOwnPropertyDescriptor(target, prop);
+    },
+    defineProperty(_, prop, descriptor) {
+      target ?? (target = getter());
+      return Reflect.defineProperty(target, prop, descriptor);
+    }
+  });
+}
+function stringifyPrimitive(value) {
+  if (typeof value === "bigint")
+    return value.toString() + "n";
+  if (typeof value === "string")
+    return `"${value}"`;
+  return `${value}`;
+}
+function optionalKeys(shape) {
+  return Object.keys(shape).filter((k) => {
+    return shape[k]._zod.optin === "optional" && shape[k]._zod.optout === "optional";
+  });
+}
+function pick(schema, mask) {
+  const newShape = {};
+  const currDef = schema._zod.def;
+  for (const key in mask) {
+    if (!(key in currDef.shape)) {
+      throw new Error(`Unrecognized key: "${key}"`);
+    }
+    if (!mask[key])
+      continue;
+    newShape[key] = currDef.shape[key];
+  }
+  return clone(schema, {
+    ...schema._zod.def,
+    shape: newShape,
+    checks: []
+  });
+}
+function omit(schema, mask) {
+  const newShape = { ...schema._zod.def.shape };
+  const currDef = schema._zod.def;
+  for (const key in mask) {
+    if (!(key in currDef.shape)) {
+      throw new Error(`Unrecognized key: "${key}"`);
+    }
+    if (!mask[key])
+      continue;
+    delete newShape[key];
+  }
+  return clone(schema, {
+    ...schema._zod.def,
+    shape: newShape,
+    checks: []
+  });
+}
+function extend(schema, shape) {
+  if (!isPlainObject(shape)) {
+    throw new Error("Invalid input to extend: expected a plain object");
+  }
+  const def = {
+    ...schema._zod.def,
+    get shape() {
+      const _shape = { ...schema._zod.def.shape, ...shape };
+      assignProp(this, "shape", _shape);
+      return _shape;
+    },
+    checks: []
+    // delete existing checks
+  };
+  return clone(schema, def);
+}
+function merge(a2, b) {
+  return clone(a2, {
+    ...a2._zod.def,
+    get shape() {
+      const _shape = { ...a2._zod.def.shape, ...b._zod.def.shape };
+      assignProp(this, "shape", _shape);
+      return _shape;
+    },
+    catchall: b._zod.def.catchall,
+    checks: []
+    // delete existing checks
+  });
+}
+function partial(Class2, schema, mask) {
+  const oldShape = schema._zod.def.shape;
+  const shape = { ...oldShape };
+  if (mask) {
+    for (const key in mask) {
+      if (!(key in oldShape)) {
+        throw new Error(`Unrecognized key: "${key}"`);
+      }
+      if (!mask[key])
+        continue;
+      shape[key] = Class2 ? new Class2({
+        type: "optional",
+        innerType: oldShape[key]
+      }) : oldShape[key];
+    }
+  } else {
+    for (const key in oldShape) {
+      shape[key] = Class2 ? new Class2({
+        type: "optional",
+        innerType: oldShape[key]
+      }) : oldShape[key];
+    }
+  }
+  return clone(schema, {
+    ...schema._zod.def,
+    shape,
+    checks: []
+  });
+}
+function required(Class2, schema, mask) {
+  const oldShape = schema._zod.def.shape;
+  const shape = { ...oldShape };
+  if (mask) {
+    for (const key in mask) {
+      if (!(key in shape)) {
+        throw new Error(`Unrecognized key: "${key}"`);
+      }
+      if (!mask[key])
+        continue;
+      shape[key] = new Class2({
+        type: "nonoptional",
+        innerType: oldShape[key]
+      });
+    }
+  } else {
+    for (const key in oldShape) {
+      shape[key] = new Class2({
+        type: "nonoptional",
+        innerType: oldShape[key]
+      });
+    }
+  }
+  return clone(schema, {
+    ...schema._zod.def,
+    shape,
+    // optional: [],
+    checks: []
+  });
+}
+function aborted(x, startIndex = 0) {
+  for (let i2 = startIndex; i2 < x.issues.length; i2++) {
+    if (x.issues[i2]?.continue !== true)
+      return true;
+  }
+  return false;
+}
+function prefixIssues(path28, issues) {
+  return issues.map((iss) => {
+    var _a;
+    (_a = iss).path ?? (_a.path = []);
+    iss.path.unshift(path28);
+    return iss;
+  });
+}
+function unwrapMessage(message) {
+  return typeof message === "string" ? message : message?.message;
+}
+function finalizeIssue(iss, ctx, config3) {
+  const full = { ...iss, path: iss.path ?? [] };
+  if (!iss.message) {
+    const message = unwrapMessage(iss.inst?._zod.def?.error?.(iss)) ?? unwrapMessage(ctx?.error?.(iss)) ?? unwrapMessage(config3.customError?.(iss)) ?? unwrapMessage(config3.localeError?.(iss)) ?? "Invalid input";
+    full.message = message;
+  }
+  delete full.inst;
+  delete full.continue;
+  if (!ctx?.reportInput) {
+    delete full.input;
+  }
+  return full;
+}
+function getSizableOrigin(input) {
+  if (input instanceof Set)
+    return "set";
+  if (input instanceof Map)
+    return "map";
+  if (input instanceof File)
+    return "file";
+  return "unknown";
+}
+function getLengthableOrigin(input) {
+  if (Array.isArray(input))
+    return "array";
+  if (typeof input === "string")
+    return "string";
+  return "unknown";
+}
+function issue(...args2) {
+  const [iss, input, inst] = args2;
+  if (typeof iss === "string") {
+    return {
+      message: iss,
+      code: "custom",
+      input,
+      inst
+    };
+  }
+  return { ...iss };
+}
+function cleanEnum(obj) {
+  return Object.entries(obj).filter(([k, _]) => {
+    return Number.isNaN(Number.parseInt(k, 10));
+  }).map((el) => el[1]);
+}
+var captureStackTrace, allowsEval, getParsedType, propertyKeyTypes, primitiveTypes, NUMBER_FORMAT_RANGES, BIGINT_FORMAT_RANGES, Class;
+var init_util = __esm({
+  "node_modules/zod/v4/core/util.js"() {
+    captureStackTrace = Error.captureStackTrace ? Error.captureStackTrace : (..._args) => {
+    };
+    allowsEval = cached(() => {
+      if (typeof navigator !== "undefined" && navigator?.userAgent?.includes("Cloudflare")) {
+        return false;
+      }
+      try {
+        const F = Function;
+        new F("");
+        return true;
+      } catch (_) {
+        return false;
+      }
+    });
+    getParsedType = (data) => {
+      const t = typeof data;
+      switch (t) {
+        case "undefined":
+          return "undefined";
+        case "string":
+          return "string";
+        case "number":
+          return Number.isNaN(data) ? "nan" : "number";
+        case "boolean":
+          return "boolean";
+        case "function":
+          return "function";
+        case "bigint":
+          return "bigint";
+        case "symbol":
+          return "symbol";
+        case "object":
+          if (Array.isArray(data)) {
+            return "array";
+          }
+          if (data === null) {
+            return "null";
+          }
+          if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
+            return "promise";
+          }
+          if (typeof Map !== "undefined" && data instanceof Map) {
+            return "map";
+          }
+          if (typeof Set !== "undefined" && data instanceof Set) {
+            return "set";
+          }
+          if (typeof Date !== "undefined" && data instanceof Date) {
+            return "date";
+          }
+          if (typeof File !== "undefined" && data instanceof File) {
+            return "file";
+          }
+          return "object";
+        default:
+          throw new Error(`Unknown data type: ${t}`);
+      }
+    };
+    propertyKeyTypes = /* @__PURE__ */ new Set(["string", "number", "symbol"]);
+    primitiveTypes = /* @__PURE__ */ new Set(["string", "number", "bigint", "boolean", "symbol", "undefined"]);
+    NUMBER_FORMAT_RANGES = {
+      safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
+      int32: [-2147483648, 2147483647],
+      uint32: [0, 4294967295],
+      float32: [-34028234663852886e22, 34028234663852886e22],
+      float64: [-Number.MAX_VALUE, Number.MAX_VALUE]
+    };
+    BIGINT_FORMAT_RANGES = {
+      int64: [/* @__PURE__ */ BigInt("-9223372036854775808"), /* @__PURE__ */ BigInt("9223372036854775807")],
+      uint64: [/* @__PURE__ */ BigInt(0), /* @__PURE__ */ BigInt("18446744073709551615")]
+    };
+    Class = class {
+      constructor(..._args) {
+      }
+    };
+  }
+});
+
+// node_modules/zod/v4/core/errors.js
+function flattenError(error2, mapper = (issue2) => issue2.message) {
+  const fieldErrors = {};
+  const formErrors = [];
+  for (const sub of error2.issues) {
+    if (sub.path.length > 0) {
+      fieldErrors[sub.path[0]] = fieldErrors[sub.path[0]] || [];
+      fieldErrors[sub.path[0]].push(mapper(sub));
+    } else {
+      formErrors.push(mapper(sub));
+    }
+  }
+  return { formErrors, fieldErrors };
+}
+function formatError(error2, _mapper) {
+  const mapper = _mapper || function(issue2) {
+    return issue2.message;
+  };
+  const fieldErrors = { _errors: [] };
+  const processError = (error3) => {
+    for (const issue2 of error3.issues) {
+      if (issue2.code === "invalid_union" && issue2.errors.length) {
+        issue2.errors.map((issues) => processError({ issues }));
+      } else if (issue2.code === "invalid_key") {
+        processError({ issues: issue2.issues });
+      } else if (issue2.code === "invalid_element") {
+        processError({ issues: issue2.issues });
+      } else if (issue2.path.length === 0) {
+        fieldErrors._errors.push(mapper(issue2));
+      } else {
+        let curr = fieldErrors;
+        let i2 = 0;
+        while (i2 < issue2.path.length) {
+          const el = issue2.path[i2];
+          const terminal = i2 === issue2.path.length - 1;
+          if (!terminal) {
+            curr[el] = curr[el] || { _errors: [] };
+          } else {
+            curr[el] = curr[el] || { _errors: [] };
+            curr[el]._errors.push(mapper(issue2));
+          }
+          curr = curr[el];
+          i2++;
+        }
+      }
+    }
+  };
+  processError(error2);
+  return fieldErrors;
+}
+var initializer, $ZodError, $ZodRealError;
+var init_errors = __esm({
+  "node_modules/zod/v4/core/errors.js"() {
+    init_core();
+    init_util();
+    initializer = (inst, def) => {
+      inst.name = "$ZodError";
+      Object.defineProperty(inst, "_zod", {
+        value: inst._zod,
+        enumerable: false
+      });
+      Object.defineProperty(inst, "issues", {
+        value: def,
+        enumerable: false
+      });
+      Object.defineProperty(inst, "message", {
+        get() {
+          return JSON.stringify(def, jsonStringifyReplacer, 2);
+        },
+        enumerable: true
+        // configurable: false,
+      });
+      Object.defineProperty(inst, "toString", {
+        value: () => inst.message,
+        enumerable: false
+      });
+    };
+    $ZodError = $constructor("$ZodError", initializer);
+    $ZodRealError = $constructor("$ZodError", initializer, { Parent: Error });
+  }
+});
+
+// node_modules/zod/v4/core/parse.js
+var _parse, _parseAsync, _safeParse, safeParse, _safeParseAsync, safeParseAsync;
+var init_parse = __esm({
+  "node_modules/zod/v4/core/parse.js"() {
+    init_core();
+    init_errors();
+    init_util();
+    _parse = (_Err) => (schema, value, _ctx, _params) => {
+      const ctx = _ctx ? Object.assign(_ctx, { async: false }) : { async: false };
+      const result2 = schema._zod.run({ value, issues: [] }, ctx);
+      if (result2 instanceof Promise) {
+        throw new $ZodAsyncError();
+      }
+      if (result2.issues.length) {
+        const e = new (_params?.Err ?? _Err)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+        captureStackTrace(e, _params?.callee);
+        throw e;
+      }
+      return result2.value;
+    };
+    _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
+      const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
+      let result2 = schema._zod.run({ value, issues: [] }, ctx);
+      if (result2 instanceof Promise)
+        result2 = await result2;
+      if (result2.issues.length) {
+        const e = new (params?.Err ?? _Err)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())));
+        captureStackTrace(e, params?.callee);
+        throw e;
+      }
+      return result2.value;
+    };
+    _safeParse = (_Err) => (schema, value, _ctx) => {
+      const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
+      const result2 = schema._zod.run({ value, issues: [] }, ctx);
+      if (result2 instanceof Promise) {
+        throw new $ZodAsyncError();
+      }
+      return result2.issues.length ? {
+        success: false,
+        error: new (_Err ?? $ZodError)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
+      } : { success: true, data: result2.value };
+    };
+    safeParse = /* @__PURE__ */ _safeParse($ZodRealError);
+    _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
+      const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
+      let result2 = schema._zod.run({ value, issues: [] }, ctx);
+      if (result2 instanceof Promise)
+        result2 = await result2;
+      return result2.issues.length ? {
+        success: false,
+        error: new _Err(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
+      } : { success: true, data: result2.value };
+    };
+    safeParseAsync = /* @__PURE__ */ _safeParseAsync($ZodRealError);
+  }
+});
+
+// node_modules/zod/v4/core/regexes.js
+function emoji() {
+  return new RegExp(_emoji, "u");
+}
+function timeSource(args2) {
+  const hhmm = `(?:[01]\\d|2[0-3]):[0-5]\\d`;
+  const regex2 = typeof args2.precision === "number" ? args2.precision === -1 ? `${hhmm}` : args2.precision === 0 ? `${hhmm}:[0-5]\\d` : `${hhmm}:[0-5]\\d\\.\\d{${args2.precision}}` : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
+  return regex2;
+}
+function time(args2) {
+  return new RegExp(`^${timeSource(args2)}$`);
+}
+function datetime(args2) {
+  const time3 = timeSource({ precision: args2.precision });
+  const opts = ["Z"];
+  if (args2.local)
+    opts.push("");
+  if (args2.offset)
+    opts.push(`([+-]\\d{2}:\\d{2})`);
+  const timeRegex2 = `${time3}(?:${opts.join("|")})`;
+  return new RegExp(`^${dateSource}T(?:${timeRegex2})$`);
+}
+var cuid, cuid2, ulid, xid, ksuid, nanoid, duration, guid, uuid, email, _emoji, ipv4, ipv6, cidrv4, cidrv6, base64, base64url, hostname, e164, dateSource, date, string, integer, number, boolean, _null, lowercase, uppercase;
+var init_regexes = __esm({
+  "node_modules/zod/v4/core/regexes.js"() {
+    cuid = /^[cC][^\s-]{8,}$/;
+    cuid2 = /^[0-9a-z]+$/;
+    ulid = /^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$/;
+    xid = /^[0-9a-vA-V]{20}$/;
+    ksuid = /^[A-Za-z0-9]{27}$/;
+    nanoid = /^[a-zA-Z0-9_-]{21}$/;
+    duration = /^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$/;
+    guid = /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
+    uuid = (version5) => {
+      if (!version5)
+        return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$/;
+      return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version5}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
+    };
+    email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
+    _emoji = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
+    ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
+    ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})$/;
+    cidrv4 = /^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/([0-9]|[1-2][0-9]|3[0-2])$/;
+    cidrv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
+    base64 = /^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$/;
+    base64url = /^[A-Za-z0-9_-]*$/;
+    hostname = /^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$/;
+    e164 = /^\+(?:[0-9]){6,14}[0-9]$/;
+    dateSource = `(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))`;
+    date = /* @__PURE__ */ new RegExp(`^${dateSource}$`);
+    string = (params) => {
+      const regex2 = params ? `[\\s\\S]{${params?.minimum ?? 0},${params?.maximum ?? ""}}` : `[\\s\\S]*`;
+      return new RegExp(`^${regex2}$`);
+    };
+    integer = /^\d+$/;
+    number = /^-?\d+(?:\.\d+)?/i;
+    boolean = /true|false/i;
+    _null = /null/i;
+    lowercase = /^[^A-Z]*$/;
+    uppercase = /^[^a-z]*$/;
+  }
+});
+
+// node_modules/zod/v4/core/checks.js
+var $ZodCheck, numericOriginMap, $ZodCheckLessThan, $ZodCheckGreaterThan, $ZodCheckMultipleOf, $ZodCheckNumberFormat, $ZodCheckMaxLength, $ZodCheckMinLength, $ZodCheckLengthEquals, $ZodCheckStringFormat, $ZodCheckRegex, $ZodCheckLowerCase, $ZodCheckUpperCase, $ZodCheckIncludes, $ZodCheckStartsWith, $ZodCheckEndsWith, $ZodCheckOverwrite;
+var init_checks = __esm({
+  "node_modules/zod/v4/core/checks.js"() {
+    init_core();
+    init_regexes();
+    init_util();
+    $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
+      var _a;
+      inst._zod ?? (inst._zod = {});
+      inst._zod.def = def;
+      (_a = inst._zod).onattach ?? (_a.onattach = []);
+    });
+    numericOriginMap = {
+      number: "number",
+      bigint: "bigint",
+      object: "date"
+    };
+    $ZodCheckLessThan = /* @__PURE__ */ $constructor("$ZodCheckLessThan", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      const origin = numericOriginMap[typeof def.value];
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        const curr = (def.inclusive ? bag.maximum : bag.exclusiveMaximum) ?? Number.POSITIVE_INFINITY;
+        if (def.value < curr) {
+          if (def.inclusive)
+            bag.maximum = def.value;
+          else
+            bag.exclusiveMaximum = def.value;
+        }
+      });
+      inst._zod.check = (payload) => {
+        if (def.inclusive ? payload.value <= def.value : payload.value < def.value) {
+          return;
+        }
+        payload.issues.push({
+          origin,
+          code: "too_big",
+          maximum: def.value,
+          input: payload.value,
+          inclusive: def.inclusive,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckGreaterThan = /* @__PURE__ */ $constructor("$ZodCheckGreaterThan", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      const origin = numericOriginMap[typeof def.value];
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        const curr = (def.inclusive ? bag.minimum : bag.exclusiveMinimum) ?? Number.NEGATIVE_INFINITY;
+        if (def.value > curr) {
+          if (def.inclusive)
+            bag.minimum = def.value;
+          else
+            bag.exclusiveMinimum = def.value;
+        }
+      });
+      inst._zod.check = (payload) => {
+        if (def.inclusive ? payload.value >= def.value : payload.value > def.value) {
+          return;
+        }
+        payload.issues.push({
+          origin,
+          code: "too_small",
+          minimum: def.value,
+          input: payload.value,
+          inclusive: def.inclusive,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckMultipleOf = /* @__PURE__ */ $constructor("$ZodCheckMultipleOf", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        var _a;
+        (_a = inst2._zod.bag).multipleOf ?? (_a.multipleOf = def.value);
+      });
+      inst._zod.check = (payload) => {
+        if (typeof payload.value !== typeof def.value)
+          throw new Error("Cannot mix number and bigint in multiple_of check.");
+        const isMultiple = typeof payload.value === "bigint" ? payload.value % def.value === BigInt(0) : floatSafeRemainder(payload.value, def.value) === 0;
+        if (isMultiple)
+          return;
+        payload.issues.push({
+          origin: typeof payload.value,
+          code: "not_multiple_of",
+          divisor: def.value,
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckNumberFormat = /* @__PURE__ */ $constructor("$ZodCheckNumberFormat", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      def.format = def.format || "float64";
+      const isInt = def.format?.includes("int");
+      const origin = isInt ? "int" : "number";
+      const [minimum, maximum] = NUMBER_FORMAT_RANGES[def.format];
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.format = def.format;
+        bag.minimum = minimum;
+        bag.maximum = maximum;
+        if (isInt)
+          bag.pattern = integer;
+      });
+      inst._zod.check = (payload) => {
+        const input = payload.value;
+        if (isInt) {
+          if (!Number.isInteger(input)) {
+            payload.issues.push({
+              expected: origin,
+              format: def.format,
+              code: "invalid_type",
+              input,
+              inst
+            });
+            return;
+          }
+          if (!Number.isSafeInteger(input)) {
+            if (input > 0) {
+              payload.issues.push({
+                input,
+                code: "too_big",
+                maximum: Number.MAX_SAFE_INTEGER,
+                note: "Integers must be within the safe integer range.",
+                inst,
+                origin,
+                continue: !def.abort
+              });
+            } else {
+              payload.issues.push({
+                input,
+                code: "too_small",
+                minimum: Number.MIN_SAFE_INTEGER,
+                note: "Integers must be within the safe integer range.",
+                inst,
+                origin,
+                continue: !def.abort
+              });
+            }
+            return;
+          }
+        }
+        if (input < minimum) {
+          payload.issues.push({
+            origin: "number",
+            input,
+            code: "too_small",
+            minimum,
+            inclusive: true,
+            inst,
+            continue: !def.abort
+          });
+        }
+        if (input > maximum) {
+          payload.issues.push({
+            origin: "number",
+            input,
+            code: "too_big",
+            maximum,
+            inst
+          });
+        }
+      };
+    });
+    $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
+      var _a;
+      $ZodCheck.init(inst, def);
+      (_a = inst._zod.def).when ?? (_a.when = (payload) => {
+        const val = payload.value;
+        return !nullish(val) && val.length !== void 0;
+      });
+      inst._zod.onattach.push((inst2) => {
+        const curr = inst2._zod.bag.maximum ?? Number.POSITIVE_INFINITY;
+        if (def.maximum < curr)
+          inst2._zod.bag.maximum = def.maximum;
+      });
+      inst._zod.check = (payload) => {
+        const input = payload.value;
+        const length = input.length;
+        if (length <= def.maximum)
+          return;
+        const origin = getLengthableOrigin(input);
+        payload.issues.push({
+          origin,
+          code: "too_big",
+          maximum: def.maximum,
+          inclusive: true,
+          input,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
+      var _a;
+      $ZodCheck.init(inst, def);
+      (_a = inst._zod.def).when ?? (_a.when = (payload) => {
+        const val = payload.value;
+        return !nullish(val) && val.length !== void 0;
+      });
+      inst._zod.onattach.push((inst2) => {
+        const curr = inst2._zod.bag.minimum ?? Number.NEGATIVE_INFINITY;
+        if (def.minimum > curr)
+          inst2._zod.bag.minimum = def.minimum;
+      });
+      inst._zod.check = (payload) => {
+        const input = payload.value;
+        const length = input.length;
+        if (length >= def.minimum)
+          return;
+        const origin = getLengthableOrigin(input);
+        payload.issues.push({
+          origin,
+          code: "too_small",
+          minimum: def.minimum,
+          inclusive: true,
+          input,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
+      var _a;
+      $ZodCheck.init(inst, def);
+      (_a = inst._zod.def).when ?? (_a.when = (payload) => {
+        const val = payload.value;
+        return !nullish(val) && val.length !== void 0;
+      });
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.minimum = def.length;
+        bag.maximum = def.length;
+        bag.length = def.length;
+      });
+      inst._zod.check = (payload) => {
+        const input = payload.value;
+        const length = input.length;
+        if (length === def.length)
+          return;
+        const origin = getLengthableOrigin(input);
+        const tooBig = length > def.length;
+        payload.issues.push({
+          origin,
+          ...tooBig ? { code: "too_big", maximum: def.length } : { code: "too_small", minimum: def.length },
+          inclusive: true,
+          exact: true,
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
+      var _a, _b;
+      $ZodCheck.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.format = def.format;
+        if (def.pattern) {
+          bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
+          bag.patterns.add(def.pattern);
+        }
+      });
+      if (def.pattern)
+        (_a = inst._zod).check ?? (_a.check = (payload) => {
+          def.pattern.lastIndex = 0;
+          if (def.pattern.test(payload.value))
+            return;
+          payload.issues.push({
+            origin: "string",
+            code: "invalid_format",
+            format: def.format,
+            input: payload.value,
+            ...def.pattern ? { pattern: def.pattern.toString() } : {},
+            inst,
+            continue: !def.abort
+          });
+        });
+      else
+        (_b = inst._zod).check ?? (_b.check = () => {
+        });
+    });
+    $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def) => {
+      $ZodCheckStringFormat.init(inst, def);
+      inst._zod.check = (payload) => {
+        def.pattern.lastIndex = 0;
+        if (def.pattern.test(payload.value))
+          return;
+        payload.issues.push({
+          origin: "string",
+          code: "invalid_format",
+          format: "regex",
+          input: payload.value,
+          pattern: def.pattern.toString(),
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckLowerCase = /* @__PURE__ */ $constructor("$ZodCheckLowerCase", (inst, def) => {
+      def.pattern ?? (def.pattern = lowercase);
+      $ZodCheckStringFormat.init(inst, def);
+    });
+    $ZodCheckUpperCase = /* @__PURE__ */ $constructor("$ZodCheckUpperCase", (inst, def) => {
+      def.pattern ?? (def.pattern = uppercase);
+      $ZodCheckStringFormat.init(inst, def);
+    });
+    $ZodCheckIncludes = /* @__PURE__ */ $constructor("$ZodCheckIncludes", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      const escapedRegex = escapeRegex(def.includes);
+      const pattern = new RegExp(typeof def.position === "number" ? `^.{${def.position}}${escapedRegex}` : escapedRegex);
+      def.pattern = pattern;
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
+        bag.patterns.add(pattern);
+      });
+      inst._zod.check = (payload) => {
+        if (payload.value.includes(def.includes, def.position))
+          return;
+        payload.issues.push({
+          origin: "string",
+          code: "invalid_format",
+          format: "includes",
+          includes: def.includes,
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckStartsWith = /* @__PURE__ */ $constructor("$ZodCheckStartsWith", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      const pattern = new RegExp(`^${escapeRegex(def.prefix)}.*`);
+      def.pattern ?? (def.pattern = pattern);
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
+        bag.patterns.add(pattern);
+      });
+      inst._zod.check = (payload) => {
+        if (payload.value.startsWith(def.prefix))
+          return;
+        payload.issues.push({
+          origin: "string",
+          code: "invalid_format",
+          format: "starts_with",
+          prefix: def.prefix,
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckEndsWith = /* @__PURE__ */ $constructor("$ZodCheckEndsWith", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      const pattern = new RegExp(`.*${escapeRegex(def.suffix)}$`);
+      def.pattern ?? (def.pattern = pattern);
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
+        bag.patterns.add(pattern);
+      });
+      inst._zod.check = (payload) => {
+        if (payload.value.endsWith(def.suffix))
+          return;
+        payload.issues.push({
+          origin: "string",
+          code: "invalid_format",
+          format: "ends_with",
+          suffix: def.suffix,
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      inst._zod.check = (payload) => {
+        payload.value = def.tx(payload.value);
+      };
+    });
+  }
+});
+
+// node_modules/zod/v4/core/doc.js
+var Doc;
+var init_doc = __esm({
+  "node_modules/zod/v4/core/doc.js"() {
+    Doc = class {
+      constructor(args2 = []) {
+        this.content = [];
+        this.indent = 0;
+        if (this)
+          this.args = args2;
+      }
+      indented(fn2) {
+        this.indent += 1;
+        fn2(this);
+        this.indent -= 1;
+      }
+      write(arg) {
+        if (typeof arg === "function") {
+          arg(this, { execution: "sync" });
+          arg(this, { execution: "async" });
+          return;
+        }
+        const content = arg;
+        const lines = content.split("\n").filter((x) => x);
+        const minIndent = Math.min(...lines.map((x) => x.length - x.trimStart().length));
+        const dedented = lines.map((x) => x.slice(minIndent)).map((x) => " ".repeat(this.indent * 2) + x);
+        for (const line of dedented) {
+          this.content.push(line);
+        }
+      }
+      compile() {
+        const F = Function;
+        const args2 = this?.args;
+        const content = this?.content ?? [``];
+        const lines = [...content.map((x) => `  ${x}`)];
+        return new F(...args2, lines.join("\n"));
+      }
+    };
+  }
+});
+
+// node_modules/zod/v4/core/versions.js
+var version;
+var init_versions = __esm({
+  "node_modules/zod/v4/core/versions.js"() {
+    version = {
+      major: 4,
+      minor: 0,
+      patch: 0
+    };
+  }
+});
+
+// node_modules/zod/v4/core/schemas.js
+function isValidBase64(data) {
+  if (data === "")
+    return true;
+  if (data.length % 4 !== 0)
+    return false;
+  try {
+    atob(data);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function isValidBase64URL(data) {
+  if (!base64url.test(data))
+    return false;
+  const base642 = data.replace(/[-_]/g, (c3) => c3 === "-" ? "+" : "/");
+  const padded = base642.padEnd(Math.ceil(base642.length / 4) * 4, "=");
+  return isValidBase64(padded);
+}
+function isValidJWT(token, algorithm = null) {
+  try {
+    const tokensParts = token.split(".");
+    if (tokensParts.length !== 3)
+      return false;
+    const [header] = tokensParts;
+    if (!header)
+      return false;
+    const parsedHeader = JSON.parse(atob(header));
+    if ("typ" in parsedHeader && parsedHeader?.typ !== "JWT")
+      return false;
+    if (!parsedHeader.alg)
+      return false;
+    if (algorithm && (!("alg" in parsedHeader) || parsedHeader.alg !== algorithm))
+      return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+function handleArrayResult(result2, final, index) {
+  if (result2.issues.length) {
+    final.issues.push(...prefixIssues(index, result2.issues));
+  }
+  final.value[index] = result2.value;
+}
+function handleObjectResult(result2, final, key) {
+  if (result2.issues.length) {
+    final.issues.push(...prefixIssues(key, result2.issues));
+  }
+  final.value[key] = result2.value;
+}
+function handleOptionalObjectResult(result2, final, key, input) {
+  if (result2.issues.length) {
+    if (input[key] === void 0) {
+      if (key in input) {
+        final.value[key] = void 0;
+      } else {
+        final.value[key] = result2.value;
+      }
+    } else {
+      final.issues.push(...prefixIssues(key, result2.issues));
+    }
+  } else if (result2.value === void 0) {
+    if (key in input)
+      final.value[key] = void 0;
+  } else {
+    final.value[key] = result2.value;
+  }
+}
+function handleUnionResults(results, final, inst, ctx) {
+  for (const result2 of results) {
+    if (result2.issues.length === 0) {
+      final.value = result2.value;
+      return final;
+    }
+  }
+  final.issues.push({
+    code: "invalid_union",
+    input: final.value,
+    inst,
+    errors: results.map((result2) => result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
+  });
+  return final;
+}
+function mergeValues(a2, b) {
+  if (a2 === b) {
+    return { valid: true, data: a2 };
+  }
+  if (a2 instanceof Date && b instanceof Date && +a2 === +b) {
+    return { valid: true, data: a2 };
+  }
+  if (isPlainObject(a2) && isPlainObject(b)) {
+    const bKeys = Object.keys(b);
+    const sharedKeys = Object.keys(a2).filter((key) => bKeys.indexOf(key) !== -1);
+    const newObj = { ...a2, ...b };
+    for (const key of sharedKeys) {
+      const sharedValue = mergeValues(a2[key], b[key]);
+      if (!sharedValue.valid) {
+        return {
+          valid: false,
+          mergeErrorPath: [key, ...sharedValue.mergeErrorPath]
+        };
+      }
+      newObj[key] = sharedValue.data;
+    }
+    return { valid: true, data: newObj };
+  }
+  if (Array.isArray(a2) && Array.isArray(b)) {
+    if (a2.length !== b.length) {
+      return { valid: false, mergeErrorPath: [] };
+    }
+    const newArray = [];
+    for (let index = 0; index < a2.length; index++) {
+      const itemA = a2[index];
+      const itemB = b[index];
+      const sharedValue = mergeValues(itemA, itemB);
+      if (!sharedValue.valid) {
+        return {
+          valid: false,
+          mergeErrorPath: [index, ...sharedValue.mergeErrorPath]
+        };
+      }
+      newArray.push(sharedValue.data);
+    }
+    return { valid: true, data: newArray };
+  }
+  return { valid: false, mergeErrorPath: [] };
+}
+function handleIntersectionResults(result2, left, right) {
+  if (left.issues.length) {
+    result2.issues.push(...left.issues);
+  }
+  if (right.issues.length) {
+    result2.issues.push(...right.issues);
+  }
+  if (aborted(result2))
+    return result2;
+  const merged = mergeValues(left.value, right.value);
+  if (!merged.valid) {
+    throw new Error(`Unmergable intersection. Error path: ${JSON.stringify(merged.mergeErrorPath)}`);
+  }
+  result2.value = merged.data;
+  return result2;
+}
+function handleDefaultResult(payload, def) {
+  if (payload.value === void 0) {
+    payload.value = def.defaultValue;
+  }
+  return payload;
+}
+function handleNonOptionalResult(payload, inst) {
+  if (!payload.issues.length && payload.value === void 0) {
+    payload.issues.push({
+      code: "invalid_type",
+      expected: "nonoptional",
+      input: payload.value,
+      inst
+    });
+  }
+  return payload;
+}
+function handlePipeResult(left, def, ctx) {
+  if (aborted(left)) {
+    return left;
+  }
+  return def.out._zod.run({ value: left.value, issues: left.issues }, ctx);
+}
+function handleReadonlyResult(payload) {
+  payload.value = Object.freeze(payload.value);
+  return payload;
+}
+function handleRefineResult(result2, payload, input, inst) {
+  if (!result2) {
+    const _iss = {
+      code: "custom",
+      input,
+      inst,
+      // incorporates params.error into issue reporting
+      path: [...inst._zod.def.path ?? []],
+      // incorporates params.error into issue reporting
+      continue: !inst._zod.def.abort
+      // params: inst._zod.def.params,
+    };
+    if (inst._zod.def.params)
+      _iss.params = inst._zod.def.params;
+    payload.issues.push(issue(_iss));
+  }
+}
+var $ZodType, $ZodString, $ZodStringFormat, $ZodGUID, $ZodUUID, $ZodEmail, $ZodURL, $ZodEmoji, $ZodNanoID, $ZodCUID, $ZodCUID2, $ZodULID, $ZodXID, $ZodKSUID, $ZodISODateTime, $ZodISODate, $ZodISOTime, $ZodISODuration, $ZodIPv4, $ZodIPv6, $ZodCIDRv4, $ZodCIDRv6, $ZodBase64, $ZodBase64URL, $ZodE164, $ZodJWT, $ZodNumber, $ZodNumberFormat, $ZodBoolean, $ZodNull, $ZodUnknown, $ZodNever, $ZodArray, $ZodObject, $ZodUnion, $ZodDiscriminatedUnion, $ZodIntersection, $ZodRecord, $ZodEnum, $ZodLiteral, $ZodTransform, $ZodOptional, $ZodNullable, $ZodDefault, $ZodPrefault, $ZodNonOptional, $ZodCatch, $ZodPipe, $ZodReadonly, $ZodCustom;
+var init_schemas = __esm({
+  "node_modules/zod/v4/core/schemas.js"() {
+    init_checks();
+    init_core();
+    init_doc();
+    init_parse();
+    init_regexes();
+    init_util();
+    init_versions();
+    init_util();
+    $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
+      var _a;
+      inst ?? (inst = {});
+      inst._zod.def = def;
+      inst._zod.bag = inst._zod.bag || {};
+      inst._zod.version = version;
+      const checks = [...inst._zod.def.checks ?? []];
+      if (inst._zod.traits.has("$ZodCheck")) {
+        checks.unshift(inst);
+      }
+      for (const ch of checks) {
+        for (const fn2 of ch._zod.onattach) {
+          fn2(inst);
+        }
+      }
+      if (checks.length === 0) {
+        (_a = inst._zod).deferred ?? (_a.deferred = []);
+        inst._zod.deferred?.push(() => {
+          inst._zod.run = inst._zod.parse;
+        });
+      } else {
+        const runChecks = (payload, checks2, ctx) => {
+          let isAborted2 = aborted(payload);
+          let asyncResult;
+          for (const ch of checks2) {
+            if (ch._zod.def.when) {
+              const shouldRun = ch._zod.def.when(payload);
+              if (!shouldRun)
+                continue;
+            } else if (isAborted2) {
+              continue;
+            }
+            const currLen = payload.issues.length;
+            const _ = ch._zod.check(payload);
+            if (_ instanceof Promise && ctx?.async === false) {
+              throw new $ZodAsyncError();
+            }
+            if (asyncResult || _ instanceof Promise) {
+              asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
+                await _;
+                const nextLen = payload.issues.length;
+                if (nextLen === currLen)
+                  return;
+                if (!isAborted2)
+                  isAborted2 = aborted(payload, currLen);
+              });
+            } else {
+              const nextLen = payload.issues.length;
+              if (nextLen === currLen)
+                continue;
+              if (!isAborted2)
+                isAborted2 = aborted(payload, currLen);
+            }
+          }
+          if (asyncResult) {
+            return asyncResult.then(() => {
+              return payload;
+            });
+          }
+          return payload;
+        };
+        inst._zod.run = (payload, ctx) => {
+          const result2 = inst._zod.parse(payload, ctx);
+          if (result2 instanceof Promise) {
+            if (ctx.async === false)
+              throw new $ZodAsyncError();
+            return result2.then((result3) => runChecks(result3, checks, ctx));
+          }
+          return runChecks(result2, checks, ctx);
+        };
+      }
+      inst["~standard"] = {
+        validate: (value) => {
+          try {
+            const r = safeParse(inst, value);
+            return r.success ? { value: r.data } : { issues: r.error?.issues };
+          } catch (_) {
+            return safeParseAsync(inst, value).then((r) => r.success ? { value: r.data } : { issues: r.error?.issues });
+          }
+        },
+        vendor: "zod",
+        version: 1
+      };
+    });
+    $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.pattern = [...inst?._zod.bag?.patterns ?? []].pop() ?? string(inst._zod.bag);
+      inst._zod.parse = (payload, _) => {
+        if (def.coerce)
+          try {
+            payload.value = String(payload.value);
+          } catch (_2) {
+          }
+        if (typeof payload.value === "string")
+          return payload;
+        payload.issues.push({
+          expected: "string",
+          code: "invalid_type",
+          input: payload.value,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodStringFormat = /* @__PURE__ */ $constructor("$ZodStringFormat", (inst, def) => {
+      $ZodCheckStringFormat.init(inst, def);
+      $ZodString.init(inst, def);
+    });
+    $ZodGUID = /* @__PURE__ */ $constructor("$ZodGUID", (inst, def) => {
+      def.pattern ?? (def.pattern = guid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodUUID = /* @__PURE__ */ $constructor("$ZodUUID", (inst, def) => {
+      if (def.version) {
+        const versionMap = {
+          v1: 1,
+          v2: 2,
+          v3: 3,
+          v4: 4,
+          v5: 5,
+          v6: 6,
+          v7: 7,
+          v8: 8
+        };
+        const v = versionMap[def.version];
+        if (v === void 0)
+          throw new Error(`Invalid UUID version: "${def.version}"`);
+        def.pattern ?? (def.pattern = uuid(v));
+      } else
+        def.pattern ?? (def.pattern = uuid());
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodEmail = /* @__PURE__ */ $constructor("$ZodEmail", (inst, def) => {
+      def.pattern ?? (def.pattern = email);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodURL = /* @__PURE__ */ $constructor("$ZodURL", (inst, def) => {
+      $ZodStringFormat.init(inst, def);
+      inst._zod.check = (payload) => {
+        try {
+          const orig = payload.value;
+          const url = new URL(orig);
+          const href = url.href;
+          if (def.hostname) {
+            def.hostname.lastIndex = 0;
+            if (!def.hostname.test(url.hostname)) {
+              payload.issues.push({
+                code: "invalid_format",
+                format: "url",
+                note: "Invalid hostname",
+                pattern: hostname.source,
+                input: payload.value,
+                inst,
+                continue: !def.abort
+              });
+            }
+          }
+          if (def.protocol) {
+            def.protocol.lastIndex = 0;
+            if (!def.protocol.test(url.protocol.endsWith(":") ? url.protocol.slice(0, -1) : url.protocol)) {
+              payload.issues.push({
+                code: "invalid_format",
+                format: "url",
+                note: "Invalid protocol",
+                pattern: def.protocol.source,
+                input: payload.value,
+                inst,
+                continue: !def.abort
+              });
+            }
+          }
+          if (!orig.endsWith("/") && href.endsWith("/")) {
+            payload.value = href.slice(0, -1);
+          } else {
+            payload.value = href;
+          }
+          return;
+        } catch (_) {
+          payload.issues.push({
+            code: "invalid_format",
+            format: "url",
+            input: payload.value,
+            inst,
+            continue: !def.abort
+          });
+        }
+      };
+    });
+    $ZodEmoji = /* @__PURE__ */ $constructor("$ZodEmoji", (inst, def) => {
+      def.pattern ?? (def.pattern = emoji());
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodNanoID = /* @__PURE__ */ $constructor("$ZodNanoID", (inst, def) => {
+      def.pattern ?? (def.pattern = nanoid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodCUID = /* @__PURE__ */ $constructor("$ZodCUID", (inst, def) => {
+      def.pattern ?? (def.pattern = cuid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodCUID2 = /* @__PURE__ */ $constructor("$ZodCUID2", (inst, def) => {
+      def.pattern ?? (def.pattern = cuid2);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodULID = /* @__PURE__ */ $constructor("$ZodULID", (inst, def) => {
+      def.pattern ?? (def.pattern = ulid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodXID = /* @__PURE__ */ $constructor("$ZodXID", (inst, def) => {
+      def.pattern ?? (def.pattern = xid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodKSUID = /* @__PURE__ */ $constructor("$ZodKSUID", (inst, def) => {
+      def.pattern ?? (def.pattern = ksuid);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodISODateTime = /* @__PURE__ */ $constructor("$ZodISODateTime", (inst, def) => {
+      def.pattern ?? (def.pattern = datetime(def));
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodISODate = /* @__PURE__ */ $constructor("$ZodISODate", (inst, def) => {
+      def.pattern ?? (def.pattern = date);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodISOTime = /* @__PURE__ */ $constructor("$ZodISOTime", (inst, def) => {
+      def.pattern ?? (def.pattern = time(def));
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodISODuration = /* @__PURE__ */ $constructor("$ZodISODuration", (inst, def) => {
+      def.pattern ?? (def.pattern = duration);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodIPv4 = /* @__PURE__ */ $constructor("$ZodIPv4", (inst, def) => {
+      def.pattern ?? (def.pattern = ipv4);
+      $ZodStringFormat.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.format = `ipv4`;
+      });
+    });
+    $ZodIPv6 = /* @__PURE__ */ $constructor("$ZodIPv6", (inst, def) => {
+      def.pattern ?? (def.pattern = ipv6);
+      $ZodStringFormat.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        const bag = inst2._zod.bag;
+        bag.format = `ipv6`;
+      });
+      inst._zod.check = (payload) => {
+        try {
+          new URL(`http://[${payload.value}]`);
+        } catch {
+          payload.issues.push({
+            code: "invalid_format",
+            format: "ipv6",
+            input: payload.value,
+            inst,
+            continue: !def.abort
+          });
+        }
+      };
+    });
+    $ZodCIDRv4 = /* @__PURE__ */ $constructor("$ZodCIDRv4", (inst, def) => {
+      def.pattern ?? (def.pattern = cidrv4);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodCIDRv6 = /* @__PURE__ */ $constructor("$ZodCIDRv6", (inst, def) => {
+      def.pattern ?? (def.pattern = cidrv6);
+      $ZodStringFormat.init(inst, def);
+      inst._zod.check = (payload) => {
+        const [address, prefix] = payload.value.split("/");
+        try {
+          if (!prefix)
+            throw new Error();
+          const prefixNum = Number(prefix);
+          if (`${prefixNum}` !== prefix)
+            throw new Error();
+          if (prefixNum < 0 || prefixNum > 128)
+            throw new Error();
+          new URL(`http://[${address}]`);
+        } catch {
+          payload.issues.push({
+            code: "invalid_format",
+            format: "cidrv6",
+            input: payload.value,
+            inst,
+            continue: !def.abort
+          });
+        }
+      };
+    });
+    $ZodBase64 = /* @__PURE__ */ $constructor("$ZodBase64", (inst, def) => {
+      def.pattern ?? (def.pattern = base64);
+      $ZodStringFormat.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        inst2._zod.bag.contentEncoding = "base64";
+      });
+      inst._zod.check = (payload) => {
+        if (isValidBase64(payload.value))
+          return;
+        payload.issues.push({
+          code: "invalid_format",
+          format: "base64",
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodBase64URL = /* @__PURE__ */ $constructor("$ZodBase64URL", (inst, def) => {
+      def.pattern ?? (def.pattern = base64url);
+      $ZodStringFormat.init(inst, def);
+      inst._zod.onattach.push((inst2) => {
+        inst2._zod.bag.contentEncoding = "base64url";
+      });
+      inst._zod.check = (payload) => {
+        if (isValidBase64URL(payload.value))
+          return;
+        payload.issues.push({
+          code: "invalid_format",
+          format: "base64url",
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodE164 = /* @__PURE__ */ $constructor("$ZodE164", (inst, def) => {
+      def.pattern ?? (def.pattern = e164);
+      $ZodStringFormat.init(inst, def);
+    });
+    $ZodJWT = /* @__PURE__ */ $constructor("$ZodJWT", (inst, def) => {
+      $ZodStringFormat.init(inst, def);
+      inst._zod.check = (payload) => {
+        if (isValidJWT(payload.value, def.alg))
+          return;
+        payload.issues.push({
+          code: "invalid_format",
+          format: "jwt",
+          input: payload.value,
+          inst,
+          continue: !def.abort
+        });
+      };
+    });
+    $ZodNumber = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.pattern = inst._zod.bag.pattern ?? number;
+      inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce)
+          try {
+            payload.value = Number(payload.value);
+          } catch (_) {
+          }
+        const input = payload.value;
+        if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) {
+          return payload;
+        }
+        const received = typeof input === "number" ? Number.isNaN(input) ? "NaN" : !Number.isFinite(input) ? "Infinity" : void 0 : void 0;
+        payload.issues.push({
+          expected: "number",
+          code: "invalid_type",
+          input,
+          inst,
+          ...received ? { received } : {}
+        });
+        return payload;
+      };
+    });
+    $ZodNumberFormat = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
+      $ZodCheckNumberFormat.init(inst, def);
+      $ZodNumber.init(inst, def);
+    });
+    $ZodBoolean = /* @__PURE__ */ $constructor("$ZodBoolean", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.pattern = boolean;
+      inst._zod.parse = (payload, _ctx) => {
+        if (def.coerce)
+          try {
+            payload.value = Boolean(payload.value);
+          } catch (_) {
+          }
+        const input = payload.value;
+        if (typeof input === "boolean")
+          return payload;
+        payload.issues.push({
+          expected: "boolean",
+          code: "invalid_type",
+          input,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodNull = /* @__PURE__ */ $constructor("$ZodNull", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.pattern = _null;
+      inst._zod.values = /* @__PURE__ */ new Set([null]);
+      inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (input === null)
+          return payload;
+        payload.issues.push({
+          expected: "null",
+          code: "invalid_type",
+          input,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodUnknown = /* @__PURE__ */ $constructor("$ZodUnknown", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload) => payload;
+    });
+    $ZodNever = /* @__PURE__ */ $constructor("$ZodNever", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, _ctx) => {
+        payload.issues.push({
+          expected: "never",
+          code: "invalid_type",
+          input: payload.value,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, ctx) => {
+        const input = payload.value;
+        if (!Array.isArray(input)) {
+          payload.issues.push({
+            expected: "array",
+            code: "invalid_type",
+            input,
+            inst
+          });
+          return payload;
+        }
+        payload.value = Array(input.length);
+        const proms = [];
+        for (let i2 = 0; i2 < input.length; i2++) {
+          const item = input[i2];
+          const result2 = def.element._zod.run({
+            value: item,
+            issues: []
+          }, ctx);
+          if (result2 instanceof Promise) {
+            proms.push(result2.then((result3) => handleArrayResult(result3, payload, i2)));
+          } else {
+            handleArrayResult(result2, payload, i2);
+          }
+        }
+        if (proms.length) {
+          return Promise.all(proms).then(() => payload);
+        }
+        return payload;
+      };
+    });
+    $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
+      $ZodType.init(inst, def);
+      const _normalized = cached(() => {
+        const keys2 = Object.keys(def.shape);
+        for (const k of keys2) {
+          if (!(def.shape[k] instanceof $ZodType)) {
+            throw new Error(`Invalid element at key "${k}": expected a Zod schema`);
+          }
+        }
+        const okeys = optionalKeys(def.shape);
+        return {
+          shape: def.shape,
+          keys: keys2,
+          keySet: new Set(keys2),
+          numKeys: keys2.length,
+          optionalKeys: new Set(okeys)
+        };
+      });
+      defineLazy(inst._zod, "propValues", () => {
+        const shape = def.shape;
+        const propValues = {};
+        for (const key in shape) {
+          const field = shape[key]._zod;
+          if (field.values) {
+            propValues[key] ?? (propValues[key] = /* @__PURE__ */ new Set());
+            for (const v of field.values)
+              propValues[key].add(v);
+          }
+        }
+        return propValues;
+      });
+      const generateFastpass = (shape) => {
+        const doc = new Doc(["shape", "payload", "ctx"]);
+        const normalized = _normalized.value;
+        const parseStr = (key) => {
+          const k = esc(key);
+          return `shape[${k}]._zod.run({ value: input[${k}], issues: [] }, ctx)`;
+        };
+        doc.write(`const input = payload.value;`);
+        const ids = /* @__PURE__ */ Object.create(null);
+        let counter = 0;
+        for (const key of normalized.keys) {
+          ids[key] = `key_${counter++}`;
+        }
+        doc.write(`const newResult = {}`);
+        for (const key of normalized.keys) {
+          if (normalized.optionalKeys.has(key)) {
+            const id = ids[key];
+            doc.write(`const ${id} = ${parseStr(key)};`);
+            const k = esc(key);
+            doc.write(`
+        if (${id}.issues.length) {
+          if (input[${k}] === undefined) {
+            if (${k} in input) {
+              newResult[${k}] = undefined;
+            }
+          } else {
+            payload.issues = payload.issues.concat(
+              ${id}.issues.map((iss) => ({
+                ...iss,
+                path: iss.path ? [${k}, ...iss.path] : [${k}],
+              }))
+            );
+          }
+        } else if (${id}.value === undefined) {
+          if (${k} in input) newResult[${k}] = undefined;
+        } else {
+          newResult[${k}] = ${id}.value;
+        }
+        `);
+          } else {
+            const id = ids[key];
+            doc.write(`const ${id} = ${parseStr(key)};`);
+            doc.write(`
+          if (${id}.issues.length) payload.issues = payload.issues.concat(${id}.issues.map(iss => ({
+            ...iss,
+            path: iss.path ? [${esc(key)}, ...iss.path] : [${esc(key)}]
+          })));`);
+            doc.write(`newResult[${esc(key)}] = ${id}.value`);
+          }
+        }
+        doc.write(`payload.value = newResult;`);
+        doc.write(`return payload;`);
+        const fn2 = doc.compile();
+        return (payload, ctx) => fn2(shape, payload, ctx);
+      };
+      let fastpass;
+      const isObject6 = isObject3;
+      const jit = !globalConfig.jitless;
+      const allowsEval2 = allowsEval;
+      const fastEnabled = jit && allowsEval2.value;
+      const catchall = def.catchall;
+      let value;
+      inst._zod.parse = (payload, ctx) => {
+        value ?? (value = _normalized.value);
+        const input = payload.value;
+        if (!isObject6(input)) {
+          payload.issues.push({
+            expected: "object",
+            code: "invalid_type",
+            input,
+            inst
+          });
+          return payload;
+        }
+        const proms = [];
+        if (jit && fastEnabled && ctx?.async === false && ctx.jitless !== true) {
+          if (!fastpass)
+            fastpass = generateFastpass(def.shape);
+          payload = fastpass(payload, ctx);
+        } else {
+          payload.value = {};
+          const shape = value.shape;
+          for (const key of value.keys) {
+            const el = shape[key];
+            const r = el._zod.run({ value: input[key], issues: [] }, ctx);
+            const isOptional = el._zod.optin === "optional" && el._zod.optout === "optional";
+            if (r instanceof Promise) {
+              proms.push(r.then((r2) => isOptional ? handleOptionalObjectResult(r2, payload, key, input) : handleObjectResult(r2, payload, key)));
+            } else if (isOptional) {
+              handleOptionalObjectResult(r, payload, key, input);
+            } else {
+              handleObjectResult(r, payload, key);
+            }
+          }
+        }
+        if (!catchall) {
+          return proms.length ? Promise.all(proms).then(() => payload) : payload;
+        }
+        const unrecognized = [];
+        const keySet = value.keySet;
+        const _catchall = catchall._zod;
+        const t = _catchall.def.type;
+        for (const key of Object.keys(input)) {
+          if (keySet.has(key))
+            continue;
+          if (t === "never") {
+            unrecognized.push(key);
+            continue;
+          }
+          const r = _catchall.run({ value: input[key], issues: [] }, ctx);
+          if (r instanceof Promise) {
+            proms.push(r.then((r2) => handleObjectResult(r2, payload, key)));
+          } else {
+            handleObjectResult(r, payload, key);
+          }
+        }
+        if (unrecognized.length) {
+          payload.issues.push({
+            code: "unrecognized_keys",
+            keys: unrecognized,
+            input,
+            inst
+          });
+        }
+        if (!proms.length)
+          return payload;
+        return Promise.all(proms).then(() => {
+          return payload;
+        });
+      };
+    });
+    $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
+      $ZodType.init(inst, def);
+      defineLazy(inst._zod, "optin", () => def.options.some((o2) => o2._zod.optin === "optional") ? "optional" : void 0);
+      defineLazy(inst._zod, "optout", () => def.options.some((o2) => o2._zod.optout === "optional") ? "optional" : void 0);
+      defineLazy(inst._zod, "values", () => {
+        if (def.options.every((o2) => o2._zod.values)) {
+          return new Set(def.options.flatMap((option) => Array.from(option._zod.values)));
+        }
+        return void 0;
+      });
+      defineLazy(inst._zod, "pattern", () => {
+        if (def.options.every((o2) => o2._zod.pattern)) {
+          const patterns = def.options.map((o2) => o2._zod.pattern);
+          return new RegExp(`^(${patterns.map((p) => cleanRegex(p.source)).join("|")})$`);
+        }
+        return void 0;
+      });
+      inst._zod.parse = (payload, ctx) => {
+        let async = false;
+        const results = [];
+        for (const option of def.options) {
+          const result2 = option._zod.run({
+            value: payload.value,
+            issues: []
+          }, ctx);
+          if (result2 instanceof Promise) {
+            results.push(result2);
+            async = true;
+          } else {
+            if (result2.issues.length === 0)
+              return result2;
+            results.push(result2);
+          }
+        }
+        if (!async)
+          return handleUnionResults(results, payload, inst, ctx);
+        return Promise.all(results).then((results2) => {
+          return handleUnionResults(results2, payload, inst, ctx);
+        });
+      };
+    });
+    $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnion", (inst, def) => {
+      $ZodUnion.init(inst, def);
+      const _super = inst._zod.parse;
+      defineLazy(inst._zod, "propValues", () => {
+        const propValues = {};
+        for (const option of def.options) {
+          const pv = option._zod.propValues;
+          if (!pv || Object.keys(pv).length === 0)
+            throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(option)}"`);
+          for (const [k, v] of Object.entries(pv)) {
+            if (!propValues[k])
+              propValues[k] = /* @__PURE__ */ new Set();
+            for (const val of v) {
+              propValues[k].add(val);
+            }
+          }
+        }
+        return propValues;
+      });
+      const disc = cached(() => {
+        const opts = def.options;
+        const map = /* @__PURE__ */ new Map();
+        for (const o2 of opts) {
+          const values = o2._zod.propValues[def.discriminator];
+          if (!values || values.size === 0)
+            throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(o2)}"`);
+          for (const v of values) {
+            if (map.has(v)) {
+              throw new Error(`Duplicate discriminator value "${String(v)}"`);
+            }
+            map.set(v, o2);
+          }
+        }
+        return map;
+      });
+      inst._zod.parse = (payload, ctx) => {
+        const input = payload.value;
+        if (!isObject3(input)) {
+          payload.issues.push({
+            code: "invalid_type",
+            expected: "object",
+            input,
+            inst
+          });
+          return payload;
+        }
+        const opt = disc.value.get(input?.[def.discriminator]);
+        if (opt) {
+          return opt._zod.run(payload, ctx);
+        }
+        if (def.unionFallback) {
+          return _super(payload, ctx);
+        }
+        payload.issues.push({
+          code: "invalid_union",
+          errors: [],
+          note: "No matching discriminator",
+          input,
+          path: [def.discriminator],
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodIntersection = /* @__PURE__ */ $constructor("$ZodIntersection", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, ctx) => {
+        const input = payload.value;
+        const left = def.left._zod.run({ value: input, issues: [] }, ctx);
+        const right = def.right._zod.run({ value: input, issues: [] }, ctx);
+        const async = left instanceof Promise || right instanceof Promise;
+        if (async) {
+          return Promise.all([left, right]).then(([left2, right2]) => {
+            return handleIntersectionResults(payload, left2, right2);
+          });
+        }
+        return handleIntersectionResults(payload, left, right);
+      };
+    });
+    $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, ctx) => {
+        const input = payload.value;
+        if (!isPlainObject(input)) {
+          payload.issues.push({
+            expected: "record",
+            code: "invalid_type",
+            input,
+            inst
+          });
+          return payload;
+        }
+        const proms = [];
+        if (def.keyType._zod.values) {
+          const values = def.keyType._zod.values;
+          payload.value = {};
+          for (const key of values) {
+            if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
+              const result2 = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+              if (result2 instanceof Promise) {
+                proms.push(result2.then((result3) => {
+                  if (result3.issues.length) {
+                    payload.issues.push(...prefixIssues(key, result3.issues));
+                  }
+                  payload.value[key] = result3.value;
+                }));
+              } else {
+                if (result2.issues.length) {
+                  payload.issues.push(...prefixIssues(key, result2.issues));
+                }
+                payload.value[key] = result2.value;
+              }
+            }
+          }
+          let unrecognized;
+          for (const key in input) {
+            if (!values.has(key)) {
+              unrecognized = unrecognized ?? [];
+              unrecognized.push(key);
+            }
+          }
+          if (unrecognized && unrecognized.length > 0) {
+            payload.issues.push({
+              code: "unrecognized_keys",
+              input,
+              inst,
+              keys: unrecognized
+            });
+          }
+        } else {
+          payload.value = {};
+          for (const key of Reflect.ownKeys(input)) {
+            if (key === "__proto__")
+              continue;
+            const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
+            if (keyResult instanceof Promise) {
+              throw new Error("Async schemas not supported in object keys currently");
+            }
+            if (keyResult.issues.length) {
+              payload.issues.push({
+                origin: "record",
+                code: "invalid_key",
+                issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
+                input: key,
+                path: [key],
+                inst
+              });
+              payload.value[keyResult.value] = keyResult.value;
+              continue;
+            }
+            const result2 = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
+            if (result2 instanceof Promise) {
+              proms.push(result2.then((result3) => {
+                if (result3.issues.length) {
+                  payload.issues.push(...prefixIssues(key, result3.issues));
+                }
+                payload.value[keyResult.value] = result3.value;
+              }));
+            } else {
+              if (result2.issues.length) {
+                payload.issues.push(...prefixIssues(key, result2.issues));
+              }
+              payload.value[keyResult.value] = result2.value;
+            }
+          }
+        }
+        if (proms.length) {
+          return Promise.all(proms).then(() => payload);
+        }
+        return payload;
+      };
+    });
+    $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
+      $ZodType.init(inst, def);
+      const values = getEnumValues(def.entries);
+      inst._zod.values = new Set(values);
+      inst._zod.pattern = new RegExp(`^(${values.filter((k) => propertyKeyTypes.has(typeof k)).map((o2) => typeof o2 === "string" ? escapeRegex(o2) : o2.toString()).join("|")})$`);
+      inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (inst._zod.values.has(input)) {
+          return payload;
+        }
+        payload.issues.push({
+          code: "invalid_value",
+          values,
+          input,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodLiteral = /* @__PURE__ */ $constructor("$ZodLiteral", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.values = new Set(def.values);
+      inst._zod.pattern = new RegExp(`^(${def.values.map((o2) => typeof o2 === "string" ? escapeRegex(o2) : o2 ? o2.toString() : String(o2)).join("|")})$`);
+      inst._zod.parse = (payload, _ctx) => {
+        const input = payload.value;
+        if (inst._zod.values.has(input)) {
+          return payload;
+        }
+        payload.issues.push({
+          code: "invalid_value",
+          values: def.values,
+          input,
+          inst
+        });
+        return payload;
+      };
+    });
+    $ZodTransform = /* @__PURE__ */ $constructor("$ZodTransform", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, _ctx) => {
+        const _out = def.transform(payload.value, payload);
+        if (_ctx.async) {
+          const output2 = _out instanceof Promise ? _out : Promise.resolve(_out);
+          return output2.then((output3) => {
+            payload.value = output3;
+            return payload;
+          });
+        }
+        if (_out instanceof Promise) {
+          throw new $ZodAsyncError();
+        }
+        payload.value = _out;
+        return payload;
+      };
+    });
+    $ZodOptional = /* @__PURE__ */ $constructor("$ZodOptional", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.optin = "optional";
+      inst._zod.optout = "optional";
+      defineLazy(inst._zod, "values", () => {
+        return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, void 0]) : void 0;
+      });
+      defineLazy(inst._zod, "pattern", () => {
+        const pattern = def.innerType._zod.pattern;
+        return pattern ? new RegExp(`^(${cleanRegex(pattern.source)})?$`) : void 0;
+      });
+      inst._zod.parse = (payload, ctx) => {
+        if (def.innerType._zod.optin === "optional") {
+          return def.innerType._zod.run(payload, ctx);
+        }
+        if (payload.value === void 0) {
+          return payload;
+        }
+        return def.innerType._zod.run(payload, ctx);
+      };
+    });
+    $ZodNullable = /* @__PURE__ */ $constructor("$ZodNullable", (inst, def) => {
+      $ZodType.init(inst, def);
+      defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
+      defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
+      defineLazy(inst._zod, "pattern", () => {
+        const pattern = def.innerType._zod.pattern;
+        return pattern ? new RegExp(`^(${cleanRegex(pattern.source)}|null)$`) : void 0;
+      });
+      defineLazy(inst._zod, "values", () => {
+        return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, null]) : void 0;
+      });
+      inst._zod.parse = (payload, ctx) => {
+        if (payload.value === null)
+          return payload;
+        return def.innerType._zod.run(payload, ctx);
+      };
+    });
+    $ZodDefault = /* @__PURE__ */ $constructor("$ZodDefault", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.optin = "optional";
+      defineLazy(inst._zod, "values", () => def.innerType._zod.values);
+      inst._zod.parse = (payload, ctx) => {
+        if (payload.value === void 0) {
+          payload.value = def.defaultValue;
+          return payload;
+        }
+        const result2 = def.innerType._zod.run(payload, ctx);
+        if (result2 instanceof Promise) {
+          return result2.then((result3) => handleDefaultResult(result3, def));
+        }
+        return handleDefaultResult(result2, def);
+      };
+    });
+    $ZodPrefault = /* @__PURE__ */ $constructor("$ZodPrefault", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.optin = "optional";
+      defineLazy(inst._zod, "values", () => def.innerType._zod.values);
+      inst._zod.parse = (payload, ctx) => {
+        if (payload.value === void 0) {
+          payload.value = def.defaultValue;
+        }
+        return def.innerType._zod.run(payload, ctx);
+      };
+    });
+    $ZodNonOptional = /* @__PURE__ */ $constructor("$ZodNonOptional", (inst, def) => {
+      $ZodType.init(inst, def);
+      defineLazy(inst._zod, "values", () => {
+        const v = def.innerType._zod.values;
+        return v ? new Set([...v].filter((x) => x !== void 0)) : void 0;
+      });
+      inst._zod.parse = (payload, ctx) => {
+        const result2 = def.innerType._zod.run(payload, ctx);
+        if (result2 instanceof Promise) {
+          return result2.then((result3) => handleNonOptionalResult(result3, inst));
+        }
+        return handleNonOptionalResult(result2, inst);
+      };
+    });
+    $ZodCatch = /* @__PURE__ */ $constructor("$ZodCatch", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst._zod.optin = "optional";
+      defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
+      defineLazy(inst._zod, "values", () => def.innerType._zod.values);
+      inst._zod.parse = (payload, ctx) => {
+        const result2 = def.innerType._zod.run(payload, ctx);
+        if (result2 instanceof Promise) {
+          return result2.then((result3) => {
+            payload.value = result3.value;
+            if (result3.issues.length) {
+              payload.value = def.catchValue({
+                ...payload,
+                error: {
+                  issues: result3.issues.map((iss) => finalizeIssue(iss, ctx, config()))
+                },
+                input: payload.value
+              });
+              payload.issues = [];
+            }
+            return payload;
+          });
+        }
+        payload.value = result2.value;
+        if (result2.issues.length) {
+          payload.value = def.catchValue({
+            ...payload,
+            error: {
+              issues: result2.issues.map((iss) => finalizeIssue(iss, ctx, config()))
+            },
+            input: payload.value
+          });
+          payload.issues = [];
+        }
+        return payload;
+      };
+    });
+    $ZodPipe = /* @__PURE__ */ $constructor("$ZodPipe", (inst, def) => {
+      $ZodType.init(inst, def);
+      defineLazy(inst._zod, "values", () => def.in._zod.values);
+      defineLazy(inst._zod, "optin", () => def.in._zod.optin);
+      defineLazy(inst._zod, "optout", () => def.out._zod.optout);
+      inst._zod.parse = (payload, ctx) => {
+        const left = def.in._zod.run(payload, ctx);
+        if (left instanceof Promise) {
+          return left.then((left2) => handlePipeResult(left2, def, ctx));
+        }
+        return handlePipeResult(left, def, ctx);
+      };
+    });
+    $ZodReadonly = /* @__PURE__ */ $constructor("$ZodReadonly", (inst, def) => {
+      $ZodType.init(inst, def);
+      defineLazy(inst._zod, "propValues", () => def.innerType._zod.propValues);
+      defineLazy(inst._zod, "values", () => def.innerType._zod.values);
+      defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
+      defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
+      inst._zod.parse = (payload, ctx) => {
+        const result2 = def.innerType._zod.run(payload, ctx);
+        if (result2 instanceof Promise) {
+          return result2.then(handleReadonlyResult);
+        }
+        return handleReadonlyResult(result2);
+      };
+    });
+    $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
+      $ZodCheck.init(inst, def);
+      $ZodType.init(inst, def);
+      inst._zod.parse = (payload, _) => {
+        return payload;
+      };
+      inst._zod.check = (payload) => {
+        const input = payload.value;
+        const r = def.fn(input);
+        if (r instanceof Promise) {
+          return r.then((r2) => handleRefineResult(r2, payload, input, inst));
+        }
+        handleRefineResult(r, payload, input, inst);
+        return;
+      };
+    });
+  }
+});
+
+// node_modules/zod/v4/locales/en.js
+function en_default() {
+  return {
+    localeError: error()
+  };
+}
+var parsedType, error;
+var init_en = __esm({
+  "node_modules/zod/v4/locales/en.js"() {
+    init_util();
+    parsedType = (data) => {
+      const t = typeof data;
+      switch (t) {
+        case "number": {
+          return Number.isNaN(data) ? "NaN" : "number";
+        }
+        case "object": {
+          if (Array.isArray(data)) {
+            return "array";
+          }
+          if (data === null) {
+            return "null";
+          }
+          if (Object.getPrototypeOf(data) !== Object.prototype && data.constructor) {
+            return data.constructor.name;
+          }
+        }
+      }
+      return t;
+    };
+    error = () => {
+      const Sizable = {
+        string: { unit: "characters", verb: "to have" },
+        file: { unit: "bytes", verb: "to have" },
+        array: { unit: "items", verb: "to have" },
+        set: { unit: "items", verb: "to have" }
+      };
+      function getSizing(origin) {
+        return Sizable[origin] ?? null;
+      }
+      const Nouns = {
+        regex: "input",
+        email: "email address",
+        url: "URL",
+        emoji: "emoji",
+        uuid: "UUID",
+        uuidv4: "UUIDv4",
+        uuidv6: "UUIDv6",
+        nanoid: "nanoid",
+        guid: "GUID",
+        cuid: "cuid",
+        cuid2: "cuid2",
+        ulid: "ULID",
+        xid: "XID",
+        ksuid: "KSUID",
+        datetime: "ISO datetime",
+        date: "ISO date",
+        time: "ISO time",
+        duration: "ISO duration",
+        ipv4: "IPv4 address",
+        ipv6: "IPv6 address",
+        cidrv4: "IPv4 range",
+        cidrv6: "IPv6 range",
+        base64: "base64-encoded string",
+        base64url: "base64url-encoded string",
+        json_string: "JSON string",
+        e164: "E.164 number",
+        jwt: "JWT",
+        template_literal: "input"
+      };
+      return (issue2) => {
+        switch (issue2.code) {
+          case "invalid_type":
+            return `Invalid input: expected ${issue2.expected}, received ${parsedType(issue2.input)}`;
+          case "invalid_value":
+            if (issue2.values.length === 1)
+              return `Invalid input: expected ${stringifyPrimitive(issue2.values[0])}`;
+            return `Invalid option: expected one of ${joinValues(issue2.values, "|")}`;
+          case "too_big": {
+            const adj = issue2.inclusive ? "<=" : "<";
+            const sizing = getSizing(issue2.origin);
+            if (sizing)
+              return `Too big: expected ${issue2.origin ?? "value"} to have ${adj}${issue2.maximum.toString()} ${sizing.unit ?? "elements"}`;
+            return `Too big: expected ${issue2.origin ?? "value"} to be ${adj}${issue2.maximum.toString()}`;
+          }
+          case "too_small": {
+            const adj = issue2.inclusive ? ">=" : ">";
+            const sizing = getSizing(issue2.origin);
+            if (sizing) {
+              return `Too small: expected ${issue2.origin} to have ${adj}${issue2.minimum.toString()} ${sizing.unit}`;
+            }
+            return `Too small: expected ${issue2.origin} to be ${adj}${issue2.minimum.toString()}`;
+          }
+          case "invalid_format": {
+            const _issue = issue2;
+            if (_issue.format === "starts_with") {
+              return `Invalid string: must start with "${_issue.prefix}"`;
+            }
+            if (_issue.format === "ends_with")
+              return `Invalid string: must end with "${_issue.suffix}"`;
+            if (_issue.format === "includes")
+              return `Invalid string: must include "${_issue.includes}"`;
+            if (_issue.format === "regex")
+              return `Invalid string: must match pattern ${_issue.pattern}`;
+            return `Invalid ${Nouns[_issue.format] ?? issue2.format}`;
+          }
+          case "not_multiple_of":
+            return `Invalid number: must be a multiple of ${issue2.divisor}`;
+          case "unrecognized_keys":
+            return `Unrecognized key${issue2.keys.length > 1 ? "s" : ""}: ${joinValues(issue2.keys, ", ")}`;
+          case "invalid_key":
+            return `Invalid key in ${issue2.origin}`;
+          case "invalid_union":
+            return "Invalid input";
+          case "invalid_element":
+            return `Invalid value in ${issue2.origin}`;
+          default:
+            return `Invalid input`;
+        }
+      };
+    };
+  }
+});
+
+// node_modules/zod/v4/locales/index.js
+var init_locales = __esm({
+  "node_modules/zod/v4/locales/index.js"() {
+  }
+});
+
+// node_modules/zod/v4/core/registries.js
+function registry() {
+  return new $ZodRegistry();
+}
+var $ZodRegistry, globalRegistry;
+var init_registries = __esm({
+  "node_modules/zod/v4/core/registries.js"() {
+    $ZodRegistry = class {
+      constructor() {
+        this._map = /* @__PURE__ */ new Map();
+        this._idmap = /* @__PURE__ */ new Map();
+      }
+      add(schema, ..._meta) {
+        const meta = _meta[0];
+        this._map.set(schema, meta);
+        if (meta && typeof meta === "object" && "id" in meta) {
+          if (this._idmap.has(meta.id)) {
+            throw new Error(`ID ${meta.id} already exists in the registry`);
+          }
+          this._idmap.set(meta.id, schema);
+        }
+        return this;
+      }
+      clear() {
+        this._map = /* @__PURE__ */ new Map();
+        this._idmap = /* @__PURE__ */ new Map();
+        return this;
+      }
+      remove(schema) {
+        const meta = this._map.get(schema);
+        if (meta && typeof meta === "object" && "id" in meta) {
+          this._idmap.delete(meta.id);
+        }
+        this._map.delete(schema);
+        return this;
+      }
+      get(schema) {
+        const p = schema._zod.parent;
+        if (p) {
+          const pm = { ...this.get(p) ?? {} };
+          delete pm.id;
+          return { ...pm, ...this._map.get(schema) };
+        }
+        return this._map.get(schema);
+      }
+      has(schema) {
+        return this._map.has(schema);
+      }
+    };
+    globalRegistry = /* @__PURE__ */ registry();
+  }
+});
+
+// node_modules/zod/v4/core/api.js
+function _string(Class2, params) {
+  return new Class2({
+    type: "string",
+    ...normalizeParams(params)
+  });
+}
+function _email(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "email",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _guid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "guid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _uuid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "uuid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _uuidv4(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "uuid",
+    check: "string_format",
+    abort: false,
+    version: "v4",
+    ...normalizeParams(params)
+  });
+}
+function _uuidv6(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "uuid",
+    check: "string_format",
+    abort: false,
+    version: "v6",
+    ...normalizeParams(params)
+  });
+}
+function _uuidv7(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "uuid",
+    check: "string_format",
+    abort: false,
+    version: "v7",
+    ...normalizeParams(params)
+  });
+}
+function _url(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "url",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _emoji2(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "emoji",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _nanoid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "nanoid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _cuid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "cuid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _cuid2(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "cuid2",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _ulid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "ulid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _xid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "xid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _ksuid(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "ksuid",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _ipv4(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "ipv4",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _ipv6(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "ipv6",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _cidrv4(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "cidrv4",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _cidrv6(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "cidrv6",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _base64(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "base64",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _base64url(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "base64url",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _e164(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "e164",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _jwt(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "jwt",
+    check: "string_format",
+    abort: false,
+    ...normalizeParams(params)
+  });
+}
+function _isoDateTime(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "datetime",
+    check: "string_format",
+    offset: false,
+    local: false,
+    precision: null,
+    ...normalizeParams(params)
+  });
+}
+function _isoDate(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "date",
+    check: "string_format",
+    ...normalizeParams(params)
+  });
+}
+function _isoTime(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "time",
+    check: "string_format",
+    precision: null,
+    ...normalizeParams(params)
+  });
+}
+function _isoDuration(Class2, params) {
+  return new Class2({
+    type: "string",
+    format: "duration",
+    check: "string_format",
+    ...normalizeParams(params)
+  });
+}
+function _number(Class2, params) {
+  return new Class2({
+    type: "number",
+    checks: [],
+    ...normalizeParams(params)
+  });
+}
+function _int(Class2, params) {
+  return new Class2({
+    type: "number",
+    check: "number_format",
+    abort: false,
+    format: "safeint",
+    ...normalizeParams(params)
+  });
+}
+function _boolean(Class2, params) {
+  return new Class2({
+    type: "boolean",
+    ...normalizeParams(params)
+  });
+}
+function _null2(Class2, params) {
+  return new Class2({
+    type: "null",
+    ...normalizeParams(params)
+  });
+}
+function _unknown(Class2) {
+  return new Class2({
+    type: "unknown"
+  });
+}
+function _never(Class2, params) {
+  return new Class2({
+    type: "never",
+    ...normalizeParams(params)
+  });
+}
+function _lt(value, params) {
+  return new $ZodCheckLessThan({
+    check: "less_than",
+    ...normalizeParams(params),
+    value,
+    inclusive: false
+  });
+}
+function _lte(value, params) {
+  return new $ZodCheckLessThan({
+    check: "less_than",
+    ...normalizeParams(params),
+    value,
+    inclusive: true
+  });
+}
+function _gt(value, params) {
+  return new $ZodCheckGreaterThan({
+    check: "greater_than",
+    ...normalizeParams(params),
+    value,
+    inclusive: false
+  });
+}
+function _gte(value, params) {
+  return new $ZodCheckGreaterThan({
+    check: "greater_than",
+    ...normalizeParams(params),
+    value,
+    inclusive: true
+  });
+}
+function _multipleOf(value, params) {
+  return new $ZodCheckMultipleOf({
+    check: "multiple_of",
+    ...normalizeParams(params),
+    value
+  });
+}
+function _maxLength(maximum, params) {
+  const ch = new $ZodCheckMaxLength({
+    check: "max_length",
+    ...normalizeParams(params),
+    maximum
+  });
+  return ch;
+}
+function _minLength(minimum, params) {
+  return new $ZodCheckMinLength({
+    check: "min_length",
+    ...normalizeParams(params),
+    minimum
+  });
+}
+function _length(length, params) {
+  return new $ZodCheckLengthEquals({
+    check: "length_equals",
+    ...normalizeParams(params),
+    length
+  });
+}
+function _regex(pattern, params) {
+  return new $ZodCheckRegex({
+    check: "string_format",
+    format: "regex",
+    ...normalizeParams(params),
+    pattern
+  });
+}
+function _lowercase(params) {
+  return new $ZodCheckLowerCase({
+    check: "string_format",
+    format: "lowercase",
+    ...normalizeParams(params)
+  });
+}
+function _uppercase(params) {
+  return new $ZodCheckUpperCase({
+    check: "string_format",
+    format: "uppercase",
+    ...normalizeParams(params)
+  });
+}
+function _includes(includes, params) {
+  return new $ZodCheckIncludes({
+    check: "string_format",
+    format: "includes",
+    ...normalizeParams(params),
+    includes
+  });
+}
+function _startsWith(prefix, params) {
+  return new $ZodCheckStartsWith({
+    check: "string_format",
+    format: "starts_with",
+    ...normalizeParams(params),
+    prefix
+  });
+}
+function _endsWith(suffix, params) {
+  return new $ZodCheckEndsWith({
+    check: "string_format",
+    format: "ends_with",
+    ...normalizeParams(params),
+    suffix
+  });
+}
+function _overwrite(tx) {
+  return new $ZodCheckOverwrite({
+    check: "overwrite",
+    tx
+  });
+}
+function _normalize(form) {
+  return _overwrite((input) => input.normalize(form));
+}
+function _trim() {
+  return _overwrite((input) => input.trim());
+}
+function _toLowerCase() {
+  return _overwrite((input) => input.toLowerCase());
+}
+function _toUpperCase() {
+  return _overwrite((input) => input.toUpperCase());
+}
+function _array(Class2, element, params) {
+  return new Class2({
+    type: "array",
+    element,
+    // get element() {
+    //   return element;
+    // },
+    ...normalizeParams(params)
+  });
+}
+function _custom(Class2, fn2, _params) {
+  const norm = normalizeParams(_params);
+  norm.abort ?? (norm.abort = true);
+  const schema = new Class2({
+    type: "custom",
+    check: "custom",
+    fn: fn2,
+    ...norm
+  });
+  return schema;
+}
+function _refine(Class2, fn2, _params) {
+  const schema = new Class2({
+    type: "custom",
+    check: "custom",
+    fn: fn2,
+    ...normalizeParams(_params)
+  });
+  return schema;
+}
+var init_api = __esm({
+  "node_modules/zod/v4/core/api.js"() {
+    init_checks();
+    init_util();
+  }
+});
+
+// node_modules/zod/v4/core/function.js
+var init_function = __esm({
+  "node_modules/zod/v4/core/function.js"() {
+  }
+});
+
+// node_modules/zod/v4/core/to-json-schema.js
+var init_to_json_schema = __esm({
+  "node_modules/zod/v4/core/to-json-schema.js"() {
+  }
+});
+
+// node_modules/zod/v4/core/json-schema.js
+var init_json_schema = __esm({
+  "node_modules/zod/v4/core/json-schema.js"() {
+  }
+});
+
+// node_modules/zod/v4/core/index.js
+var init_core2 = __esm({
+  "node_modules/zod/v4/core/index.js"() {
+    init_core();
+    init_parse();
+    init_errors();
+    init_schemas();
+    init_checks();
+    init_versions();
+    init_util();
+    init_regexes();
+    init_locales();
+    init_registries();
+    init_doc();
+    init_function();
+    init_api();
+    init_to_json_schema();
+    init_json_schema();
+  }
+});
+
+// node_modules/zod/v4/classic/checks.js
+var init_checks2 = __esm({
+  "node_modules/zod/v4/classic/checks.js"() {
+    init_core2();
+  }
+});
+
+// node_modules/zod/v4/classic/iso.js
+var iso_exports = {};
+__export(iso_exports, {
+  ZodISODate: () => ZodISODate,
+  ZodISODateTime: () => ZodISODateTime,
+  ZodISODuration: () => ZodISODuration,
+  ZodISOTime: () => ZodISOTime,
+  date: () => date2,
+  datetime: () => datetime2,
+  duration: () => duration2,
+  time: () => time2
+});
+function datetime2(params) {
+  return _isoDateTime(ZodISODateTime, params);
+}
+function date2(params) {
+  return _isoDate(ZodISODate, params);
+}
+function time2(params) {
+  return _isoTime(ZodISOTime, params);
+}
+function duration2(params) {
+  return _isoDuration(ZodISODuration, params);
+}
+var ZodISODateTime, ZodISODate, ZodISOTime, ZodISODuration;
+var init_iso = __esm({
+  "node_modules/zod/v4/classic/iso.js"() {
+    init_core2();
+    init_schemas2();
+    ZodISODateTime = /* @__PURE__ */ $constructor("ZodISODateTime", (inst, def) => {
+      $ZodISODateTime.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodISODate = /* @__PURE__ */ $constructor("ZodISODate", (inst, def) => {
+      $ZodISODate.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodISOTime = /* @__PURE__ */ $constructor("ZodISOTime", (inst, def) => {
+      $ZodISOTime.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodISODuration = /* @__PURE__ */ $constructor("ZodISODuration", (inst, def) => {
+      $ZodISODuration.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+  }
+});
+
+// node_modules/zod/v4/classic/errors.js
+var initializer2, ZodError, ZodRealError;
+var init_errors2 = __esm({
+  "node_modules/zod/v4/classic/errors.js"() {
+    init_core2();
+    init_core2();
+    initializer2 = (inst, issues) => {
+      $ZodError.init(inst, issues);
+      inst.name = "ZodError";
+      Object.defineProperties(inst, {
+        format: {
+          value: (mapper) => formatError(inst, mapper)
+          // enumerable: false,
+        },
+        flatten: {
+          value: (mapper) => flattenError(inst, mapper)
+          // enumerable: false,
+        },
+        addIssue: {
+          value: (issue2) => inst.issues.push(issue2)
+          // enumerable: false,
+        },
+        addIssues: {
+          value: (issues2) => inst.issues.push(...issues2)
+          // enumerable: false,
+        },
+        isEmpty: {
+          get() {
+            return inst.issues.length === 0;
+          }
+          // enumerable: false,
+        }
+      });
+    };
+    ZodError = $constructor("ZodError", initializer2);
+    ZodRealError = $constructor("ZodError", initializer2, {
+      Parent: Error
+    });
+  }
+});
+
+// node_modules/zod/v4/classic/parse.js
+var parse, parseAsync, safeParse2, safeParseAsync2;
+var init_parse2 = __esm({
+  "node_modules/zod/v4/classic/parse.js"() {
+    init_core2();
+    init_errors2();
+    parse = /* @__PURE__ */ _parse(ZodRealError);
+    parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
+    safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
+    safeParseAsync2 = /* @__PURE__ */ _safeParseAsync(ZodRealError);
+  }
+});
+
+// node_modules/zod/v4/classic/schemas.js
+function string2(params) {
+  return _string(ZodString, params);
+}
+function number2(params) {
+  return _number(ZodNumber, params);
+}
+function int(params) {
+  return _int(ZodNumberFormat, params);
+}
+function boolean2(params) {
+  return _boolean(ZodBoolean, params);
+}
+function _null3(params) {
+  return _null2(ZodNull, params);
+}
+function unknown() {
+  return _unknown(ZodUnknown);
+}
+function never(params) {
+  return _never(ZodNever, params);
+}
+function array(element, params) {
+  return _array(ZodArray, element, params);
+}
+function object(shape, params) {
+  const def = {
+    type: "object",
+    get shape() {
+      util_exports.assignProp(this, "shape", { ...shape });
+      return this.shape;
+    },
+    ...util_exports.normalizeParams(params)
+  };
+  return new ZodObject(def);
+}
+function looseObject(shape, params) {
+  return new ZodObject({
+    type: "object",
+    get shape() {
+      util_exports.assignProp(this, "shape", { ...shape });
+      return this.shape;
+    },
+    catchall: unknown(),
+    ...util_exports.normalizeParams(params)
+  });
+}
+function union(options2, params) {
+  return new ZodUnion({
+    type: "union",
+    options: options2,
+    ...util_exports.normalizeParams(params)
+  });
+}
+function discriminatedUnion(discriminator, options2, params) {
+  return new ZodDiscriminatedUnion({
+    type: "union",
+    options: options2,
+    discriminator,
+    ...util_exports.normalizeParams(params)
+  });
+}
+function intersection(left, right) {
+  return new ZodIntersection({
+    type: "intersection",
+    left,
+    right
+  });
+}
+function record(keyType, valueType, params) {
+  return new ZodRecord({
+    type: "record",
+    keyType,
+    valueType,
+    ...util_exports.normalizeParams(params)
+  });
+}
+function _enum(values, params) {
+  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
+  return new ZodEnum({
+    type: "enum",
+    entries,
+    ...util_exports.normalizeParams(params)
+  });
+}
+function literal(value, params) {
+  return new ZodLiteral({
+    type: "literal",
+    values: Array.isArray(value) ? value : [value],
+    ...util_exports.normalizeParams(params)
+  });
+}
+function transform(fn2) {
+  return new ZodTransform({
+    type: "transform",
+    transform: fn2
+  });
+}
+function optional(innerType) {
+  return new ZodOptional({
+    type: "optional",
+    innerType
+  });
+}
+function nullable(innerType) {
+  return new ZodNullable({
+    type: "nullable",
+    innerType
+  });
+}
+function _default(innerType, defaultValue) {
+  return new ZodDefault({
+    type: "default",
+    innerType,
+    get defaultValue() {
+      return typeof defaultValue === "function" ? defaultValue() : defaultValue;
+    }
+  });
+}
+function prefault(innerType, defaultValue) {
+  return new ZodPrefault({
+    type: "prefault",
+    innerType,
+    get defaultValue() {
+      return typeof defaultValue === "function" ? defaultValue() : defaultValue;
+    }
+  });
+}
+function nonoptional(innerType, params) {
+  return new ZodNonOptional({
+    type: "nonoptional",
+    innerType,
+    ...util_exports.normalizeParams(params)
+  });
+}
+function _catch(innerType, catchValue) {
+  return new ZodCatch({
+    type: "catch",
+    innerType,
+    catchValue: typeof catchValue === "function" ? catchValue : () => catchValue
+  });
+}
+function pipe(in_, out) {
+  return new ZodPipe({
+    type: "pipe",
+    in: in_,
+    out
+    // ...util.normalizeParams(params),
+  });
+}
+function readonly(innerType) {
+  return new ZodReadonly({
+    type: "readonly",
+    innerType
+  });
+}
+function check(fn2) {
+  const ch = new $ZodCheck({
+    check: "custom"
+    // ...util.normalizeParams(params),
+  });
+  ch._zod.check = fn2;
+  return ch;
+}
+function custom(fn2, _params) {
+  return _custom(ZodCustom, fn2 ?? (() => true), _params);
+}
+function refine(fn2, _params = {}) {
+  return _refine(ZodCustom, fn2, _params);
+}
+function superRefine(fn2) {
+  const ch = check((payload) => {
+    payload.addIssue = (issue2) => {
+      if (typeof issue2 === "string") {
+        payload.issues.push(util_exports.issue(issue2, payload.value, ch._zod.def));
+      } else {
+        const _issue = issue2;
+        if (_issue.fatal)
+          _issue.continue = false;
+        _issue.code ?? (_issue.code = "custom");
+        _issue.input ?? (_issue.input = payload.value);
+        _issue.inst ?? (_issue.inst = ch);
+        _issue.continue ?? (_issue.continue = !ch._zod.def.abort);
+        payload.issues.push(util_exports.issue(_issue));
+      }
+    };
+    return fn2(payload.value, payload);
+  });
+  return ch;
+}
+function preprocess(fn2, schema) {
+  return pipe(transform(fn2), schema);
+}
+var ZodType, _ZodString, ZodString, ZodStringFormat, ZodEmail, ZodGUID, ZodUUID, ZodURL, ZodEmoji, ZodNanoID, ZodCUID, ZodCUID2, ZodULID, ZodXID, ZodKSUID, ZodIPv4, ZodIPv6, ZodCIDRv4, ZodCIDRv6, ZodBase64, ZodBase64URL, ZodE164, ZodJWT, ZodNumber, ZodNumberFormat, ZodBoolean, ZodNull, ZodUnknown, ZodNever, ZodArray, ZodObject, ZodUnion, ZodDiscriminatedUnion, ZodIntersection, ZodRecord, ZodEnum, ZodLiteral, ZodTransform, ZodOptional, ZodNullable, ZodDefault, ZodPrefault, ZodNonOptional, ZodCatch, ZodPipe, ZodReadonly, ZodCustom;
+var init_schemas2 = __esm({
+  "node_modules/zod/v4/classic/schemas.js"() {
+    init_core2();
+    init_core2();
+    init_checks2();
+    init_iso();
+    init_parse2();
+    ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
+      $ZodType.init(inst, def);
+      inst.def = def;
+      Object.defineProperty(inst, "_def", { value: def });
+      inst.check = (...checks) => {
+        return inst.clone(
+          {
+            ...def,
+            checks: [
+              ...def.checks ?? [],
+              ...checks.map((ch) => typeof ch === "function" ? { _zod: { check: ch, def: { check: "custom" }, onattach: [] } } : ch)
+            ]
+          }
+          // { parent: true }
+        );
+      };
+      inst.clone = (def2, params) => clone(inst, def2, params);
+      inst.brand = () => inst;
+      inst.register = ((reg, meta) => {
+        reg.add(inst, meta);
+        return inst;
+      });
+      inst.parse = (data, params) => parse(inst, data, params, { callee: inst.parse });
+      inst.safeParse = (data, params) => safeParse2(inst, data, params);
+      inst.parseAsync = async (data, params) => parseAsync(inst, data, params, { callee: inst.parseAsync });
+      inst.safeParseAsync = async (data, params) => safeParseAsync2(inst, data, params);
+      inst.spa = inst.safeParseAsync;
+      inst.refine = (check2, params) => inst.check(refine(check2, params));
+      inst.superRefine = (refinement) => inst.check(superRefine(refinement));
+      inst.overwrite = (fn2) => inst.check(_overwrite(fn2));
+      inst.optional = () => optional(inst);
+      inst.nullable = () => nullable(inst);
+      inst.nullish = () => optional(nullable(inst));
+      inst.nonoptional = (params) => nonoptional(inst, params);
+      inst.array = () => array(inst);
+      inst.or = (arg) => union([inst, arg]);
+      inst.and = (arg) => intersection(inst, arg);
+      inst.transform = (tx) => pipe(inst, transform(tx));
+      inst.default = (def2) => _default(inst, def2);
+      inst.prefault = (def2) => prefault(inst, def2);
+      inst.catch = (params) => _catch(inst, params);
+      inst.pipe = (target) => pipe(inst, target);
+      inst.readonly = () => readonly(inst);
+      inst.describe = (description) => {
+        const cl = inst.clone();
+        globalRegistry.add(cl, { description });
+        return cl;
+      };
+      Object.defineProperty(inst, "description", {
+        get() {
+          return globalRegistry.get(inst)?.description;
+        },
+        configurable: true
+      });
+      inst.meta = (...args2) => {
+        if (args2.length === 0) {
+          return globalRegistry.get(inst);
+        }
+        const cl = inst.clone();
+        globalRegistry.add(cl, args2[0]);
+        return cl;
+      };
+      inst.isOptional = () => inst.safeParse(void 0).success;
+      inst.isNullable = () => inst.safeParse(null).success;
+      return inst;
+    });
+    _ZodString = /* @__PURE__ */ $constructor("_ZodString", (inst, def) => {
+      $ZodString.init(inst, def);
+      ZodType.init(inst, def);
+      const bag = inst._zod.bag;
+      inst.format = bag.format ?? null;
+      inst.minLength = bag.minimum ?? null;
+      inst.maxLength = bag.maximum ?? null;
+      inst.regex = (...args2) => inst.check(_regex(...args2));
+      inst.includes = (...args2) => inst.check(_includes(...args2));
+      inst.startsWith = (...args2) => inst.check(_startsWith(...args2));
+      inst.endsWith = (...args2) => inst.check(_endsWith(...args2));
+      inst.min = (...args2) => inst.check(_minLength(...args2));
+      inst.max = (...args2) => inst.check(_maxLength(...args2));
+      inst.length = (...args2) => inst.check(_length(...args2));
+      inst.nonempty = (...args2) => inst.check(_minLength(1, ...args2));
+      inst.lowercase = (params) => inst.check(_lowercase(params));
+      inst.uppercase = (params) => inst.check(_uppercase(params));
+      inst.trim = () => inst.check(_trim());
+      inst.normalize = (...args2) => inst.check(_normalize(...args2));
+      inst.toLowerCase = () => inst.check(_toLowerCase());
+      inst.toUpperCase = () => inst.check(_toUpperCase());
+    });
+    ZodString = /* @__PURE__ */ $constructor("ZodString", (inst, def) => {
+      $ZodString.init(inst, def);
+      _ZodString.init(inst, def);
+      inst.email = (params) => inst.check(_email(ZodEmail, params));
+      inst.url = (params) => inst.check(_url(ZodURL, params));
+      inst.jwt = (params) => inst.check(_jwt(ZodJWT, params));
+      inst.emoji = (params) => inst.check(_emoji2(ZodEmoji, params));
+      inst.guid = (params) => inst.check(_guid(ZodGUID, params));
+      inst.uuid = (params) => inst.check(_uuid(ZodUUID, params));
+      inst.uuidv4 = (params) => inst.check(_uuidv4(ZodUUID, params));
+      inst.uuidv6 = (params) => inst.check(_uuidv6(ZodUUID, params));
+      inst.uuidv7 = (params) => inst.check(_uuidv7(ZodUUID, params));
+      inst.nanoid = (params) => inst.check(_nanoid(ZodNanoID, params));
+      inst.guid = (params) => inst.check(_guid(ZodGUID, params));
+      inst.cuid = (params) => inst.check(_cuid(ZodCUID, params));
+      inst.cuid2 = (params) => inst.check(_cuid2(ZodCUID2, params));
+      inst.ulid = (params) => inst.check(_ulid(ZodULID, params));
+      inst.base64 = (params) => inst.check(_base64(ZodBase64, params));
+      inst.base64url = (params) => inst.check(_base64url(ZodBase64URL, params));
+      inst.xid = (params) => inst.check(_xid(ZodXID, params));
+      inst.ksuid = (params) => inst.check(_ksuid(ZodKSUID, params));
+      inst.ipv4 = (params) => inst.check(_ipv4(ZodIPv4, params));
+      inst.ipv6 = (params) => inst.check(_ipv6(ZodIPv6, params));
+      inst.cidrv4 = (params) => inst.check(_cidrv4(ZodCIDRv4, params));
+      inst.cidrv6 = (params) => inst.check(_cidrv6(ZodCIDRv6, params));
+      inst.e164 = (params) => inst.check(_e164(ZodE164, params));
+      inst.datetime = (params) => inst.check(datetime2(params));
+      inst.date = (params) => inst.check(date2(params));
+      inst.time = (params) => inst.check(time2(params));
+      inst.duration = (params) => inst.check(duration2(params));
+    });
+    ZodStringFormat = /* @__PURE__ */ $constructor("ZodStringFormat", (inst, def) => {
+      $ZodStringFormat.init(inst, def);
+      _ZodString.init(inst, def);
+    });
+    ZodEmail = /* @__PURE__ */ $constructor("ZodEmail", (inst, def) => {
+      $ZodEmail.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodGUID = /* @__PURE__ */ $constructor("ZodGUID", (inst, def) => {
+      $ZodGUID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodUUID = /* @__PURE__ */ $constructor("ZodUUID", (inst, def) => {
+      $ZodUUID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodURL = /* @__PURE__ */ $constructor("ZodURL", (inst, def) => {
+      $ZodURL.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodEmoji = /* @__PURE__ */ $constructor("ZodEmoji", (inst, def) => {
+      $ZodEmoji.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodNanoID = /* @__PURE__ */ $constructor("ZodNanoID", (inst, def) => {
+      $ZodNanoID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodCUID = /* @__PURE__ */ $constructor("ZodCUID", (inst, def) => {
+      $ZodCUID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodCUID2 = /* @__PURE__ */ $constructor("ZodCUID2", (inst, def) => {
+      $ZodCUID2.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodULID = /* @__PURE__ */ $constructor("ZodULID", (inst, def) => {
+      $ZodULID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodXID = /* @__PURE__ */ $constructor("ZodXID", (inst, def) => {
+      $ZodXID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodKSUID = /* @__PURE__ */ $constructor("ZodKSUID", (inst, def) => {
+      $ZodKSUID.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodIPv4 = /* @__PURE__ */ $constructor("ZodIPv4", (inst, def) => {
+      $ZodIPv4.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodIPv6 = /* @__PURE__ */ $constructor("ZodIPv6", (inst, def) => {
+      $ZodIPv6.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodCIDRv4 = /* @__PURE__ */ $constructor("ZodCIDRv4", (inst, def) => {
+      $ZodCIDRv4.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodCIDRv6 = /* @__PURE__ */ $constructor("ZodCIDRv6", (inst, def) => {
+      $ZodCIDRv6.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodBase64 = /* @__PURE__ */ $constructor("ZodBase64", (inst, def) => {
+      $ZodBase64.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodBase64URL = /* @__PURE__ */ $constructor("ZodBase64URL", (inst, def) => {
+      $ZodBase64URL.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodE164 = /* @__PURE__ */ $constructor("ZodE164", (inst, def) => {
+      $ZodE164.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodJWT = /* @__PURE__ */ $constructor("ZodJWT", (inst, def) => {
+      $ZodJWT.init(inst, def);
+      ZodStringFormat.init(inst, def);
+    });
+    ZodNumber = /* @__PURE__ */ $constructor("ZodNumber", (inst, def) => {
+      $ZodNumber.init(inst, def);
+      ZodType.init(inst, def);
+      inst.gt = (value, params) => inst.check(_gt(value, params));
+      inst.gte = (value, params) => inst.check(_gte(value, params));
+      inst.min = (value, params) => inst.check(_gte(value, params));
+      inst.lt = (value, params) => inst.check(_lt(value, params));
+      inst.lte = (value, params) => inst.check(_lte(value, params));
+      inst.max = (value, params) => inst.check(_lte(value, params));
+      inst.int = (params) => inst.check(int(params));
+      inst.safe = (params) => inst.check(int(params));
+      inst.positive = (params) => inst.check(_gt(0, params));
+      inst.nonnegative = (params) => inst.check(_gte(0, params));
+      inst.negative = (params) => inst.check(_lt(0, params));
+      inst.nonpositive = (params) => inst.check(_lte(0, params));
+      inst.multipleOf = (value, params) => inst.check(_multipleOf(value, params));
+      inst.step = (value, params) => inst.check(_multipleOf(value, params));
+      inst.finite = () => inst;
+      const bag = inst._zod.bag;
+      inst.minValue = Math.max(bag.minimum ?? Number.NEGATIVE_INFINITY, bag.exclusiveMinimum ?? Number.NEGATIVE_INFINITY) ?? null;
+      inst.maxValue = Math.min(bag.maximum ?? Number.POSITIVE_INFINITY, bag.exclusiveMaximum ?? Number.POSITIVE_INFINITY) ?? null;
+      inst.isInt = (bag.format ?? "").includes("int") || Number.isSafeInteger(bag.multipleOf ?? 0.5);
+      inst.isFinite = true;
+      inst.format = bag.format ?? null;
+    });
+    ZodNumberFormat = /* @__PURE__ */ $constructor("ZodNumberFormat", (inst, def) => {
+      $ZodNumberFormat.init(inst, def);
+      ZodNumber.init(inst, def);
+    });
+    ZodBoolean = /* @__PURE__ */ $constructor("ZodBoolean", (inst, def) => {
+      $ZodBoolean.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodNull = /* @__PURE__ */ $constructor("ZodNull", (inst, def) => {
+      $ZodNull.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodUnknown = /* @__PURE__ */ $constructor("ZodUnknown", (inst, def) => {
+      $ZodUnknown.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodNever = /* @__PURE__ */ $constructor("ZodNever", (inst, def) => {
+      $ZodNever.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodArray = /* @__PURE__ */ $constructor("ZodArray", (inst, def) => {
+      $ZodArray.init(inst, def);
+      ZodType.init(inst, def);
+      inst.element = def.element;
+      inst.min = (minLength, params) => inst.check(_minLength(minLength, params));
+      inst.nonempty = (params) => inst.check(_minLength(1, params));
+      inst.max = (maxLength, params) => inst.check(_maxLength(maxLength, params));
+      inst.length = (len, params) => inst.check(_length(len, params));
+      inst.unwrap = () => inst.element;
+    });
+    ZodObject = /* @__PURE__ */ $constructor("ZodObject", (inst, def) => {
+      $ZodObject.init(inst, def);
+      ZodType.init(inst, def);
+      util_exports.defineLazy(inst, "shape", () => def.shape);
+      inst.keyof = () => _enum(Object.keys(inst._zod.def.shape));
+      inst.catchall = (catchall) => inst.clone({ ...inst._zod.def, catchall });
+      inst.passthrough = () => inst.clone({ ...inst._zod.def, catchall: unknown() });
+      inst.loose = () => inst.clone({ ...inst._zod.def, catchall: unknown() });
+      inst.strict = () => inst.clone({ ...inst._zod.def, catchall: never() });
+      inst.strip = () => inst.clone({ ...inst._zod.def, catchall: void 0 });
+      inst.extend = (incoming) => {
+        return util_exports.extend(inst, incoming);
+      };
+      inst.merge = (other) => util_exports.merge(inst, other);
+      inst.pick = (mask) => util_exports.pick(inst, mask);
+      inst.omit = (mask) => util_exports.omit(inst, mask);
+      inst.partial = (...args2) => util_exports.partial(ZodOptional, inst, args2[0]);
+      inst.required = (...args2) => util_exports.required(ZodNonOptional, inst, args2[0]);
+    });
+    ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
+      $ZodUnion.init(inst, def);
+      ZodType.init(inst, def);
+      inst.options = def.options;
+    });
+    ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("ZodDiscriminatedUnion", (inst, def) => {
+      ZodUnion.init(inst, def);
+      $ZodDiscriminatedUnion.init(inst, def);
+    });
+    ZodIntersection = /* @__PURE__ */ $constructor("ZodIntersection", (inst, def) => {
+      $ZodIntersection.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodRecord = /* @__PURE__ */ $constructor("ZodRecord", (inst, def) => {
+      $ZodRecord.init(inst, def);
+      ZodType.init(inst, def);
+      inst.keyType = def.keyType;
+      inst.valueType = def.valueType;
+    });
+    ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
+      $ZodEnum.init(inst, def);
+      ZodType.init(inst, def);
+      inst.enum = def.entries;
+      inst.options = Object.values(def.entries);
+      const keys2 = new Set(Object.keys(def.entries));
+      inst.extract = (values, params) => {
+        const newEntries = {};
+        for (const value of values) {
+          if (keys2.has(value)) {
+            newEntries[value] = def.entries[value];
+          } else
+            throw new Error(`Key ${value} not found in enum`);
+        }
+        return new ZodEnum({
+          ...def,
+          checks: [],
+          ...util_exports.normalizeParams(params),
+          entries: newEntries
+        });
+      };
+      inst.exclude = (values, params) => {
+        const newEntries = { ...def.entries };
+        for (const value of values) {
+          if (keys2.has(value)) {
+            delete newEntries[value];
+          } else
+            throw new Error(`Key ${value} not found in enum`);
+        }
+        return new ZodEnum({
+          ...def,
+          checks: [],
+          ...util_exports.normalizeParams(params),
+          entries: newEntries
+        });
+      };
+    });
+    ZodLiteral = /* @__PURE__ */ $constructor("ZodLiteral", (inst, def) => {
+      $ZodLiteral.init(inst, def);
+      ZodType.init(inst, def);
+      inst.values = new Set(def.values);
+      Object.defineProperty(inst, "value", {
+        get() {
+          if (def.values.length > 1) {
+            throw new Error("This schema contains multiple valid literal values. Use `.values` instead.");
+          }
+          return def.values[0];
+        }
+      });
+    });
+    ZodTransform = /* @__PURE__ */ $constructor("ZodTransform", (inst, def) => {
+      $ZodTransform.init(inst, def);
+      ZodType.init(inst, def);
+      inst._zod.parse = (payload, _ctx) => {
+        payload.addIssue = (issue2) => {
+          if (typeof issue2 === "string") {
+            payload.issues.push(util_exports.issue(issue2, payload.value, def));
+          } else {
+            const _issue = issue2;
+            if (_issue.fatal)
+              _issue.continue = false;
+            _issue.code ?? (_issue.code = "custom");
+            _issue.input ?? (_issue.input = payload.value);
+            _issue.inst ?? (_issue.inst = inst);
+            _issue.continue ?? (_issue.continue = true);
+            payload.issues.push(util_exports.issue(_issue));
+          }
+        };
+        const output2 = def.transform(payload.value, payload);
+        if (output2 instanceof Promise) {
+          return output2.then((output3) => {
+            payload.value = output3;
+            return payload;
+          });
+        }
+        payload.value = output2;
+        return payload;
+      };
+    });
+    ZodOptional = /* @__PURE__ */ $constructor("ZodOptional", (inst, def) => {
+      $ZodOptional.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+    });
+    ZodNullable = /* @__PURE__ */ $constructor("ZodNullable", (inst, def) => {
+      $ZodNullable.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+    });
+    ZodDefault = /* @__PURE__ */ $constructor("ZodDefault", (inst, def) => {
+      $ZodDefault.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+      inst.removeDefault = inst.unwrap;
+    });
+    ZodPrefault = /* @__PURE__ */ $constructor("ZodPrefault", (inst, def) => {
+      $ZodPrefault.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+    });
+    ZodNonOptional = /* @__PURE__ */ $constructor("ZodNonOptional", (inst, def) => {
+      $ZodNonOptional.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+    });
+    ZodCatch = /* @__PURE__ */ $constructor("ZodCatch", (inst, def) => {
+      $ZodCatch.init(inst, def);
+      ZodType.init(inst, def);
+      inst.unwrap = () => inst._zod.def.innerType;
+      inst.removeCatch = inst.unwrap;
+    });
+    ZodPipe = /* @__PURE__ */ $constructor("ZodPipe", (inst, def) => {
+      $ZodPipe.init(inst, def);
+      ZodType.init(inst, def);
+      inst.in = def.in;
+      inst.out = def.out;
+    });
+    ZodReadonly = /* @__PURE__ */ $constructor("ZodReadonly", (inst, def) => {
+      $ZodReadonly.init(inst, def);
+      ZodType.init(inst, def);
+    });
+    ZodCustom = /* @__PURE__ */ $constructor("ZodCustom", (inst, def) => {
+      $ZodCustom.init(inst, def);
+      ZodType.init(inst, def);
+    });
+  }
+});
+
+// node_modules/zod/v4/classic/compat.js
+var init_compat = __esm({
+  "node_modules/zod/v4/classic/compat.js"() {
+  }
+});
+
+// node_modules/zod/v4/classic/coerce.js
+var init_coerce = __esm({
+  "node_modules/zod/v4/classic/coerce.js"() {
+  }
+});
+
+// node_modules/zod/v4/classic/external.js
+var init_external = __esm({
+  "node_modules/zod/v4/classic/external.js"() {
+    init_core2();
+    init_schemas2();
+    init_checks2();
+    init_errors2();
+    init_parse2();
+    init_compat();
+    init_core2();
+    init_en();
+    init_locales();
+    init_iso();
+    init_coerce();
+    config(en_default());
+  }
+});
+
+// node_modules/zod/v4/classic/index.js
+var init_classic = __esm({
+  "node_modules/zod/v4/classic/index.js"() {
+    init_external();
+  }
+});
+
+// node_modules/zod/v4/index.js
+var init_v4 = __esm({
+  "node_modules/zod/v4/index.js"() {
+    init_classic();
+  }
+});
+
+// node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
+var LATEST_PROTOCOL_VERSION, SUPPORTED_PROTOCOL_VERSIONS, RELATED_TASK_META_KEY, JSONRPC_VERSION, AssertObjectSchema, ProgressTokenSchema, CursorSchema, TaskCreationParamsSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, isTaskAugmentedRequestParams, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, isJSONRPCRequest, JSONRPCNotificationSchema, isJSONRPCNotification, JSONRPCResultResponseSchema, isJSONRPCResultResponse, ErrorCode, JSONRPCErrorResponseSchema, isJSONRPCErrorResponse, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema, McpError, UrlElicitationRequiredError;
+var init_types = __esm({
+  "node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
+    init_v4();
+    LATEST_PROTOCOL_VERSION = "2025-11-25";
+    SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, "2025-06-18", "2025-03-26", "2024-11-05", "2024-10-07"];
+    RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
+    JSONRPC_VERSION = "2.0";
+    AssertObjectSchema = custom((v) => v !== null && (typeof v === "object" || typeof v === "function"));
+    ProgressTokenSchema = union([string2(), number2().int()]);
+    CursorSchema = string2();
+    TaskCreationParamsSchema = looseObject({
+      /**
+       * Requested duration in milliseconds to retain task from creation.
+       */
+      ttl: number2().optional(),
+      /**
+       * Time in milliseconds to wait between task status requests.
+       */
+      pollInterval: number2().optional()
+    });
+    TaskMetadataSchema = object({
+      ttl: number2().optional()
+    });
+    RelatedTaskMetadataSchema = object({
+      taskId: string2()
+    });
+    RequestMetaSchema = looseObject({
+      /**
+       * If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
+       */
+      progressToken: ProgressTokenSchema.optional(),
+      /**
+       * If specified, this request is related to the provided task.
+       */
+      [RELATED_TASK_META_KEY]: RelatedTaskMetadataSchema.optional()
+    });
+    BaseRequestParamsSchema = object({
+      /**
+       * See [General fields: `_meta`](/specification/draft/basic/index#meta) for notes on `_meta` usage.
+       */
+      _meta: RequestMetaSchema.optional()
+    });
+    TaskAugmentedRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * If specified, the caller is requesting task-augmented execution for this request.
+       * The request will return a CreateTaskResult immediately, and the actual result can be
+       * retrieved later via tasks/result.
+       *
+       * Task augmentation is subject to capability negotiation - receivers MUST declare support
+       * for task augmentation of specific request types in their capabilities.
+       */
+      task: TaskMetadataSchema.optional()
+    });
+    isTaskAugmentedRequestParams = (value) => TaskAugmentedRequestParamsSchema.safeParse(value).success;
+    RequestSchema = object({
+      method: string2(),
+      params: BaseRequestParamsSchema.loose().optional()
+    });
+    NotificationsParamsSchema = object({
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: RequestMetaSchema.optional()
+    });
+    NotificationSchema = object({
+      method: string2(),
+      params: NotificationsParamsSchema.loose().optional()
+    });
+    ResultSchema = looseObject({
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: RequestMetaSchema.optional()
+    });
+    RequestIdSchema = union([string2(), number2().int()]);
+    JSONRPCRequestSchema = object({
+      jsonrpc: literal(JSONRPC_VERSION),
+      id: RequestIdSchema,
+      ...RequestSchema.shape
+    }).strict();
+    isJSONRPCRequest = (value) => JSONRPCRequestSchema.safeParse(value).success;
+    JSONRPCNotificationSchema = object({
+      jsonrpc: literal(JSONRPC_VERSION),
+      ...NotificationSchema.shape
+    }).strict();
+    isJSONRPCNotification = (value) => JSONRPCNotificationSchema.safeParse(value).success;
+    JSONRPCResultResponseSchema = object({
+      jsonrpc: literal(JSONRPC_VERSION),
+      id: RequestIdSchema,
+      result: ResultSchema
+    }).strict();
+    isJSONRPCResultResponse = (value) => JSONRPCResultResponseSchema.safeParse(value).success;
+    (function(ErrorCode2) {
+      ErrorCode2[ErrorCode2["ConnectionClosed"] = -32e3] = "ConnectionClosed";
+      ErrorCode2[ErrorCode2["RequestTimeout"] = -32001] = "RequestTimeout";
+      ErrorCode2[ErrorCode2["ParseError"] = -32700] = "ParseError";
+      ErrorCode2[ErrorCode2["InvalidRequest"] = -32600] = "InvalidRequest";
+      ErrorCode2[ErrorCode2["MethodNotFound"] = -32601] = "MethodNotFound";
+      ErrorCode2[ErrorCode2["InvalidParams"] = -32602] = "InvalidParams";
+      ErrorCode2[ErrorCode2["InternalError"] = -32603] = "InternalError";
+      ErrorCode2[ErrorCode2["UrlElicitationRequired"] = -32042] = "UrlElicitationRequired";
+    })(ErrorCode || (ErrorCode = {}));
+    JSONRPCErrorResponseSchema = object({
+      jsonrpc: literal(JSONRPC_VERSION),
+      id: RequestIdSchema.optional(),
+      error: object({
+        /**
+         * The error type that occurred.
+         */
+        code: number2().int(),
+        /**
+         * A short description of the error. The message SHOULD be limited to a concise single sentence.
+         */
+        message: string2(),
+        /**
+         * Additional information about the error. The value of this member is defined by the sender (e.g. detailed error information, nested errors etc.).
+         */
+        data: unknown().optional()
+      })
+    }).strict();
+    isJSONRPCErrorResponse = (value) => JSONRPCErrorResponseSchema.safeParse(value).success;
+    JSONRPCMessageSchema = union([
+      JSONRPCRequestSchema,
+      JSONRPCNotificationSchema,
+      JSONRPCResultResponseSchema,
+      JSONRPCErrorResponseSchema
+    ]);
+    JSONRPCResponseSchema = union([JSONRPCResultResponseSchema, JSONRPCErrorResponseSchema]);
+    EmptyResultSchema = ResultSchema.strict();
+    CancelledNotificationParamsSchema = NotificationsParamsSchema.extend({
+      /**
+       * The ID of the request to cancel.
+       *
+       * This MUST correspond to the ID of a request previously issued in the same direction.
+       */
+      requestId: RequestIdSchema.optional(),
+      /**
+       * An optional string describing the reason for the cancellation. This MAY be logged or presented to the user.
+       */
+      reason: string2().optional()
+    });
+    CancelledNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/cancelled"),
+      params: CancelledNotificationParamsSchema
+    });
+    IconSchema = object({
+      /**
+       * URL or data URI for the icon.
+       */
+      src: string2(),
+      /**
+       * Optional MIME type for the icon.
+       */
+      mimeType: string2().optional(),
+      /**
+       * Optional array of strings that specify sizes at which the icon can be used.
+       * Each string should be in WxH format (e.g., `"48x48"`, `"96x96"`) or `"any"` for scalable formats like SVG.
+       *
+       * If not provided, the client should assume that the icon can be used at any size.
+       */
+      sizes: array(string2()).optional(),
+      /**
+       * Optional specifier for the theme this icon is designed for. `light` indicates
+       * the icon is designed to be used with a light background, and `dark` indicates
+       * the icon is designed to be used with a dark background.
+       *
+       * If not provided, the client should assume the icon can be used with any theme.
+       */
+      theme: _enum(["light", "dark"]).optional()
+    });
+    IconsSchema = object({
+      /**
+       * Optional set of sized icons that the client can display in a user interface.
+       *
+       * Clients that support rendering icons MUST support at least the following MIME types:
+       * - `image/png` - PNG images (safe, universal compatibility)
+       * - `image/jpeg` (and `image/jpg`) - JPEG images (safe, universal compatibility)
+       *
+       * Clients that support rendering icons SHOULD also support:
+       * - `image/svg+xml` - SVG images (scalable but requires security precautions)
+       * - `image/webp` - WebP images (modern, efficient format)
+       */
+      icons: array(IconSchema).optional()
+    });
+    BaseMetadataSchema = object({
+      /** Intended for programmatic or logical use, but used as a display name in past specs or fallback */
+      name: string2(),
+      /**
+       * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
+       * even by those unfamiliar with domain-specific terminology.
+       *
+       * If not provided, the name should be used for display (except for Tool,
+       * where `annotations.title` should be given precedence over using `name`,
+       * if present).
+       */
+      title: string2().optional()
+    });
+    ImplementationSchema = BaseMetadataSchema.extend({
+      ...BaseMetadataSchema.shape,
+      ...IconsSchema.shape,
+      version: string2(),
+      /**
+       * An optional URL of the website for this implementation.
+       */
+      websiteUrl: string2().optional(),
+      /**
+       * An optional human-readable description of what this implementation does.
+       *
+       * This can be used by clients or servers to provide context about their purpose
+       * and capabilities. For example, a server might describe the types of resources
+       * or tools it provides, while a client might describe its intended use case.
+       */
+      description: string2().optional()
+    });
+    FormElicitationCapabilitySchema = intersection(object({
+      applyDefaults: boolean2().optional()
+    }), record(string2(), unknown()));
+    ElicitationCapabilitySchema = preprocess((value) => {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
+        if (Object.keys(value).length === 0) {
+          return { form: {} };
+        }
+      }
+      return value;
+    }, intersection(object({
+      form: FormElicitationCapabilitySchema.optional(),
+      url: AssertObjectSchema.optional()
+    }), record(string2(), unknown()).optional()));
+    ClientTasksCapabilitySchema = looseObject({
+      /**
+       * Present if the client supports listing tasks.
+       */
+      list: AssertObjectSchema.optional(),
+      /**
+       * Present if the client supports cancelling tasks.
+       */
+      cancel: AssertObjectSchema.optional(),
+      /**
+       * Capabilities for task creation on specific request types.
+       */
+      requests: looseObject({
+        /**
+         * Task support for sampling requests.
+         */
+        sampling: looseObject({
+          createMessage: AssertObjectSchema.optional()
+        }).optional(),
+        /**
+         * Task support for elicitation requests.
+         */
+        elicitation: looseObject({
+          create: AssertObjectSchema.optional()
+        }).optional()
+      }).optional()
+    });
+    ServerTasksCapabilitySchema = looseObject({
+      /**
+       * Present if the server supports listing tasks.
+       */
+      list: AssertObjectSchema.optional(),
+      /**
+       * Present if the server supports cancelling tasks.
+       */
+      cancel: AssertObjectSchema.optional(),
+      /**
+       * Capabilities for task creation on specific request types.
+       */
+      requests: looseObject({
+        /**
+         * Task support for tool requests.
+         */
+        tools: looseObject({
+          call: AssertObjectSchema.optional()
+        }).optional()
+      }).optional()
+    });
+    ClientCapabilitiesSchema = object({
+      /**
+       * Experimental, non-standard capabilities that the client supports.
+       */
+      experimental: record(string2(), AssertObjectSchema).optional(),
+      /**
+       * Present if the client supports sampling from an LLM.
+       */
+      sampling: object({
+        /**
+         * Present if the client supports context inclusion via includeContext parameter.
+         * If not declared, servers SHOULD only use `includeContext: "none"` (or omit it).
+         */
+        context: AssertObjectSchema.optional(),
+        /**
+         * Present if the client supports tool use via tools and toolChoice parameters.
+         */
+        tools: AssertObjectSchema.optional()
+      }).optional(),
+      /**
+       * Present if the client supports eliciting user input.
+       */
+      elicitation: ElicitationCapabilitySchema.optional(),
+      /**
+       * Present if the client supports listing roots.
+       */
+      roots: object({
+        /**
+         * Whether the client supports issuing notifications for changes to the roots list.
+         */
+        listChanged: boolean2().optional()
+      }).optional(),
+      /**
+       * Present if the client supports task creation.
+       */
+      tasks: ClientTasksCapabilitySchema.optional(),
+      /**
+       * Extensions that the client supports. Keys are extension identifiers (vendor-prefix/extension-name).
+       */
+      extensions: record(string2(), AssertObjectSchema).optional()
+    });
+    InitializeRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * The latest version of the Model Context Protocol that the client supports. The client MAY decide to support older versions as well.
+       */
+      protocolVersion: string2(),
+      capabilities: ClientCapabilitiesSchema,
+      clientInfo: ImplementationSchema
+    });
+    InitializeRequestSchema = RequestSchema.extend({
+      method: literal("initialize"),
+      params: InitializeRequestParamsSchema
+    });
+    ServerCapabilitiesSchema = object({
+      /**
+       * Experimental, non-standard capabilities that the server supports.
+       */
+      experimental: record(string2(), AssertObjectSchema).optional(),
+      /**
+       * Present if the server supports sending log messages to the client.
+       */
+      logging: AssertObjectSchema.optional(),
+      /**
+       * Present if the server supports sending completions to the client.
+       */
+      completions: AssertObjectSchema.optional(),
+      /**
+       * Present if the server offers any prompt templates.
+       */
+      prompts: object({
+        /**
+         * Whether this server supports issuing notifications for changes to the prompt list.
+         */
+        listChanged: boolean2().optional()
+      }).optional(),
+      /**
+       * Present if the server offers any resources to read.
+       */
+      resources: object({
+        /**
+         * Whether this server supports clients subscribing to resource updates.
+         */
+        subscribe: boolean2().optional(),
+        /**
+         * Whether this server supports issuing notifications for changes to the resource list.
+         */
+        listChanged: boolean2().optional()
+      }).optional(),
+      /**
+       * Present if the server offers any tools to call.
+       */
+      tools: object({
+        /**
+         * Whether this server supports issuing notifications for changes to the tool list.
+         */
+        listChanged: boolean2().optional()
+      }).optional(),
+      /**
+       * Present if the server supports task creation.
+       */
+      tasks: ServerTasksCapabilitySchema.optional(),
+      /**
+       * Extensions that the server supports. Keys are extension identifiers (vendor-prefix/extension-name).
+       */
+      extensions: record(string2(), AssertObjectSchema).optional()
+    });
+    InitializeResultSchema = ResultSchema.extend({
+      /**
+       * The version of the Model Context Protocol that the server wants to use. This may not match the version that the client requested. If the client cannot support this version, it MUST disconnect.
+       */
+      protocolVersion: string2(),
+      capabilities: ServerCapabilitiesSchema,
+      serverInfo: ImplementationSchema,
+      /**
+       * Instructions describing how to use the server and its features.
+       *
+       * This can be used by clients to improve the LLM's understanding of available tools, resources, etc. It can be thought of like a "hint" to the model. For example, this information MAY be added to the system prompt.
+       */
+      instructions: string2().optional()
+    });
+    InitializedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/initialized"),
+      params: NotificationsParamsSchema.optional()
+    });
+    PingRequestSchema = RequestSchema.extend({
+      method: literal("ping"),
+      params: BaseRequestParamsSchema.optional()
+    });
+    ProgressSchema = object({
+      /**
+       * The progress thus far. This should increase every time progress is made, even if the total is unknown.
+       */
+      progress: number2(),
+      /**
+       * Total number of items to process (or total progress required), if known.
+       */
+      total: optional(number2()),
+      /**
+       * An optional message describing the current progress.
+       */
+      message: optional(string2())
+    });
+    ProgressNotificationParamsSchema = object({
+      ...NotificationsParamsSchema.shape,
+      ...ProgressSchema.shape,
+      /**
+       * The progress token which was given in the initial request, used to associate this notification with the request that is proceeding.
+       */
+      progressToken: ProgressTokenSchema
+    });
+    ProgressNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/progress"),
+      params: ProgressNotificationParamsSchema
+    });
+    PaginatedRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * An opaque token representing the current pagination position.
+       * If provided, the server should return results starting after this cursor.
+       */
+      cursor: CursorSchema.optional()
+    });
+    PaginatedRequestSchema = RequestSchema.extend({
+      params: PaginatedRequestParamsSchema.optional()
+    });
+    PaginatedResultSchema = ResultSchema.extend({
+      /**
+       * An opaque token representing the pagination position after the last returned result.
+       * If present, there may be more results available.
+       */
+      nextCursor: CursorSchema.optional()
+    });
+    TaskStatusSchema = _enum(["working", "input_required", "completed", "failed", "cancelled"]);
+    TaskSchema = object({
+      taskId: string2(),
+      status: TaskStatusSchema,
+      /**
+       * Time in milliseconds to keep task results available after completion.
+       * If null, the task has unlimited lifetime until manually cleaned up.
+       */
+      ttl: union([number2(), _null3()]),
+      /**
+       * ISO 8601 timestamp when the task was created.
+       */
+      createdAt: string2(),
+      /**
+       * ISO 8601 timestamp when the task was last updated.
+       */
+      lastUpdatedAt: string2(),
+      pollInterval: optional(number2()),
+      /**
+       * Optional diagnostic message for failed tasks or other status information.
+       */
+      statusMessage: optional(string2())
+    });
+    CreateTaskResultSchema = ResultSchema.extend({
+      task: TaskSchema
+    });
+    TaskStatusNotificationParamsSchema = NotificationsParamsSchema.merge(TaskSchema);
+    TaskStatusNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/tasks/status"),
+      params: TaskStatusNotificationParamsSchema
+    });
+    GetTaskRequestSchema = RequestSchema.extend({
+      method: literal("tasks/get"),
+      params: BaseRequestParamsSchema.extend({
+        taskId: string2()
+      })
+    });
+    GetTaskResultSchema = ResultSchema.merge(TaskSchema);
+    GetTaskPayloadRequestSchema = RequestSchema.extend({
+      method: literal("tasks/result"),
+      params: BaseRequestParamsSchema.extend({
+        taskId: string2()
+      })
+    });
+    GetTaskPayloadResultSchema = ResultSchema.loose();
+    ListTasksRequestSchema = PaginatedRequestSchema.extend({
+      method: literal("tasks/list")
+    });
+    ListTasksResultSchema = PaginatedResultSchema.extend({
+      tasks: array(TaskSchema)
+    });
+    CancelTaskRequestSchema = RequestSchema.extend({
+      method: literal("tasks/cancel"),
+      params: BaseRequestParamsSchema.extend({
+        taskId: string2()
+      })
+    });
+    CancelTaskResultSchema = ResultSchema.merge(TaskSchema);
+    ResourceContentsSchema = object({
+      /**
+       * The URI of this resource.
+       */
+      uri: string2(),
+      /**
+       * The MIME type of this resource, if known.
+       */
+      mimeType: optional(string2()),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    TextResourceContentsSchema = ResourceContentsSchema.extend({
+      /**
+       * The text of the item. This must only be set if the item can actually be represented as text (not binary data).
+       */
+      text: string2()
+    });
+    Base64Schema = string2().refine((val) => {
+      try {
+        atob(val);
+        return true;
+      } catch {
+        return false;
+      }
+    }, { message: "Invalid Base64 string" });
+    BlobResourceContentsSchema = ResourceContentsSchema.extend({
+      /**
+       * A base64-encoded string representing the binary data of the item.
+       */
+      blob: Base64Schema
+    });
+    RoleSchema = _enum(["user", "assistant"]);
+    AnnotationsSchema = object({
+      /**
+       * Intended audience(s) for the resource.
+       */
+      audience: array(RoleSchema).optional(),
+      /**
+       * Importance hint for the resource, from 0 (least) to 1 (most).
+       */
+      priority: number2().min(0).max(1).optional(),
+      /**
+       * ISO 8601 timestamp for the most recent modification.
+       */
+      lastModified: iso_exports.datetime({ offset: true }).optional()
+    });
+    ResourceSchema = object({
+      ...BaseMetadataSchema.shape,
+      ...IconsSchema.shape,
+      /**
+       * The URI of this resource.
+       */
+      uri: string2(),
+      /**
+       * A description of what this resource represents.
+       *
+       * This can be used by clients to improve the LLM's understanding of available resources. It can be thought of like a "hint" to the model.
+       */
+      description: optional(string2()),
+      /**
+       * The MIME type of this resource, if known.
+       */
+      mimeType: optional(string2()),
+      /**
+       * The size of the raw resource content, in bytes (i.e., before base64 encoding or any tokenization), if known.
+       *
+       * This can be used by Hosts to display file sizes and estimate context window usage.
+       */
+      size: optional(number2()),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: optional(looseObject({}))
+    });
+    ResourceTemplateSchema = object({
+      ...BaseMetadataSchema.shape,
+      ...IconsSchema.shape,
+      /**
+       * A URI template (according to RFC 6570) that can be used to construct resource URIs.
+       */
+      uriTemplate: string2(),
+      /**
+       * A description of what this template is for.
+       *
+       * This can be used by clients to improve the LLM's understanding of available resources. It can be thought of like a "hint" to the model.
+       */
+      description: optional(string2()),
+      /**
+       * The MIME type for all resources that match this template. This should only be included if all resources matching this template have the same type.
+       */
+      mimeType: optional(string2()),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: optional(looseObject({}))
+    });
+    ListResourcesRequestSchema = PaginatedRequestSchema.extend({
+      method: literal("resources/list")
+    });
+    ListResourcesResultSchema = PaginatedResultSchema.extend({
+      resources: array(ResourceSchema)
+    });
+    ListResourceTemplatesRequestSchema = PaginatedRequestSchema.extend({
+      method: literal("resources/templates/list")
+    });
+    ListResourceTemplatesResultSchema = PaginatedResultSchema.extend({
+      resourceTemplates: array(ResourceTemplateSchema)
+    });
+    ResourceRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * The URI of the resource to read. The URI can use any protocol; it is up to the server how to interpret it.
+       *
+       * @format uri
+       */
+      uri: string2()
+    });
+    ReadResourceRequestParamsSchema = ResourceRequestParamsSchema;
+    ReadResourceRequestSchema = RequestSchema.extend({
+      method: literal("resources/read"),
+      params: ReadResourceRequestParamsSchema
+    });
+    ReadResourceResultSchema = ResultSchema.extend({
+      contents: array(union([TextResourceContentsSchema, BlobResourceContentsSchema]))
+    });
+    ResourceListChangedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/resources/list_changed"),
+      params: NotificationsParamsSchema.optional()
+    });
+    SubscribeRequestParamsSchema = ResourceRequestParamsSchema;
+    SubscribeRequestSchema = RequestSchema.extend({
+      method: literal("resources/subscribe"),
+      params: SubscribeRequestParamsSchema
+    });
+    UnsubscribeRequestParamsSchema = ResourceRequestParamsSchema;
+    UnsubscribeRequestSchema = RequestSchema.extend({
+      method: literal("resources/unsubscribe"),
+      params: UnsubscribeRequestParamsSchema
+    });
+    ResourceUpdatedNotificationParamsSchema = NotificationsParamsSchema.extend({
+      /**
+       * The URI of the resource that has been updated. This might be a sub-resource of the one that the client actually subscribed to.
+       */
+      uri: string2()
+    });
+    ResourceUpdatedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/resources/updated"),
+      params: ResourceUpdatedNotificationParamsSchema
+    });
+    PromptArgumentSchema = object({
+      /**
+       * The name of the argument.
+       */
+      name: string2(),
+      /**
+       * A human-readable description of the argument.
+       */
+      description: optional(string2()),
+      /**
+       * Whether this argument must be provided.
+       */
+      required: optional(boolean2())
+    });
+    PromptSchema = object({
+      ...BaseMetadataSchema.shape,
+      ...IconsSchema.shape,
+      /**
+       * An optional description of what this prompt provides
+       */
+      description: optional(string2()),
+      /**
+       * A list of arguments to use for templating the prompt.
+       */
+      arguments: optional(array(PromptArgumentSchema)),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: optional(looseObject({}))
+    });
+    ListPromptsRequestSchema = PaginatedRequestSchema.extend({
+      method: literal("prompts/list")
+    });
+    ListPromptsResultSchema = PaginatedResultSchema.extend({
+      prompts: array(PromptSchema)
+    });
+    GetPromptRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * The name of the prompt or prompt template.
+       */
+      name: string2(),
+      /**
+       * Arguments to use for templating the prompt.
+       */
+      arguments: record(string2(), string2()).optional()
+    });
+    GetPromptRequestSchema = RequestSchema.extend({
+      method: literal("prompts/get"),
+      params: GetPromptRequestParamsSchema
+    });
+    TextContentSchema = object({
+      type: literal("text"),
+      /**
+       * The text content of the message.
+       */
+      text: string2(),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    ImageContentSchema = object({
+      type: literal("image"),
+      /**
+       * The base64-encoded image data.
+       */
+      data: Base64Schema,
+      /**
+       * The MIME type of the image. Different providers may support different image types.
+       */
+      mimeType: string2(),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    AudioContentSchema = object({
+      type: literal("audio"),
+      /**
+       * The base64-encoded audio data.
+       */
+      data: Base64Schema,
+      /**
+       * The MIME type of the audio. Different providers may support different audio types.
+       */
+      mimeType: string2(),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    ToolUseContentSchema = object({
+      type: literal("tool_use"),
+      /**
+       * The name of the tool to invoke.
+       * Must match a tool name from the request's tools array.
+       */
+      name: string2(),
+      /**
+       * Unique identifier for this tool call.
+       * Used to correlate with ToolResultContent in subsequent messages.
+       */
+      id: string2(),
+      /**
+       * Arguments to pass to the tool.
+       * Must conform to the tool's inputSchema.
+       */
+      input: record(string2(), unknown()),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    EmbeddedResourceSchema = object({
+      type: literal("resource"),
+      resource: union([TextResourceContentsSchema, BlobResourceContentsSchema]),
+      /**
+       * Optional annotations for the client.
+       */
+      annotations: AnnotationsSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    ResourceLinkSchema = ResourceSchema.extend({
+      type: literal("resource_link")
+    });
+    ContentBlockSchema = union([
+      TextContentSchema,
+      ImageContentSchema,
+      AudioContentSchema,
+      ResourceLinkSchema,
+      EmbeddedResourceSchema
+    ]);
+    PromptMessageSchema = object({
+      role: RoleSchema,
+      content: ContentBlockSchema
+    });
+    GetPromptResultSchema = ResultSchema.extend({
+      /**
+       * An optional description for the prompt.
+       */
+      description: string2().optional(),
+      messages: array(PromptMessageSchema)
+    });
+    PromptListChangedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/prompts/list_changed"),
+      params: NotificationsParamsSchema.optional()
+    });
+    ToolAnnotationsSchema = object({
+      /**
+       * A human-readable title for the tool.
+       */
+      title: string2().optional(),
+      /**
+       * If true, the tool does not modify its environment.
+       *
+       * Default: false
+       */
+      readOnlyHint: boolean2().optional(),
+      /**
+       * If true, the tool may perform destructive updates to its environment.
+       * If false, the tool performs only additive updates.
+       *
+       * (This property is meaningful only when `readOnlyHint == false`)
+       *
+       * Default: true
+       */
+      destructiveHint: boolean2().optional(),
+      /**
+       * If true, calling the tool repeatedly with the same arguments
+       * will have no additional effect on the its environment.
+       *
+       * (This property is meaningful only when `readOnlyHint == false`)
+       *
+       * Default: false
+       */
+      idempotentHint: boolean2().optional(),
+      /**
+       * If true, this tool may interact with an "open world" of external
+       * entities. If false, the tool's domain of interaction is closed.
+       * For example, the world of a web search tool is open, whereas that
+       * of a memory tool is not.
+       *
+       * Default: true
+       */
+      openWorldHint: boolean2().optional()
+    });
+    ToolExecutionSchema = object({
+      /**
+       * Indicates the tool's preference for task-augmented execution.
+       * - "required": Clients MUST invoke the tool as a task
+       * - "optional": Clients MAY invoke the tool as a task or normal request
+       * - "forbidden": Clients MUST NOT attempt to invoke the tool as a task
+       *
+       * If not present, defaults to "forbidden".
+       */
+      taskSupport: _enum(["required", "optional", "forbidden"]).optional()
+    });
+    ToolSchema = object({
+      ...BaseMetadataSchema.shape,
+      ...IconsSchema.shape,
+      /**
+       * A human-readable description of the tool.
+       */
+      description: string2().optional(),
+      /**
+       * A JSON Schema 2020-12 object defining the expected parameters for the tool.
+       * Must have type: 'object' at the root level per MCP spec.
+       */
+      inputSchema: object({
+        type: literal("object"),
+        properties: record(string2(), AssertObjectSchema).optional(),
+        required: array(string2()).optional()
+      }).catchall(unknown()),
+      /**
+       * An optional JSON Schema 2020-12 object defining the structure of the tool's output
+       * returned in the structuredContent field of a CallToolResult.
+       * Must have type: 'object' at the root level per MCP spec.
+       */
+      outputSchema: object({
+        type: literal("object"),
+        properties: record(string2(), AssertObjectSchema).optional(),
+        required: array(string2()).optional()
+      }).catchall(unknown()).optional(),
+      /**
+       * Optional additional tool information.
+       */
+      annotations: ToolAnnotationsSchema.optional(),
+      /**
+       * Execution-related properties for this tool.
+       */
+      execution: ToolExecutionSchema.optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    ListToolsRequestSchema = PaginatedRequestSchema.extend({
+      method: literal("tools/list")
+    });
+    ListToolsResultSchema = PaginatedResultSchema.extend({
+      tools: array(ToolSchema)
+    });
+    CallToolResultSchema = ResultSchema.extend({
+      /**
+       * A list of content objects that represent the result of the tool call.
+       *
+       * If the Tool does not define an outputSchema, this field MUST be present in the result.
+       * For backwards compatibility, this field is always present, but it may be empty.
+       */
+      content: array(ContentBlockSchema).default([]),
+      /**
+       * An object containing structured tool output.
+       *
+       * If the Tool defines an outputSchema, this field MUST be present in the result, and contain a JSON object that matches the schema.
+       */
+      structuredContent: record(string2(), unknown()).optional(),
+      /**
+       * Whether the tool call ended in an error.
+       *
+       * If not set, this is assumed to be false (the call was successful).
+       *
+       * Any errors that originate from the tool SHOULD be reported inside the result
+       * object, with `isError` set to true, _not_ as an MCP protocol-level error
+       * response. Otherwise, the LLM would not be able to see that an error occurred
+       * and self-correct.
+       *
+       * However, any errors in _finding_ the tool, an error indicating that the
+       * server does not support tool calls, or any other exceptional conditions,
+       * should be reported as an MCP error response.
+       */
+      isError: boolean2().optional()
+    });
+    CompatibilityCallToolResultSchema = CallToolResultSchema.or(ResultSchema.extend({
+      toolResult: unknown()
+    }));
+    CallToolRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
+      /**
+       * The name of the tool to call.
+       */
+      name: string2(),
+      /**
+       * Arguments to pass to the tool.
+       */
+      arguments: record(string2(), unknown()).optional()
+    });
+    CallToolRequestSchema = RequestSchema.extend({
+      method: literal("tools/call"),
+      params: CallToolRequestParamsSchema
+    });
+    ToolListChangedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/tools/list_changed"),
+      params: NotificationsParamsSchema.optional()
+    });
+    ListChangedOptionsBaseSchema = object({
+      /**
+       * If true, the list will be refreshed automatically when a list changed notification is received.
+       * The callback will be called with the updated list.
+       *
+       * If false, the callback will be called with null items, allowing manual refresh.
+       *
+       * @default true
+       */
+      autoRefresh: boolean2().default(true),
+      /**
+       * Debounce time in milliseconds for list changed notification processing.
+       *
+       * Multiple notifications received within this timeframe will only trigger one refresh.
+       * Set to 0 to disable debouncing.
+       *
+       * @default 300
+       */
+      debounceMs: number2().int().nonnegative().default(300)
+    });
+    LoggingLevelSchema = _enum(["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]);
+    SetLevelRequestParamsSchema = BaseRequestParamsSchema.extend({
+      /**
+       * The level of logging that the client wants to receive from the server. The server should send all logs at this level and higher (i.e., more severe) to the client as notifications/logging/message.
+       */
+      level: LoggingLevelSchema
+    });
+    SetLevelRequestSchema = RequestSchema.extend({
+      method: literal("logging/setLevel"),
+      params: SetLevelRequestParamsSchema
+    });
+    LoggingMessageNotificationParamsSchema = NotificationsParamsSchema.extend({
+      /**
+       * The severity of this log message.
+       */
+      level: LoggingLevelSchema,
+      /**
+       * An optional name of the logger issuing this message.
+       */
+      logger: string2().optional(),
+      /**
+       * The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here.
+       */
+      data: unknown()
+    });
+    LoggingMessageNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/message"),
+      params: LoggingMessageNotificationParamsSchema
+    });
+    ModelHintSchema = object({
+      /**
+       * A hint for a model name.
+       */
+      name: string2().optional()
+    });
+    ModelPreferencesSchema = object({
+      /**
+       * Optional hints to use for model selection.
+       */
+      hints: array(ModelHintSchema).optional(),
+      /**
+       * How much to prioritize cost when selecting a model.
+       */
+      costPriority: number2().min(0).max(1).optional(),
+      /**
+       * How much to prioritize sampling speed (latency) when selecting a model.
+       */
+      speedPriority: number2().min(0).max(1).optional(),
+      /**
+       * How much to prioritize intelligence and capabilities when selecting a model.
+       */
+      intelligencePriority: number2().min(0).max(1).optional()
+    });
+    ToolChoiceSchema = object({
+      /**
+       * Controls when tools are used:
+       * - "auto": Model decides whether to use tools (default)
+       * - "required": Model MUST use at least one tool before completing
+       * - "none": Model MUST NOT use any tools
+       */
+      mode: _enum(["auto", "required", "none"]).optional()
+    });
+    ToolResultContentSchema = object({
+      type: literal("tool_result"),
+      toolUseId: string2().describe("The unique identifier for the corresponding tool call."),
+      content: array(ContentBlockSchema).default([]),
+      structuredContent: object({}).loose().optional(),
+      isError: boolean2().optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    SamplingContentSchema = discriminatedUnion("type", [TextContentSchema, ImageContentSchema, AudioContentSchema]);
+    SamplingMessageContentBlockSchema = discriminatedUnion("type", [
+      TextContentSchema,
+      ImageContentSchema,
+      AudioContentSchema,
+      ToolUseContentSchema,
+      ToolResultContentSchema
+    ]);
+    SamplingMessageSchema = object({
+      role: RoleSchema,
+      content: union([SamplingMessageContentBlockSchema, array(SamplingMessageContentBlockSchema)]),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    CreateMessageRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
+      messages: array(SamplingMessageSchema),
+      /**
+       * The server's preferences for which model to select. The client MAY modify or omit this request.
+       */
+      modelPreferences: ModelPreferencesSchema.optional(),
+      /**
+       * An optional system prompt the server wants to use for sampling. The client MAY modify or omit this prompt.
+       */
+      systemPrompt: string2().optional(),
+      /**
+       * A request to include context from one or more MCP servers (including the caller), to be attached to the prompt.
+       * The client MAY ignore this request.
+       *
+       * Default is "none". Values "thisServer" and "allServers" are soft-deprecated. Servers SHOULD only use these values if the client
+       * declares ClientCapabilities.sampling.context. These values may be removed in future spec releases.
+       */
+      includeContext: _enum(["none", "thisServer", "allServers"]).optional(),
+      temperature: number2().optional(),
+      /**
+       * The requested maximum number of tokens to sample (to prevent runaway completions).
+       *
+       * The client MAY choose to sample fewer tokens than the requested maximum.
+       */
+      maxTokens: number2().int(),
+      stopSequences: array(string2()).optional(),
+      /**
+       * Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific.
+       */
+      metadata: AssertObjectSchema.optional(),
+      /**
+       * Tools that the model may use during generation.
+       * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
+       */
+      tools: array(ToolSchema).optional(),
+      /**
+       * Controls how the model uses tools.
+       * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
+       * Default is `{ mode: "auto" }`.
+       */
+      toolChoice: ToolChoiceSchema.optional()
+    });
+    CreateMessageRequestSchema = RequestSchema.extend({
+      method: literal("sampling/createMessage"),
+      params: CreateMessageRequestParamsSchema
+    });
+    CreateMessageResultSchema = ResultSchema.extend({
+      /**
+       * The name of the model that generated the message.
+       */
+      model: string2(),
+      /**
+       * The reason why sampling stopped, if known.
+       *
+       * Standard values:
+       * - "endTurn": Natural end of the assistant's turn
+       * - "stopSequence": A stop sequence was encountered
+       * - "maxTokens": Maximum token limit was reached
+       *
+       * This field is an open string to allow for provider-specific stop reasons.
+       */
+      stopReason: optional(_enum(["endTurn", "stopSequence", "maxTokens"]).or(string2())),
+      role: RoleSchema,
+      /**
+       * Response content. Single content block (text, image, or audio).
+       */
+      content: SamplingContentSchema
+    });
+    CreateMessageResultWithToolsSchema = ResultSchema.extend({
+      /**
+       * The name of the model that generated the message.
+       */
+      model: string2(),
+      /**
+       * The reason why sampling stopped, if known.
+       *
+       * Standard values:
+       * - "endTurn": Natural end of the assistant's turn
+       * - "stopSequence": A stop sequence was encountered
+       * - "maxTokens": Maximum token limit was reached
+       * - "toolUse": The model wants to use one or more tools
+       *
+       * This field is an open string to allow for provider-specific stop reasons.
+       */
+      stopReason: optional(_enum(["endTurn", "stopSequence", "maxTokens", "toolUse"]).or(string2())),
+      role: RoleSchema,
+      /**
+       * Response content. May be a single block or array. May include ToolUseContent if stopReason is "toolUse".
+       */
+      content: union([SamplingMessageContentBlockSchema, array(SamplingMessageContentBlockSchema)])
+    });
+    BooleanSchemaSchema = object({
+      type: literal("boolean"),
+      title: string2().optional(),
+      description: string2().optional(),
+      default: boolean2().optional()
+    });
+    StringSchemaSchema = object({
+      type: literal("string"),
+      title: string2().optional(),
+      description: string2().optional(),
+      minLength: number2().optional(),
+      maxLength: number2().optional(),
+      format: _enum(["email", "uri", "date", "date-time"]).optional(),
+      default: string2().optional()
+    });
+    NumberSchemaSchema = object({
+      type: _enum(["number", "integer"]),
+      title: string2().optional(),
+      description: string2().optional(),
+      minimum: number2().optional(),
+      maximum: number2().optional(),
+      default: number2().optional()
+    });
+    UntitledSingleSelectEnumSchemaSchema = object({
+      type: literal("string"),
+      title: string2().optional(),
+      description: string2().optional(),
+      enum: array(string2()),
+      default: string2().optional()
+    });
+    TitledSingleSelectEnumSchemaSchema = object({
+      type: literal("string"),
+      title: string2().optional(),
+      description: string2().optional(),
+      oneOf: array(object({
+        const: string2(),
+        title: string2()
+      })),
+      default: string2().optional()
+    });
+    LegacyTitledEnumSchemaSchema = object({
+      type: literal("string"),
+      title: string2().optional(),
+      description: string2().optional(),
+      enum: array(string2()),
+      enumNames: array(string2()).optional(),
+      default: string2().optional()
+    });
+    SingleSelectEnumSchemaSchema = union([UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema]);
+    UntitledMultiSelectEnumSchemaSchema = object({
+      type: literal("array"),
+      title: string2().optional(),
+      description: string2().optional(),
+      minItems: number2().optional(),
+      maxItems: number2().optional(),
+      items: object({
+        type: literal("string"),
+        enum: array(string2())
+      }),
+      default: array(string2()).optional()
+    });
+    TitledMultiSelectEnumSchemaSchema = object({
+      type: literal("array"),
+      title: string2().optional(),
+      description: string2().optional(),
+      minItems: number2().optional(),
+      maxItems: number2().optional(),
+      items: object({
+        anyOf: array(object({
+          const: string2(),
+          title: string2()
+        }))
+      }),
+      default: array(string2()).optional()
+    });
+    MultiSelectEnumSchemaSchema = union([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema]);
+    EnumSchemaSchema = union([LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema]);
+    PrimitiveSchemaDefinitionSchema = union([EnumSchemaSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema]);
+    ElicitRequestFormParamsSchema = TaskAugmentedRequestParamsSchema.extend({
+      /**
+       * The elicitation mode.
+       *
+       * Optional for backward compatibility. Clients MUST treat missing mode as "form".
+       */
+      mode: literal("form").optional(),
+      /**
+       * The message to present to the user describing what information is being requested.
+       */
+      message: string2(),
+      /**
+       * A restricted subset of JSON Schema.
+       * Only top-level properties are allowed, without nesting.
+       */
+      requestedSchema: object({
+        type: literal("object"),
+        properties: record(string2(), PrimitiveSchemaDefinitionSchema),
+        required: array(string2()).optional()
+      })
+    });
+    ElicitRequestURLParamsSchema = TaskAugmentedRequestParamsSchema.extend({
+      /**
+       * The elicitation mode.
+       */
+      mode: literal("url"),
+      /**
+       * The message to present to the user explaining why the interaction is needed.
+       */
+      message: string2(),
+      /**
+       * The ID of the elicitation, which must be unique within the context of the server.
+       * The client MUST treat this ID as an opaque value.
+       */
+      elicitationId: string2(),
+      /**
+       * The URL that the user should navigate to.
+       */
+      url: string2().url()
+    });
+    ElicitRequestParamsSchema = union([ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema]);
+    ElicitRequestSchema = RequestSchema.extend({
+      method: literal("elicitation/create"),
+      params: ElicitRequestParamsSchema
+    });
+    ElicitationCompleteNotificationParamsSchema = NotificationsParamsSchema.extend({
+      /**
+       * The ID of the elicitation that completed.
+       */
+      elicitationId: string2()
+    });
+    ElicitationCompleteNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/elicitation/complete"),
+      params: ElicitationCompleteNotificationParamsSchema
+    });
+    ElicitResultSchema = ResultSchema.extend({
+      /**
+       * The user action in response to the elicitation.
+       * - "accept": User submitted the form/confirmed the action
+       * - "decline": User explicitly decline the action
+       * - "cancel": User dismissed without making an explicit choice
+       */
+      action: _enum(["accept", "decline", "cancel"]),
+      /**
+       * The submitted form data, only present when action is "accept".
+       * Contains values matching the requested schema.
+       * Per MCP spec, content is "typically omitted" for decline/cancel actions.
+       * We normalize null to undefined for leniency while maintaining type compatibility.
+       */
+      content: preprocess((val) => val === null ? void 0 : val, record(string2(), union([string2(), number2(), boolean2(), array(string2())])).optional())
+    });
+    ResourceTemplateReferenceSchema = object({
+      type: literal("ref/resource"),
+      /**
+       * The URI or URI template of the resource.
+       */
+      uri: string2()
+    });
+    PromptReferenceSchema = object({
+      type: literal("ref/prompt"),
+      /**
+       * The name of the prompt or prompt template
+       */
+      name: string2()
+    });
+    CompleteRequestParamsSchema = BaseRequestParamsSchema.extend({
+      ref: union([PromptReferenceSchema, ResourceTemplateReferenceSchema]),
+      /**
+       * The argument's information
+       */
+      argument: object({
+        /**
+         * The name of the argument
+         */
+        name: string2(),
+        /**
+         * The value of the argument to use for completion matching.
+         */
+        value: string2()
+      }),
+      context: object({
+        /**
+         * Previously-resolved variables in a URI template or prompt.
+         */
+        arguments: record(string2(), string2()).optional()
+      }).optional()
+    });
+    CompleteRequestSchema = RequestSchema.extend({
+      method: literal("completion/complete"),
+      params: CompleteRequestParamsSchema
+    });
+    CompleteResultSchema = ResultSchema.extend({
+      completion: looseObject({
+        /**
+         * An array of completion values. Must not exceed 100 items.
+         */
+        values: array(string2()).max(100),
+        /**
+         * The total number of completion options available. This can exceed the number of values actually sent in the response.
+         */
+        total: optional(number2().int()),
+        /**
+         * Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
+         */
+        hasMore: optional(boolean2())
+      })
+    });
+    RootSchema = object({
+      /**
+       * The URI identifying the root. This *must* start with file:// for now.
+       */
+      uri: string2().startsWith("file://"),
+      /**
+       * An optional name for the root.
+       */
+      name: string2().optional(),
+      /**
+       * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
+       * for notes on _meta usage.
+       */
+      _meta: record(string2(), unknown()).optional()
+    });
+    ListRootsRequestSchema = RequestSchema.extend({
+      method: literal("roots/list"),
+      params: BaseRequestParamsSchema.optional()
+    });
+    ListRootsResultSchema = ResultSchema.extend({
+      roots: array(RootSchema)
+    });
+    RootsListChangedNotificationSchema = NotificationSchema.extend({
+      method: literal("notifications/roots/list_changed"),
+      params: NotificationsParamsSchema.optional()
+    });
+    ClientRequestSchema = union([
+      PingRequestSchema,
+      InitializeRequestSchema,
+      CompleteRequestSchema,
+      SetLevelRequestSchema,
+      GetPromptRequestSchema,
+      ListPromptsRequestSchema,
+      ListResourcesRequestSchema,
+      ListResourceTemplatesRequestSchema,
+      ReadResourceRequestSchema,
+      SubscribeRequestSchema,
+      UnsubscribeRequestSchema,
+      CallToolRequestSchema,
+      ListToolsRequestSchema,
+      GetTaskRequestSchema,
+      GetTaskPayloadRequestSchema,
+      ListTasksRequestSchema,
+      CancelTaskRequestSchema
+    ]);
+    ClientNotificationSchema = union([
+      CancelledNotificationSchema,
+      ProgressNotificationSchema,
+      InitializedNotificationSchema,
+      RootsListChangedNotificationSchema,
+      TaskStatusNotificationSchema
+    ]);
+    ClientResultSchema = union([
+      EmptyResultSchema,
+      CreateMessageResultSchema,
+      CreateMessageResultWithToolsSchema,
+      ElicitResultSchema,
+      ListRootsResultSchema,
+      GetTaskResultSchema,
+      ListTasksResultSchema,
+      CreateTaskResultSchema
+    ]);
+    ServerRequestSchema = union([
+      PingRequestSchema,
+      CreateMessageRequestSchema,
+      ElicitRequestSchema,
+      ListRootsRequestSchema,
+      GetTaskRequestSchema,
+      GetTaskPayloadRequestSchema,
+      ListTasksRequestSchema,
+      CancelTaskRequestSchema
+    ]);
+    ServerNotificationSchema = union([
+      CancelledNotificationSchema,
+      ProgressNotificationSchema,
+      LoggingMessageNotificationSchema,
+      ResourceUpdatedNotificationSchema,
+      ResourceListChangedNotificationSchema,
+      ToolListChangedNotificationSchema,
+      PromptListChangedNotificationSchema,
+      TaskStatusNotificationSchema,
+      ElicitationCompleteNotificationSchema
+    ]);
+    ServerResultSchema = union([
+      EmptyResultSchema,
+      InitializeResultSchema,
+      CompleteResultSchema,
+      GetPromptResultSchema,
+      ListPromptsResultSchema,
+      ListResourcesResultSchema,
+      ListResourceTemplatesResultSchema,
+      ReadResourceResultSchema,
+      CallToolResultSchema,
+      ListToolsResultSchema,
+      GetTaskResultSchema,
+      ListTasksResultSchema,
+      CreateTaskResultSchema
+    ]);
+    McpError = class _McpError extends Error {
+      constructor(code, message, data) {
+        super(`MCP error ${code}: ${message}`);
+        this.code = code;
+        this.data = data;
+        this.name = "McpError";
+      }
+      /**
+       * Factory method to create the appropriate error type based on the error code and data
+       */
+      static fromError(code, message, data) {
+        if (code === ErrorCode.UrlElicitationRequired && data) {
+          const errorData = data;
+          if (errorData.elicitations) {
+            return new UrlElicitationRequiredError(errorData.elicitations, message);
+          }
+        }
+        return new _McpError(code, message, data);
+      }
+    };
+    UrlElicitationRequiredError = class extends McpError {
+      constructor(elicitations, message = `URL elicitation${elicitations.length > 1 ? "s" : ""} required`) {
+        super(ErrorCode.UrlElicitationRequired, message, {
+          elicitations
+        });
+      }
+      get elicitations() {
+        return this.data?.elicitations ?? [];
+      }
+    };
+  }
+});
+
 // node_modules/zod/v3/helpers/util.js
 var util, objectUtil, ZodParsedType, getParsedType2;
-var init_util = __esm({
+var init_util2 = __esm({
   "node_modules/zod/v3/helpers/util.js"() {
     (function(util2) {
       util2.assertEqual = (_) => {
@@ -6194,7 +11649,7 @@ var init_util = __esm({
 var ZodIssueCode, quotelessJson, ZodError2;
 var init_ZodError = __esm({
   "node_modules/zod/v3/ZodError.js"() {
-    init_util();
+    init_util2();
     ZodIssueCode = util.arrayToEnum([
       "invalid_type",
       "invalid_literal",
@@ -6316,10 +11771,10 @@ var init_ZodError = __esm({
 
 // node_modules/zod/v3/locales/en.js
 var errorMap, en_default2;
-var init_en = __esm({
+var init_en2 = __esm({
   "node_modules/zod/v3/locales/en.js"() {
     init_ZodError();
-    init_util();
+    init_util2();
     errorMap = (issue2, _ctx) => {
       let message;
       switch (issue2.code) {
@@ -6432,9 +11887,9 @@ function getErrorMap() {
   return overrideErrorMap;
 }
 var overrideErrorMap;
-var init_errors = __esm({
+var init_errors3 = __esm({
   "node_modules/zod/v3/errors.js"() {
-    init_en();
+    init_en2();
     overrideErrorMap = en_default2;
   }
 });
@@ -6462,8 +11917,8 @@ function addIssueToContext(ctx, issueData) {
 var makeIssue, EMPTY_PATH, ParseStatus, INVALID, DIRTY, OK, isAborted, isDirty, isValid, isAsync;
 var init_parseUtil = __esm({
   "node_modules/zod/v3/helpers/parseUtil.js"() {
-    init_errors();
-    init_en();
+    init_errors3();
+    init_en2();
     makeIssue = (params) => {
       const { data, path: path28, errorMaps, issueData } = params;
       const fullPath = [...path28, ...issueData.path || []];
@@ -6766,13 +12221,13 @@ function custom2(check2, _params = {}, fatal) {
   return ZodAny.create();
 }
 var ParseInputLazyPath, handleResult, ZodType2, cuidRegex, cuid2Regex, ulidRegex, uuidRegex, nanoidRegex, jwtRegex, durationRegex, emailRegex, _emojiRegex, emojiRegex2, ipv4Regex, ipv4CidrRegex, ipv6Regex, ipv6CidrRegex, base64Regex, base64urlRegex, dateRegexSource, dateRegex, ZodString2, ZodNumber2, ZodBigInt, ZodBoolean2, ZodDate, ZodSymbol, ZodUndefined, ZodNull2, ZodAny, ZodUnknown2, ZodNever2, ZodVoid, ZodArray2, ZodObject2, ZodUnion2, getDiscriminator, ZodDiscriminatedUnion2, ZodIntersection2, ZodTuple, ZodRecord2, ZodMap, ZodSet, ZodFunction, ZodLazy, ZodLiteral2, ZodEnum2, ZodNativeEnum, ZodPromise, ZodEffects, ZodOptional2, ZodNullable2, ZodDefault2, ZodCatch2, ZodNaN, BRAND, ZodBranded, ZodPipeline, ZodReadonly2, late, ZodFirstPartyTypeKind, instanceOfType, stringType, numberType, nanType, bigIntType, booleanType, dateType, symbolType, undefinedType, nullType, anyType, unknownType, neverType, voidType, arrayType, objectType, strictObjectType, unionType, discriminatedUnionType, intersectionType, tupleType, recordType, mapType, setType, functionType, lazyType, literalType, enumType, nativeEnumType, promiseType, effectsType, optionalType, nullableType, preprocessType, pipelineType, ostring, onumber, oboolean, coerce, NEVER2;
-var init_types = __esm({
+var init_types2 = __esm({
   "node_modules/zod/v3/types.js"() {
     init_ZodError();
-    init_errors();
+    init_errors3();
     init_errorUtil();
     init_parseUtil();
-    init_util();
+    init_util2();
     ParseInputLazyPath = class {
       constructor(parent, value, path28, key) {
         this._cachedPath = [];
@@ -10140,13 +15595,13 @@ __export(external_exports, {
   util: () => util,
   void: () => voidType
 });
-var init_external = __esm({
+var init_external2 = __esm({
   "node_modules/zod/v3/external.js"() {
-    init_errors();
+    init_errors3();
     init_parseUtil();
     init_typeAliases();
-    init_util();
-    init_types();
+    init_util2();
+    init_types2();
     init_ZodError();
   }
 });
@@ -10154,8 +15609,8 @@ var init_external = __esm({
 // node_modules/zod/index.js
 var init_zod = __esm({
   "node_modules/zod/index.js"() {
-    init_external();
-    init_external();
+    init_external2();
+    init_external2();
   }
 });
 
@@ -20598,6 +26053,1130 @@ var require_xterm_headless = __commonJS({
   }
 });
 
+// src/utils/platform.ts
+import * as path9 from "path";
+import * as os5 from "os";
+function getDefaultRecordDir() {
+  if (process.env.TERMINAL_TOOLKIT_RECORD_DIR) {
+    return process.env.TERMINAL_TOOLKIT_RECORD_DIR;
+  }
+  const stateHome = process.env.XDG_STATE_HOME || path9.join(os5.homedir(), ".local", "state");
+  return path9.join(stateHome, "terminal-toolkit", "recordings");
+}
+function getDefaultSocketPath() {
+  if (process.env.TERMINAL_TOOLKIT_SOCKET) {
+    return process.env.TERMINAL_TOOLKIT_SOCKET;
+  }
+  if (process.platform === "win32") {
+    return "\\\\.\\pipe\\terminal-toolkit";
+  }
+  return path9.join(os5.tmpdir(), "terminal-toolkit.sock");
+}
+function resolveSocketPath(socketPath) {
+  return socketPath || getDefaultSocketPath();
+}
+function getDefaultCols() {
+  const envVal = process.env.TERMINAL_TOOLKIT_COLS;
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 120;
+}
+function getDefaultRows() {
+  const envVal = process.env.TERMINAL_TOOLKIT_ROWS;
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 40;
+}
+function getDefaultShell() {
+  if (process.env.TERMINAL_TOOLKIT_SHELL) {
+    return process.env.TERMINAL_TOOLKIT_SHELL;
+  }
+  if (process.platform === "win32") {
+    return process.env.COMSPEC || "cmd.exe";
+  }
+  return process.env.SHELL || "/bin/bash";
+}
+var init_platform = __esm({
+  "src/utils/platform.ts"() {
+    "use strict";
+  }
+});
+
+// src/utils/keys.ts
+function getKeySequence(key) {
+  const normalized = key.trim();
+  if (KEY_SEQUENCES[normalized]) {
+    return KEY_SEQUENCES[normalized];
+  }
+  const lowerKey = normalized.toLowerCase();
+  for (const [name, seq] of Object.entries(KEY_SEQUENCES)) {
+    if (name.toLowerCase() === lowerKey) {
+      return seq;
+    }
+  }
+  return null;
+}
+function getAvailableKeys() {
+  return Object.keys(KEY_SEQUENCES);
+}
+var KEY_SEQUENCES;
+var init_keys = __esm({
+  "src/utils/keys.ts"() {
+    "use strict";
+    KEY_SEQUENCES = {
+      // Control keys
+      "Enter": "\r",
+      "Tab": "	",
+      "Escape": "\x1B",
+      "Backspace": "\x7F",
+      "Delete": "\x1B[3~",
+      // Arrow keys
+      "ArrowUp": "\x1B[A",
+      "ArrowDown": "\x1B[B",
+      "ArrowRight": "\x1B[C",
+      "ArrowLeft": "\x1B[D",
+      // Navigation keys
+      "Home": "\x1B[H",
+      "End": "\x1B[F",
+      "PageUp": "\x1B[5~",
+      "PageDown": "\x1B[6~",
+      "Insert": "\x1B[2~",
+      // Function keys
+      "F1": "\x1BOP",
+      "F2": "\x1BOQ",
+      "F3": "\x1BOR",
+      "F4": "\x1BOS",
+      "F5": "\x1B[15~",
+      "F6": "\x1B[17~",
+      "F7": "\x1B[18~",
+      "F8": "\x1B[19~",
+      "F9": "\x1B[20~",
+      "F10": "\x1B[21~",
+      "F11": "\x1B[23~",
+      "F12": "\x1B[24~",
+      // Ctrl combinations
+      "Ctrl+A": "",
+      "Ctrl+B": "",
+      "Ctrl+C": "",
+      "Ctrl+D": "",
+      "Ctrl+E": "",
+      "Ctrl+F": "",
+      "Ctrl+G": "\x07",
+      "Ctrl+H": "\b",
+      "Ctrl+I": "	",
+      "Ctrl+J": "\n",
+      "Ctrl+K": "\v",
+      "Ctrl+L": "\f",
+      "Ctrl+M": "\r",
+      "Ctrl+N": "",
+      "Ctrl+O": "",
+      "Ctrl+P": "",
+      "Ctrl+Q": "",
+      "Ctrl+R": "",
+      "Ctrl+S": "",
+      "Ctrl+T": "",
+      "Ctrl+U": "",
+      "Ctrl+V": "",
+      "Ctrl+W": "",
+      "Ctrl+X": "",
+      "Ctrl+Y": "",
+      "Ctrl+Z": "",
+      "Ctrl+[": "\x1B",
+      "Ctrl+\\": "",
+      "Ctrl+]": "",
+      "Ctrl+^": "",
+      "Ctrl+_": "",
+      // Common shortcuts
+      "Ctrl+Space": "\0"
+    };
+  }
+});
+
+// src/tools/descriptions.ts
+var SESSION_ID_DESCRIPTION, TOOL_DESCRIPTIONS;
+var init_descriptions = __esm({
+  "src/tools/descriptions.ts"() {
+    "use strict";
+    SESSION_ID_DESCRIPTION = `Target session ID. For the Primary Session (formerly default session), omit sessionId entirely. Never pass "primary", "default", or an empty string. For additional sessions, pass the actual ID returned by createSession().`;
+    TOOL_DESCRIPTIONS = {
+      type: {
+        main: `Send input to a persistent interactive PTY shell, unlike shell() which runs a fresh non-interactive subprocess. Choose this for long-running builds/tests, interactive prompts, TUIs, live progress, or persistent shell state. Use autoSubmit=true to submit a command and read immediate viewport output; use getContent() to inspect later output. For manual input, type without autoSubmit and then sendKey('Enter'). IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo "Hello!").`,
+        text: "The text to type into the terminal",
+        autoSubmit: "If true, automatically send Enter and return terminal content. Recommended for most commands."
+      },
+      sendKey: {
+        main: "Send a special key to an existing PTY session (e.g., Enter, Tab, Ctrl+C, navigation). Use for interactive programs, manual submission after type(autoSubmit=false), or interrupting a command in a session you own. For ordinary commands, prefer type(autoSubmit=true); never interrupt an occupied Primary Session.",
+        key: "The key to send (e.g., enter, tab, escape, up, down, left, right, ctrl+c, ctrl+d)",
+        repeat: "Number of times to repeat the key (default: 1). Useful for pressing arrow keys or similar multiple times in one call."
+      },
+      sleep: {
+        main: "Pause execution for an extended duration. This is a BLOCKING operation - use ONLY when absolutely necessary for long-running processes (builds, installations, downloads) or waiting for slow background tasks. AVOID frequent calls. Not needed after autoSubmit or for fast commands.",
+        milliseconds: "Number of milliseconds to sleep (default: 5000 = 5 seconds). Use for operations that genuinely require waiting, not as a workaround."
+      },
+      getContent: {
+        main: "Get the current content of the terminal buffer. WARNING: Default visibleOnly=true only returns the viewport (~25 lines) and will truncate command output. Use visibleOnly=false or specify maxLines after running any command that produces output to avoid missing content.",
+        visibleOnly: "Controls data source: true = visible viewport only, false = full scrollback buffer. If omitted, defaults to true unless maxLines is specified (which implies false). Both visibleOnly and maxLines can be combined: e.g. visibleOnly=true with maxLines=10 returns the last 10 viewport lines.",
+        maxLines: "Maximum number of lines to return (default: 100 when reading scrollback). Applies to both viewport and scrollback content. Specifying maxLines alone automatically reads from scrollback. Set to 0 to return all lines.",
+        delay: "Optional delay in milliseconds before getting content (default: 0). Use this as a shortcut to avoid separate sleep() call when you need to wait briefly before reading output."
+      },
+      getBufferInfo: {
+        main: "Get metadata about the current terminal buffer, including total length, scrollback lines, and viewport rows"
+      },
+      takeScreenshot: {
+        main: "Take a screenshot of the terminal showing current screen and cursor position"
+      },
+      startRecording: {
+        main: "Start recording terminal output to an asciicast v2 file. Returns the recording ID and path where the file will be saved. Only one recording can be active at a time.",
+        format: "Recording format (default: v2, asciicast v2 format)",
+        mode: "Recording mode: always saves the recording, on-failure only saves if session exits with non-zero code (default: always)",
+        outputDir: "Directory to save the recording (default: ~/.local/state/terminal-toolkit/recordings, or TERMINAL_TOOLKIT_RECORD_DIR env var)",
+        idleTimeLimit: "Max seconds between events in the recording (default: 2). Caps idle time to prevent long pauses during playback.",
+        maxDuration: "Max recording duration in seconds (default: 3600 = 60 minutes). Recording will auto-stop when this limit is reached.",
+        inactivityTimeout: "Stop recording after N seconds of no terminal output (default: 600 = 10 minutes). Resets on each output event."
+      },
+      stopRecording: {
+        main: "Stop a recording and finalize the asciicast file. Returns metadata about the saved recording including the file path and duration.",
+        recordingId: "The recording ID returned by startRecording"
+      },
+      getClipboard: {
+        main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available."
+      },
+      setClipboard: {
+        main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available.",
+        text: "The text to write to the clipboard"
+      },
+      notify: {
+        main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. On Termux, automatically sends both an Android notification and a toast using Termux:API. Delivery failures are reported as tool errors.",
+        message: "The notification body text (e.g. 'Build finished' or 'Need your input: which option do you want?')",
+        title: "The notification title (default: 'Terminal Toolkit')",
+        sound: "Whether to play the OS notification sound (default: true). Set to false for quieter, less intrusive notifications."
+      }
+    };
+  }
+});
+
+// src/tools/type.ts
+async function handleType(manager, args2) {
+  const parsed = typeSchema.parse(args2);
+  manager.write(parsed.text, parsed.sessionId);
+  if (parsed.autoSubmit) {
+    const enterSequence = getKeySequence("Enter");
+    if (enterSequence) {
+      manager.write(enterSequence, parsed.sessionId);
+    }
+    await new Promise((resolve6) => setTimeout(resolve6, 250));
+    const content = manager.getVisibleContent(parsed.sessionId);
+    return {
+      content: [
+        {
+          type: "text",
+          text: content || "(empty terminal)"
+        }
+      ]
+    };
+  }
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Typed ${parsed.text.length} character(s) to terminal`
+      }
+    ]
+  };
+}
+var typeSchema, typeTool;
+var init_type = __esm({
+  "src/tools/type.ts"() {
+    "use strict";
+    init_zod();
+    init_keys();
+    init_descriptions();
+    typeSchema = external_exports.object({
+      text: external_exports.string().describe(TOOL_DESCRIPTIONS.type.text),
+      autoSubmit: external_exports.boolean().optional().default(false).describe(TOOL_DESCRIPTIONS.type.autoSubmit),
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    typeTool = {
+      name: "type",
+      description: TOOL_DESCRIPTIONS.type.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.type.text
+          },
+          autoSubmit: {
+            type: "boolean",
+            description: TOOL_DESCRIPTIONS.type.autoSubmit,
+            default: false
+          },
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: ["text"]
+      }
+    };
+  }
+});
+
+// src/tools/sendKey.ts
+function handleSendKey(manager, args2) {
+  const parsed = sendKeySchema.parse(args2);
+  const sequence = getKeySequence(parsed.key);
+  if (sequence === null) {
+    const available = getAvailableKeys();
+    throw new Error(
+      `Unknown key: "${parsed.key}". Available keys include: ${available.slice(0, 15).join(", ")}...`
+    );
+  }
+  const repeated = sequence.repeat(parsed.repeat);
+  manager.write(repeated, parsed.sessionId);
+  const repeatSuffix = parsed.repeat > 1 ? ` (repeated ${parsed.repeat} times)` : "";
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Sent key: ${parsed.key}${repeatSuffix}`
+      }
+    ]
+  };
+}
+var sendKeySchema, availableKeys, sendKeyTool;
+var init_sendKey = __esm({
+  "src/tools/sendKey.ts"() {
+    "use strict";
+    init_zod();
+    init_keys();
+    init_descriptions();
+    sendKeySchema = external_exports.object({
+      key: external_exports.string().describe(TOOL_DESCRIPTIONS.sendKey.key),
+      repeat: external_exports.number().int().min(1).default(1).describe(TOOL_DESCRIPTIONS.sendKey.repeat),
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    availableKeys = getAvailableKeys();
+    sendKeyTool = {
+      name: "sendKey",
+      description: TOOL_DESCRIPTIONS.sendKey.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          key: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.sendKey.key
+          },
+          repeat: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.sendKey.repeat,
+            default: 1
+          },
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: ["key"]
+      }
+    };
+  }
+});
+
+// src/tools/sleep.ts
+function formatMilliseconds(milliseconds) {
+  if (milliseconds >= 1e3) {
+    const seconds = milliseconds / 1e3;
+    const label = seconds === 1 ? "second" : "seconds";
+    return `${seconds} ${label}`;
+  } else {
+    const label = milliseconds === 1 ? "millisecond" : "milliseconds";
+    return `${milliseconds} ${label}`;
+  }
+}
+async function handleSleep(_manager, args2, signal) {
+  const parsed = sleepSchema.parse(args2 ?? {});
+  await new Promise((resolve6, reject) => {
+    if (signal?.aborted) return reject(new Error("Sleep aborted"));
+    const timer = setTimeout(() => {
+      cleanup();
+      resolve6();
+    }, parsed.milliseconds);
+    const abort = () => {
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error("Sleep aborted"));
+    };
+    const cleanup = () => signal?.removeEventListener("abort", abort);
+    signal?.addEventListener("abort", abort, { once: true });
+  });
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Slept for ${formatMilliseconds(parsed.milliseconds)}`
+      }
+    ]
+  };
+}
+var sleepSchema, sleepTool;
+var init_sleep = __esm({
+  "src/tools/sleep.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    sleepSchema = external_exports.object({
+      milliseconds: external_exports.coerce.number().finite().nonnegative().optional().default(5e3).describe(TOOL_DESCRIPTIONS.sleep.milliseconds)
+    });
+    sleepTool = {
+      name: "sleep",
+      description: TOOL_DESCRIPTIONS.sleep.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          milliseconds: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.sleep.milliseconds,
+            default: 5e3,
+            minimum: 0
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/getContent.ts
+async function handleGetContent(manager, args2) {
+  const parsed = getContentSchema.parse(args2 ?? {});
+  if (parsed.delay > 0) {
+    await new Promise((resolve6) => {
+      setTimeout(resolve6, parsed.delay);
+    });
+  }
+  const useVisible = parsed.visibleOnly === true || parsed.visibleOnly === void 0 && parsed.maxLines === void 0;
+  const effectiveMaxLines = !useVisible && parsed.maxLines === void 0 ? 100 : parsed.maxLines;
+  let content;
+  if (useVisible) {
+    content = manager.getVisibleContent(parsed.sessionId);
+  } else {
+    content = manager.getContent(parsed.sessionId);
+  }
+  if (effectiveMaxLines !== void 0 && effectiveMaxLines > 0) {
+    const lines = content.split("\n");
+    if (lines.length > effectiveMaxLines) {
+      content = lines.slice(-effectiveMaxLines).join("\n");
+    }
+  }
+  return {
+    content: [
+      {
+        type: "text",
+        text: content || "(empty terminal)"
+      }
+    ]
+  };
+}
+var getContentSchema, getContentTool;
+var init_getContent = __esm({
+  "src/tools/getContent.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    getContentSchema = external_exports.object({
+      visibleOnly: external_exports.boolean().optional().describe(TOOL_DESCRIPTIONS.getContent.visibleOnly),
+      maxLines: external_exports.number().int().nonnegative().optional().describe(TOOL_DESCRIPTIONS.getContent.maxLines),
+      delay: external_exports.number().finite().nonnegative().optional().default(0).describe(TOOL_DESCRIPTIONS.getContent.delay),
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    getContentTool = {
+      name: "getContent",
+      description: TOOL_DESCRIPTIONS.getContent.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          visibleOnly: {
+            type: "boolean",
+            description: TOOL_DESCRIPTIONS.getContent.visibleOnly
+          },
+          maxLines: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.getContent.maxLines,
+            minimum: 0
+          },
+          delay: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.getContent.delay,
+            default: 0,
+            minimum: 0
+          },
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/getBufferInfo.ts
+function handleGetBufferInfo(manager, args2) {
+  const parsed = getBufferInfoSchema.parse(args2 ?? {});
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(manager.getBufferInfo(parsed.sessionId), null, 2)
+      }
+    ]
+  };
+}
+var getBufferInfoSchema, getBufferInfoTool;
+var init_getBufferInfo = __esm({
+  "src/tools/getBufferInfo.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    getBufferInfoSchema = external_exports.object({
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    getBufferInfoTool = {
+      name: "getBufferInfo",
+      description: TOOL_DESCRIPTIONS.getBufferInfo.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/utils/render.ts
+import { createRequire as createRequire2 } from "module";
+import * as os8 from "os";
+import * as path12 from "path";
+import * as fs8 from "fs";
+function defaultFontDirs() {
+  const dirs = [];
+  const home = os8.homedir();
+  const candidates = [
+    path12.join(home, ".local/share/fonts"),
+    "/usr/share/fonts",
+    "/usr/local/share/fonts",
+    "/System/Library/Fonts",
+    path12.join(home, "Library/Fonts")
+  ];
+  for (const d of candidates) {
+    try {
+      if (fs8.statSync(d).isDirectory()) dirs.push(d);
+    } catch {
+    }
+  }
+  return dirs;
+}
+function color256(n2) {
+  if (n2 < 16) return palette16[n2];
+  if (n2 < 232) {
+    n2 -= 16;
+    const r = Math.floor(n2 / 36) * 51;
+    const g = Math.floor(n2 % 36 / 6) * 51;
+    const b = n2 % 6 * 51;
+    return `rgb(${r},${g},${b})`;
+  }
+  const gray2 = (n2 - 232) * 10 + 8;
+  return `rgb(${gray2},${gray2},${gray2})`;
+}
+function resolveColor(color, mode, isBackground) {
+  if (mode === CM_DEFAULT || color < 0) {
+    return isBackground ? BG_COLOR : FG_COLOR;
+  }
+  if (mode === CM_P16) {
+    return palette16[color] || (isBackground ? BG_COLOR : FG_COLOR);
+  }
+  if (mode === CM_P256) {
+    if (color < 16) return palette16[color];
+    return color256(color);
+  }
+  if (mode === CM_RGB) {
+    const r = color >> 16 & 255;
+    const g = color >> 8 & 255;
+    const b = color & 255;
+    return `rgb(${r},${g},${b})`;
+  }
+  return isBackground ? BG_COLOR : FG_COLOR;
+}
+function escapeXml(s) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function renderTerminalToPng(terminal, options2 = {}) {
+  const {
+    fontFamily = "JetBrains Mono",
+    fontDirs: userFontDirs = [],
+    windowChrome = true,
+    scale = 2
+  } = options2;
+  const fontDirs = userFontDirs.length > 0 ? userFontDirs : defaultFontDirs();
+  const cols = terminal.cols;
+  const rows = terminal.rows;
+  const buffer = terminal.buffer.active;
+  const charW = 8.4;
+  const charH = 17;
+  const padX = 16;
+  const padY = windowChrome ? 44 : 16;
+  const padBottom = 12;
+  const width = cols * charW + padX * 2;
+  const height = rows * charH + padY + padBottom;
+  const cornerR = 10;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+<defs>
+  <style>
+    text { font-family: '${fontFamily}'; font-size: 13px; }
+  </style>
+</defs>
+<rect width="${width}" height="${height}" rx="${cornerR}" ry="${cornerR}" fill="${BG_COLOR}"/>`;
+  if (windowChrome) {
+    svg += `
+<circle cx="20" cy="18" r="6" fill="#ff5f57"/>
+<circle cx="40" cy="18" r="6" fill="#febc2e"/>
+<circle cx="60" cy="18" r="6" fill="#28c840"/>`;
+  }
+  svg += "\n";
+  for (let y = 0; y < rows; y++) {
+    const line = buffer.getLine(y);
+    if (!line) continue;
+    for (let x = 0; x < cols; x++) {
+      const cell = line.getCell(x);
+      if (!cell) continue;
+      const char = cell.getChars();
+      if (!char || char === " ") continue;
+      const bgColor = resolveColor(cell.getBgColor(), cell.getBgColorMode(), true);
+      const fgColor = resolveColor(cell.getFgColor(), cell.getFgColorMode(), false);
+      const bold2 = cell.isBold() === 1;
+      const cx = padX + x * charW;
+      const cy = padY + y * charH;
+      if (bgColor !== BG_COLOR) {
+        svg += `<rect x="${cx}" y="${cy}" width="${charW}" height="${charH}" fill="${bgColor}"/>`;
+      }
+      const weight = bold2 ? ' font-weight="bold"' : "";
+      svg += `<text x="${cx}" y="${cy + charH - 4}" fill="${fgColor}"${weight}>${escapeXml(char)}</text>
+`;
+    }
+  }
+  svg += "</svg>";
+  let Resvg;
+  try {
+    Resvg = require3("@resvg/resvg-js").Resvg;
+  } catch {
+    throw new Error(
+      "PNG screenshot requires @resvg/resvg-js. Install it with: npm install @resvg/resvg-js"
+    );
+  }
+  const resvg = new Resvg(svg, {
+    fitTo: { mode: "width", value: Math.round(width * scale) },
+    font: {
+      loadSystemFonts: fontDirs.length === 0,
+      fontDirs,
+      defaultFontFamily: fontFamily
+    }
+  });
+  const pngData = resvg.render();
+  return Buffer.from(pngData.asPng());
+}
+var require3, CM_DEFAULT, CM_P16, CM_P256, CM_RGB, palette16, BG_COLOR, FG_COLOR;
+var init_render = __esm({
+  "src/utils/render.ts"() {
+    "use strict";
+    require3 = createRequire2(import.meta.url);
+    CM_DEFAULT = 0;
+    CM_P16 = 16777216;
+    CM_P256 = 33554432;
+    CM_RGB = 50331648;
+    palette16 = [
+      "#282c34",
+      "#e06c75",
+      "#98c379",
+      "#e5c07b",
+      "#61afef",
+      "#c678dd",
+      "#56b6c2",
+      "#abb2bf",
+      "#5c6370",
+      "#e06c75",
+      "#98c379",
+      "#e5c07b",
+      "#61afef",
+      "#c678dd",
+      "#56b6c2",
+      "#ffffff"
+    ];
+    BG_COLOR = "#282c34";
+    FG_COLOR = "#abb2bf";
+  }
+});
+
+// src/tools/screenshot.ts
+function handleScreenshot(manager, args2) {
+  const parsed = screenshotSchema.parse(args2);
+  const format3 = parsed.format || "text";
+  if (format3 === "ansi") {
+    const content = manager.getAnsiContent(true, parsed.sessionId);
+    const buffer = manager.getTerminal(parsed.sessionId).buffer.active;
+    const result3 = {
+      content,
+      cursor: { x: buffer.cursorX, y: buffer.cursorY },
+      dimensions: {
+        cols: manager.getDimensions(parsed.sessionId).cols,
+        rows: manager.getDimensions(parsed.sessionId).rows
+      }
+    };
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result3, null, 2)
+        }
+      ]
+    };
+  }
+  if (format3 === "png") {
+    const terminal = manager.getTerminal(parsed.sessionId);
+    const pngBuffer = renderTerminalToPng(terminal);
+    return {
+      content: [
+        {
+          type: "image",
+          data: pngBuffer.toString("base64"),
+          mimeType: "image/png"
+        }
+      ]
+    };
+  }
+  const screenshot = manager.takeScreenshot(parsed.sessionId);
+  const result2 = {
+    content: screenshot.content,
+    cursor: screenshot.cursor,
+    dimensions: screenshot.dimensions
+  };
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result2, null, 2)
+      }
+    ]
+  };
+}
+var screenshotSchema, screenshotTool;
+var init_screenshot = __esm({
+  "src/tools/screenshot.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    init_render();
+    screenshotSchema = external_exports.object({
+      format: external_exports.enum(["text", "ansi", "png"]).optional().describe(
+        "Output format: 'text' (default) returns plain JSON, 'ansi' returns text with ANSI color codes, 'png' returns a color screenshot image"
+      ),
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    screenshotTool = {
+      name: "takeScreenshot",
+      description: TOOL_DESCRIPTIONS.takeScreenshot.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          format: {
+            type: "string",
+            enum: ["text", "ansi", "png"],
+            description: "Output format: 'text' (default) plain JSON, 'ansi' for colored text with ANSI codes, 'png' for color screenshot image"
+          },
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/startRecording.ts
+function handleStartRecording(manager, args2) {
+  const parsed = startRecordingSchema.parse(args2 ?? {});
+  const recordingManager = manager.getRecordingManager();
+  const activeRecordings = recordingManager.getActiveRecordings();
+  if (activeRecordings.length > 0) {
+    const existing = activeRecordings[0];
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({
+            error: "A recording is already in progress",
+            activeRecordingId: existing.id,
+            activePath: existing.getFinalPath()
+          }, null, 2)
+        }
+      ],
+      isError: true
+    };
+  }
+  const recorder = recordingManager.createRecording({
+    format: parsed.format,
+    mode: parsed.mode,
+    outputDir: parsed.outputDir ?? recordingManager.getDefaultOutputDir(),
+    idleTimeLimit: parsed.idleTimeLimit,
+    maxDuration: parsed.maxDuration,
+    inactivityTimeout: parsed.inactivityTimeout
+  });
+  const dimensions = manager.getDimensions();
+  recorder.start(dimensions.cols, dimensions.rows, {
+    TERM: "xterm-256color"
+  });
+  const timeoutParts = [];
+  if (parsed.maxDuration > 0) {
+    const mins = Math.floor(parsed.maxDuration / 60);
+    timeoutParts.push(`${mins} minute${mins !== 1 ? "s" : ""}`);
+  }
+  if (parsed.inactivityTimeout > 0) {
+    const mins = Math.floor(parsed.inactivityTimeout / 60);
+    timeoutParts.push(`${mins} minute${mins !== 1 ? "s" : ""} of inactivity`);
+  }
+  const timeoutMessage = timeoutParts.length > 0 ? `Recording will auto-stop after ${timeoutParts.join(" or ")}` : void 0;
+  const result2 = {
+    recordingId: recorder.id,
+    path: recorder.getFinalPath(),
+    format: parsed.format,
+    mode: parsed.mode,
+    maxDuration: parsed.maxDuration,
+    inactivityTimeout: parsed.inactivityTimeout,
+    message: timeoutMessage
+  };
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result2, null, 2)
+      }
+    ]
+  };
+}
+var startRecordingSchema, startRecordingTool;
+var init_startRecording = __esm({
+  "src/tools/startRecording.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    startRecordingSchema = external_exports.object({
+      format: external_exports.enum(["v2"]).optional().default("v2"),
+      mode: external_exports.enum(["always", "on-failure"]).optional().default("always"),
+      outputDir: external_exports.string().optional(),
+      idleTimeLimit: external_exports.number().optional().default(2),
+      maxDuration: external_exports.number().optional().default(3600),
+      inactivityTimeout: external_exports.number().optional().default(600)
+    });
+    startRecordingTool = {
+      name: "startRecording",
+      description: TOOL_DESCRIPTIONS.startRecording.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          format: {
+            type: "string",
+            enum: ["v2"],
+            description: TOOL_DESCRIPTIONS.startRecording.format
+          },
+          mode: {
+            type: "string",
+            enum: ["always", "on-failure"],
+            description: TOOL_DESCRIPTIONS.startRecording.mode
+          },
+          outputDir: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.startRecording.outputDir
+          },
+          idleTimeLimit: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.startRecording.idleTimeLimit
+          },
+          maxDuration: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.startRecording.maxDuration
+          },
+          inactivityTimeout: {
+            type: "number",
+            description: TOOL_DESCRIPTIONS.startRecording.inactivityTimeout
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/stopRecording.ts
+async function handleStopRecording(manager, args2) {
+  const parsed = stopRecordingSchema.parse(args2);
+  const recordingManager = manager.getRecordingManager();
+  const recorder = recordingManager.getRecording(parsed.recordingId);
+  if (!recorder) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: Recording not found: ${parsed.recordingId}`
+        }
+      ],
+      isError: true
+    };
+  }
+  if (!recorder.isActive()) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: Recording already finalized: ${parsed.recordingId}`
+        }
+      ],
+      isError: true
+    };
+  }
+  const metadata = await recordingManager.finalizeRecording(parsed.recordingId, 0, "explicit");
+  if (!metadata) {
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Error: Failed to finalize recording: ${parsed.recordingId}`
+        }
+      ],
+      isError: true
+    };
+  }
+  const result2 = {
+    recordingId: metadata.id,
+    path: metadata.path,
+    durationMs: metadata.durationMs,
+    bytesWritten: metadata.bytesWritten,
+    saved: metadata.saved,
+    mode: metadata.mode,
+    stopReason: metadata.stopReason
+  };
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result2, null, 2)
+      }
+    ]
+  };
+}
+var stopRecordingSchema, stopRecordingTool;
+var init_stopRecording = __esm({
+  "src/tools/stopRecording.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    stopRecordingSchema = external_exports.object({
+      recordingId: external_exports.string()
+    });
+    stopRecordingTool = {
+      name: "stopRecording",
+      description: TOOL_DESCRIPTIONS.stopRecording.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          recordingId: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.stopRecording.recordingId
+          }
+        },
+        required: ["recordingId"]
+      }
+    };
+  }
+});
+
+// src/tools/createSession.ts
+async function handleCreateSession(manager, args2) {
+  const parsed = createSessionSchema.parse(args2 ?? {});
+  const metadata = await manager.createSession(parsed);
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(metadata, null, 2)
+      }
+    ]
+  };
+}
+var createSessionSchema, createSessionTool;
+var init_createSession = __esm({
+  "src/tools/createSession.ts"() {
+    "use strict";
+    init_zod();
+    createSessionSchema = external_exports.object({
+      shell: external_exports.string().optional().describe("Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"),
+      cols: external_exports.number().int().positive().optional().describe("Terminal width in columns (default: 80)"),
+      rows: external_exports.number().int().positive().optional().describe("Terminal height in rows (default: 25)")
+    });
+    createSessionTool = {
+      name: "createSession",
+      description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. The Primary Session already exists and persists across tool calls; it does not need to be created. Its shell state (such as working directory and environment changes) is retained until the session restarts. Returns a sessionId for subsequent terminal calls.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          shell: {
+            type: "string",
+            description: "Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"
+          },
+          cols: {
+            type: "number",
+            description: "Terminal width in columns (default: 80)"
+          },
+          rows: {
+            type: "number",
+            description: "Terminal height in rows (default: 25)"
+          }
+        },
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/listSessions.ts
+function handleListSessions(manager, _args) {
+  const result2 = manager.listSessions();
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result2, null, 2)
+      }
+    ]
+  };
+}
+var listSessionsSchema, listSessionsTool;
+var init_listSessions = __esm({
+  "src/tools/listSessions.ts"() {
+    "use strict";
+    init_zod();
+    listSessionsSchema = external_exports.object({});
+    listSessionsTool = {
+      name: "listSessions",
+      description: "List all active terminal sessions, including the Primary Session. Returns session metadata and the configured limits.",
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/destroySession.ts
+function handleDestroySession(manager, args2) {
+  const parsed = destroySessionSchema.parse(args2);
+  const result2 = manager.destroySession(parsed.sessionId);
+  return {
+    content: [
+      {
+        type: "text",
+        text: result2.message
+      }
+    ],
+    isError: !result2.success
+  };
+}
+var destroySessionSchema, destroySessionTool;
+var init_destroySession = __esm({
+  "src/tools/destroySession.ts"() {
+    "use strict";
+    init_zod();
+    destroySessionSchema = external_exports.object({
+      sessionId: external_exports.string().describe("ID of the session to destroy")
+    });
+    destroySessionTool = {
+      name: "destroySession",
+      description: "Destroy a terminal session by ID. The Primary Session cannot be destroyed.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          sessionId: {
+            type: "string",
+            description: "ID of the session to destroy"
+          }
+        },
+        required: ["sessionId"]
+      }
+    };
+  }
+});
+
+// src/tools/resize.ts
+function handleResize(manager, args2) {
+  const parsed = resizeSchema.parse(args2);
+  manager.resize(parsed.cols, parsed.rows, parsed.sessionId);
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Terminal resized to ${parsed.cols}x${parsed.rows}`
+      }
+    ]
+  };
+}
+var resizeSchema, resizeTool;
+var init_resize = __esm({
+  "src/tools/resize.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    resizeSchema = external_exports.object({
+      cols: external_exports.number().int().positive().describe("New terminal width in columns"),
+      rows: external_exports.number().int().positive().describe("New terminal height in rows"),
+      sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
+    });
+    resizeTool = {
+      name: "resize",
+      description: "Resize the terminal to the specified dimensions. Affects both the virtual terminal and the underlying PTY process.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          cols: {
+            type: "number",
+            description: "New terminal width in columns"
+          },
+          rows: {
+            type: "number",
+            description: "New terminal height in rows"
+          },
+          sessionId: {
+            type: "string",
+            description: SESSION_ID_DESCRIPTION
+          }
+        },
+        required: ["cols", "rows"]
+      }
+    };
+  }
+});
+
 // node_modules/is-docker/index.js
 import fs9 from "node:fs";
 function hasDockerEnv() {
@@ -24302,7 +30881,7 @@ var init_realtime = __esm({
 
 // node_modules/human-signals/build/src/core.js
 var SIGNALS;
-var init_core = __esm({
+var init_core3 = __esm({
   "node_modules/human-signals/build/src/core.js"() {
     SIGNALS = [
       {
@@ -24583,7 +31162,7 @@ import { constants } from "node:os";
 var getSignals, normalizeSignal;
 var init_signals = __esm({
   "node_modules/human-signals/build/src/signals.js"() {
-    init_core();
+    init_core3();
     init_realtime();
     getSignals = () => {
       const realtimeSignals = getRealtimeSignals();
@@ -26845,7 +33424,7 @@ var init_reject = __esm({
 
 // node_modules/execa/lib/stdio/type.js
 var getStdioItemType, getTransformObjectType, getDuplexType, getTransformStreamType, validateNonGeneratorType, checkUndefinedOption, getGeneratorObjectType, checkBooleanOption, isGenerator, isAsyncGenerator, isSyncGenerator, isTransformOptions, isUrl, isRegularUrl, isFilePathObject, FILE_PATH_KEYS, isFilePathString, isUnknownStdioString, KNOWN_STDIO_STRINGS, isReadableStream2, isWritableStream2, isWebStream, isTransformStream, isAsyncIterableObject, isIterableObject, isObject4, TRANSFORM_TYPES, FILE_TYPES, SPECIAL_DUPLICATE_TYPES_SYNC, SPECIAL_DUPLICATE_TYPES, FORBID_DUPLICATE_TYPES, TYPE_TO_MESSAGE;
-var init_type = __esm({
+var init_type2 = __esm({
   "node_modules/execa/lib/stdio/type.js"() {
     init_is_stream();
     init_is_plain_obj();
@@ -26981,7 +33560,7 @@ var init_type = __esm({
 var getTransformObjectModes, getOutputObjectModes, getInputObjectModes, getFdObjectMode;
 var init_object_mode = __esm({
   "node_modules/execa/lib/transform/object-mode.js"() {
-    init_type();
+    init_type2();
     getTransformObjectModes = (objectMode, index, newTransforms, direction) => direction === "output" ? getOutputObjectModes(objectMode, index, newTransforms) : getInputObjectModes(objectMode, index, newTransforms);
     getOutputObjectModes = (objectMode, index, newTransforms) => {
       const writableObjectMode = index !== 0 && newTransforms[index - 1].value.readableObjectMode;
@@ -27009,7 +33588,7 @@ var init_normalize = __esm({
   "node_modules/execa/lib/transform/normalize.js"() {
     init_is_plain_obj();
     init_encoding_option();
-    init_type();
+    init_type2();
     init_object_mode();
     normalizeTransforms = (stdioItems, optionName, direction, options2) => [
       ...stdioItems.filter(({ type }) => !TRANSFORM_TYPES.has(type)),
@@ -27112,7 +33691,7 @@ var getStreamDirection, getStdioItemDirection, KNOWN_DIRECTIONS, anyDirection, a
 var init_direction = __esm({
   "node_modules/execa/lib/stdio/direction.js"() {
     init_is_stream();
-    init_type();
+    init_type2();
     getStreamDirection = (stdioItems, fdNumber, optionName) => {
       const directions = stdioItems.map((stdioItem) => getStdioItemDirection(stdioItem, fdNumber));
       if (directions.includes("input") && directions.includes("output")) {
@@ -27297,7 +33876,7 @@ var init_input_option = __esm({
   "node_modules/execa/lib/stdio/input-option.js"() {
     init_is_stream();
     init_uint_array();
-    init_type();
+    init_type2();
     handleInputOptions = ({ input, inputFile }, fdNumber) => fdNumber === 0 ? [
       ...handleInputOption(input),
       ...handleInputFileOption(inputFile)
@@ -27339,7 +33918,7 @@ var init_input_option = __esm({
 var filterDuplicates, getDuplicateStream, getOtherStdioItems, validateDuplicateStreamSync, getDuplicateStreamInstance, hasSameValue, validateDuplicateTransform, throwOnDuplicateStream;
 var init_duplicate = __esm({
   "node_modules/execa/lib/stdio/duplicate.js"() {
-    init_type();
+    init_type2();
     filterDuplicates = (stdioItems) => stdioItems.filter((stdioItemOne, indexOne) => stdioItems.every((stdioItemTwo, indexTwo) => stdioItemOne.value !== stdioItemTwo.value || indexOne >= indexTwo || stdioItemOne.type === "generator" || stdioItemOne.type === "asyncGenerator"));
     getDuplicateStream = ({ stdioItem: { type, value, optionName }, direction, fileDescriptors, isSync }) => {
       const otherStdioItems = getOtherStdioItems(fileDescriptors, type);
@@ -27423,7 +34002,7 @@ var init_handle = __esm({
     init_standard_stream();
     init_normalize();
     init_object_mode();
-    init_type();
+    init_type2();
     init_direction();
     init_stdio_option();
     init_native();
@@ -27597,7 +34176,7 @@ var init_handle_sync = __esm({
   "node_modules/execa/lib/stdio/handle-sync.js"() {
     init_uint_array();
     init_handle();
-    init_type();
+    init_type2();
     handleStdioSync = (options2, verboseInfo) => handleStdio(addPropertiesSync, options2, verboseInfo, true);
     forbiddenIfSync = ({ type, optionName }) => {
       throwInvalidSyncValue(optionName, TYPE_TO_MESSAGE[type]);
@@ -27921,7 +34500,7 @@ import { Transform, getDefaultHighWaterMark } from "node:stream";
 var generatorToStream, runGeneratorsSync, addInternalGenerators;
 var init_generator = __esm({
   "node_modules/execa/lib/transform/generator.js"() {
-    init_type();
+    init_type2();
     init_split();
     init_validate();
     init_encoding_transform();
@@ -27988,7 +34567,7 @@ var init_input_sync = __esm({
   "node_modules/execa/lib/io/input-sync.js"() {
     init_generator();
     init_uint_array();
-    init_type();
+    init_type2();
     addInputOptionsSync = (fileDescriptors, options2) => {
       for (const fdNumber of getInputFdNumbers(fileDescriptors)) {
         addInputOptionSync(fileDescriptors, fdNumber, options2);
@@ -28028,7 +34607,7 @@ var shouldLogOutput, fdUsesVerbose, PIPED_STDIO_VALUES, logLines, logLinesSync, 
 var init_output = __esm({
   "node_modules/execa/lib/verbose/output.js"() {
     init_encoding_option();
-    init_type();
+    init_type2();
     init_log();
     init_values();
     shouldLogOutput = ({ stdioItems, encoding, verboseInfo, fdNumber }) => fdNumber !== "all" && isFullVerbose(verboseInfo, fdNumber) && !BINARY_ENCODINGS.has(encoding) && fdUsesVerbose(fdNumber) && (stdioItems.some(({ type, value }) => type === "native" && PIPED_STDIO_VALUES.has(value)) || stdioItems.every(({ type }) => TRANSFORM_TYPES.has(type)));
@@ -28068,7 +34647,7 @@ var init_output_sync = __esm({
     init_generator();
     init_split();
     init_uint_array();
-    init_type();
+    init_type2();
     init_max_buffer();
     transformOutputSync = ({ fileDescriptors, syncResult: { output: output2 }, options: options2, isMaxBuffer, verboseInfo }) => {
       if (output2 === null) {
@@ -28692,7 +35271,7 @@ var init_handle_async = __esm({
   "node_modules/execa/lib/stdio/handle-async.js"() {
     init_generator();
     init_handle();
-    init_type();
+    init_type2();
     handleStdioAsync = (options2, verboseInfo) => handleStdio(addPropertiesAsync, options2, verboseInfo, false);
     forbiddenIfAsync = ({ type, optionName }) => {
       throw new TypeError(`The \`${optionName}\` option cannot be ${TYPE_TO_MESSAGE[type]}.`);
@@ -29009,7 +35588,7 @@ var init_output_async = __esm({
     init_merge_streams();
     init_standard_stream();
     init_max_listeners();
-    init_type();
+    init_type2();
     init_pipeline();
     pipeOutputAsync = (subprocess, fileDescriptors, controller) => {
       const pipeGroups = /* @__PURE__ */ new Map();
@@ -30064,7 +36643,7 @@ var init_wait_subprocess = __esm({
     init_cancel();
     init_graceful2();
     init_standard_stream();
-    init_type();
+    init_type2();
     init_contents2();
     init_buffer_messages();
     init_ipc_input();
@@ -31462,6 +38041,77 @@ var init_clipboardy = __esm({
   }
 });
 
+// src/tools/getClipboard.ts
+async function handleGetClipboard(_manager, _args) {
+  const { default: clipboardy } = await Promise.resolve().then(() => (init_clipboardy(), clipboardy_exports));
+  const text = await clipboardy.read();
+  return {
+    content: [
+      {
+        type: "text",
+        text
+      }
+    ]
+  };
+}
+var getClipboardTool;
+var init_getClipboard = __esm({
+  "src/tools/getClipboard.ts"() {
+    "use strict";
+    init_descriptions();
+    getClipboardTool = {
+      name: "getClipboard",
+      description: TOOL_DESCRIPTIONS.getClipboard.main,
+      inputSchema: {
+        type: "object",
+        properties: {},
+        required: []
+      }
+    };
+  }
+});
+
+// src/tools/setClipboard.ts
+async function handleSetClipboard(_manager, args2) {
+  const parsed = setClipboardSchema.parse(args2);
+  const { default: clipboardy } = await Promise.resolve().then(() => (init_clipboardy(), clipboardy_exports));
+  await clipboardy.write(parsed.text);
+  const preview = parsed.text.length > 80 ? `${parsed.text.slice(0, 80)}\u2026` : parsed.text;
+  return {
+    content: [
+      {
+        type: "text",
+        text: `Clipboard set (${parsed.text.length} chars): ${preview}`
+      }
+    ]
+  };
+}
+var setClipboardSchema, setClipboardTool;
+var init_setClipboard = __esm({
+  "src/tools/setClipboard.ts"() {
+    "use strict";
+    init_zod();
+    init_descriptions();
+    setClipboardSchema = external_exports.object({
+      text: external_exports.string().describe(TOOL_DESCRIPTIONS.setClipboard.text)
+    });
+    setClipboardTool = {
+      name: "setClipboard",
+      description: TOOL_DESCRIPTIONS.setClipboard.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          text: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.setClipboard.text
+          }
+        },
+        required: ["text"]
+      }
+    };
+  }
+});
+
 // node_modules/shellwords/lib/shellwords.js
 var require_shellwords = __commonJS({
   "node_modules/shellwords/lib/shellwords.js"(exports2) {
@@ -32745,7 +39395,7 @@ function parse3(uuid2) {
   return arr;
 }
 var parse_default;
-var init_parse = __esm({
+var init_parse3 = __esm({
   "node_modules/uuid/dist/esm-node/parse.js"() {
     init_validate2();
     parse_default = parse3;
@@ -32799,7 +39449,7 @@ var DNS, URL2;
 var init_v35 = __esm({
   "node_modules/uuid/dist/esm-node/v35.js"() {
     init_stringify();
-    init_parse();
+    init_parse3();
     DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
     URL2 = "6ba7b811-9dad-11d1-80b4-00c04fd430c8";
   }
@@ -32849,7 +39499,7 @@ function v4(options2, buf, offset) {
   return stringify_default(rnds);
 }
 var v4_default;
-var init_v4 = __esm({
+var init_v42 = __esm({
   "node_modules/uuid/dist/esm-node/v4.js"() {
     init_rng();
     init_stringify();
@@ -32925,13 +39575,13 @@ var init_esm_node = __esm({
   "node_modules/uuid/dist/esm-node/index.js"() {
     init_v1();
     init_v3();
-    init_v4();
+    init_v42();
     init_v5();
     init_nil();
     init_version();
     init_validate2();
     init_stringify();
-    init_parse();
+    init_parse3();
   }
 });
 
@@ -33103,6 +39753,296 @@ var require_node_notifier = __commonJS({
     module2.exports.WindowsToaster = WindowsToaster;
     module2.exports.WindowsBalloon = WindowsBalloon;
     module2.exports.Growl = Growl;
+  }
+});
+
+// src/tools/notify.ts
+import { execFile as execFile2 } from "node:child_process";
+import { promisify as promisify7 } from "node:util";
+function isTermuxEnvironment(platform2 = process.platform, env5 = process.env) {
+  return platform2 === "android" && (Boolean(env5.TERMUX_VERSION) || Boolean(env5.PREFIX?.includes("com.termux")));
+}
+function termuxNotificationCommands(args2) {
+  const parsed = notifySchema.parse(args2);
+  return [
+    {
+      command: "termux-notification",
+      args: ["--title", parsed.title, "--content", parsed.message, ...parsed.sound ? ["--sound"] : []]
+    },
+    { command: "termux-toast", args: [parsed.message] }
+  ];
+}
+async function handleNotify(_manager, args2) {
+  const parsed = notifySchema.parse(args2);
+  if (isTermuxEnvironment()) {
+    const failures = [];
+    for (const { command, args: args3 } of termuxNotificationCommands(parsed)) {
+      try {
+        await execFileAsync(command, args3, { timeout: 15e3 });
+      } catch (error2) {
+        failures.push(`${command}: ${error2 instanceof Error ? error2.message : String(error2)}`);
+      }
+    }
+    if (failures.length) {
+      return {
+        content: [{ type: "text", text: `Termux notification delivery failed: ${failures.join("; ")}` }],
+        isError: true
+      };
+    }
+    return { content: [{ type: "text", text: `Notification and toast sent: "${parsed.message}"` }] };
+  }
+  try {
+    await new Promise((resolve6, reject) => {
+      import_node_notifier.default.notify(
+        {
+          title: parsed.title,
+          message: parsed.message,
+          sound: parsed.sound,
+          wait: false
+        },
+        (error2) => {
+          if (error2) reject(error2);
+          else resolve6();
+        }
+      );
+    });
+    return {
+      content: [{ type: "text", text: `Notification sent: "${parsed.message}"` }]
+    };
+  } catch (error2) {
+    const reason = error2 instanceof Error ? error2.message : String(error2);
+    return {
+      content: [{
+        type: "text",
+        text: `Could not deliver desktop notification: ${reason}. The message was: "${parsed.message}"`
+      }],
+      isError: true
+    };
+  }
+}
+var import_node_notifier, notifySchema, notifyTool, execFileAsync;
+var init_notify = __esm({
+  "src/tools/notify.ts"() {
+    "use strict";
+    init_zod();
+    import_node_notifier = __toESM(require_node_notifier(), 1);
+    init_descriptions();
+    notifySchema = external_exports.object({
+      message: external_exports.string().min(1).describe(TOOL_DESCRIPTIONS.notify.message),
+      title: external_exports.string().optional().default("Terminal Toolkit").describe(TOOL_DESCRIPTIONS.notify.title),
+      sound: external_exports.boolean().optional().default(true).describe(TOOL_DESCRIPTIONS.notify.sound)
+    });
+    notifyTool = {
+      name: "notify",
+      description: TOOL_DESCRIPTIONS.notify.main,
+      inputSchema: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.notify.message
+          },
+          title: {
+            type: "string",
+            description: TOOL_DESCRIPTIONS.notify.title,
+            default: "Terminal Toolkit"
+          },
+          sound: {
+            type: "boolean",
+            description: TOOL_DESCRIPTIONS.notify.sound,
+            default: true
+          }
+        },
+        required: ["message"]
+      }
+    };
+    execFileAsync = promisify7(execFile2);
+  }
+});
+
+// src/tools/systemInfo.ts
+import os11 from "node:os";
+import { readFileSync as readFileSync3 } from "node:fs";
+import { basename } from "node:path";
+function readOptional(path28) {
+  try {
+    return readFileSync3(path28, "utf8");
+  } catch {
+    return null;
+  }
+}
+function linuxDistribution() {
+  const content = readOptional("/etc/os-release");
+  if (!content) return null;
+  const entries = Object.fromEntries(content.split("\n").flatMap((line) => {
+    const match = line.match(/^([A-Z_]+)=(.*)$/);
+    return match ? [[match[1], match[2].replace(/^['"]|['"]$/g, "")]] : [];
+  }));
+  return { name: entries.PRETTY_NAME ?? entries.NAME ?? "Linux", version: entries.VERSION_ID ?? null };
+}
+function getSystemInfo(manager) {
+  const platform2 = process.platform;
+  const env5 = process.env;
+  const kernel = os11.release();
+  const linux = platform2 === "linux" ? linuxDistribution() : null;
+  const isTermux = platform2 === "android" || Boolean(env5.TERMUX_VERSION || env5.PREFIX?.includes("com.termux"));
+  const isWsl2 = platform2 === "linux" && !isTermux && (Boolean(env5.WSL_DISTRO_NAME || env5.WSL_INTEROP) || /microsoft|wsl/i.test(kernel) || /microsoft|wsl/i.test(readOptional("/proc/version") ?? ""));
+  const isWsl22 = isWsl2 && (/wsl2|microsoft-standard/i.test(kernel) || Boolean(env5.WSL_INTEROP));
+  const isMsys = Boolean(env5.MSYSTEM);
+  const environment = isTermux ? "termux" : isWsl2 ? isWsl22 ? "wsl2" : "wsl" : isMsys ? "msys2" : "native";
+  const shellPath = manager.getConfiguredShell();
+  const sessions = manager.listSessions().sessions;
+  const primary = sessions.find((session) => session.isDefault) ?? null;
+  return {
+    system: {
+      platform: platform2,
+      distribution: linux?.name ?? (platform2 === "darwin" ? "macOS" : platform2 === "win32" ? "Windows" : os11.type()),
+      version: linux?.version ?? (platform2 === "darwin" ? null : os11.release()),
+      kernel,
+      arch: os11.arch(),
+      environment,
+      hostOS: isWsl2 ? "windows" : isTermux ? "android" : platform2,
+      pathStyle: platform2 === "win32" && !isMsys ? "windows" : "posix"
+    },
+    runtime: {
+      node: process.version,
+      bun: typeof process.versions.bun === "string" ? process.versions.bun : null,
+      shell: { name: basename(shellPath), path: shellPath },
+      user: os11.userInfo().username,
+      home: os11.homedir(),
+      cwd: process.cwd(),
+      terminal: env5.TERM ?? null
+    },
+    primarySession: primary ? {
+      connected: primary.mode !== "uninitialized" && (primary.role !== "client" || primary.clientCount > 0),
+      sessionId: primary.mode === "uninitialized" ? null : primary.sessionId,
+      mode: primary.mode,
+      role: primary.role,
+      shell: primary.shell,
+      clientCount: primary.clientCount,
+      createdAt: primary.createdAt || null,
+      lastInputAt: primary.lastInputAt,
+      lastOutputAt: primary.lastOutputAt
+    } : null
+  };
+}
+function handleSystemInfo(manager, _args) {
+  return { content: [{ type: "text", text: JSON.stringify(getSystemInfo(manager), null, 2) }] };
+}
+var systemInfoTool;
+var init_systemInfo = __esm({
+  "src/tools/systemInfo.ts"() {
+    "use strict";
+    systemInfoTool = {
+      name: "systemInfo",
+      description: "Get a concise read-only summary of the Terminal Toolkit host OS, distribution, compatibility environment (WSL/MSYS2/Termux), runtime, shell, paths and Primary Session state. Useful when first connecting to an unfamiliar host; does not create a session or probe with shell commands.",
+      inputSchema: { type: "object", properties: {}, required: [] }
+    };
+  }
+});
+
+// src/tools/stats.ts
+function increment2(map, key) {
+  map.set(key, (map.get(key) ?? 0) + 1);
+}
+function recordSearch(query, results) {
+  const key = query.slice(0, MAX_QUERY_LENGTH);
+  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
+    otherQueries++;
+    return;
+  }
+  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
+  stat2.calls++;
+  stat2.totalResults += results;
+  if (!results) stat2.zeroResults++;
+  searches.set(key, stat2);
+}
+function recordDescribe(name) {
+  increment2(descriptions, name);
+}
+async function trackCall(name, fn2, signal, isFailure) {
+  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
+  counters.set(name, stat2);
+  stat2.calls++;
+  const start = performance.now();
+  try {
+    const result2 = await fn2();
+    if (isFailure?.(result2)) {
+      if (signal?.aborted) stat2.cancelled++;
+      else stat2.errors++;
+    } else stat2.success++;
+    return result2;
+  } catch (error2) {
+    if (signal?.aborted) stat2.cancelled++;
+    else stat2.errors++;
+    throw error2;
+  } finally {
+    const elapsed = performance.now() - start;
+    stat2.totalDurationMs += elapsed;
+    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
+  }
+}
+function getToolStat(options2 = {}, namespaces = {}) {
+  if (options2.category !== void 0 && !["discovery", "tool"].includes(options2.category)) throw new Error("Invalid category");
+  if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
+  if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
+  if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
+  const entries = [...counters.entries()].filter(([name]) => {
+    const discovery = ["search", "describe"].includes(name);
+    return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
+  }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
+  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
+  return {
+    since: startedAt,
+    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
+    tools: entries.slice(0, options2.limit),
+    ...!options2.category || options2.category === "discovery" ? {
+      discovery: {
+        search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
+        describe: Object.fromEntries(descriptions)
+      }
+    } : {}
+  };
+}
+var startedAt, counters, searches, descriptions, otherQueries, MAX_QUERIES, MAX_QUERY_LENGTH;
+var init_stats = __esm({
+  "src/tools/stats.ts"() {
+    "use strict";
+    startedAt = (/* @__PURE__ */ new Date()).toISOString();
+    counters = /* @__PURE__ */ new Map();
+    searches = /* @__PURE__ */ new Map();
+    descriptions = /* @__PURE__ */ new Map();
+    otherQueries = 0;
+    MAX_QUERIES = 1e3;
+    MAX_QUERY_LENGTH = 256;
+  }
+});
+
+// src/tools/getToolStat.ts
+async function handleGetToolStat(args2) {
+  if (args2 === null || typeof args2 !== "object" || Array.isArray(args2)) throw new Error("getToolStat options must be an object");
+  const { getToolDefinitions: getToolDefinitions2, getToolNamespace: getToolNamespace2 } = await Promise.resolve().then(() => (init_definitions(), definitions_exports));
+  const namespaces = Object.fromEntries(getToolDefinitions2(true).map((tool) => [tool.name, getToolNamespace2(tool.name)]));
+  return getToolStat(args2, namespaces);
+}
+var getToolStatTool;
+var init_getToolStat = __esm({
+  "src/tools/getToolStat.ts"() {
+    "use strict";
+    init_stats();
+    getToolStatTool = {
+      name: "getToolStat",
+      description: "Get process-wide tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Counters reset on server restart.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          category: { type: "string", enum: ["discovery", "tool"] },
+          namespace: { type: "string" },
+          sortBy: { type: "string", enum: ["calls", "name", "totalDurationMs"] },
+          limit: { type: "integer", minimum: 1 }
+        }
+      }
+    };
   }
 });
 
@@ -40436,6 +47376,621 @@ var require_dist4 = __commonJS({
   }
 });
 
+// src/skills.ts
+import { createHash as createHash2 } from "node:crypto";
+import { readFile, readdir, realpath, stat } from "node:fs/promises";
+import path21 from "node:path";
+import os12 from "node:os";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+function invalid(message) {
+  throw new McpError(ErrorCode.InvalidParams, message);
+}
+async function decodeSkillUri(uri) {
+  if (!uri.startsWith("skill://") || /[?#]/.test(uri)) invalid("Invalid skill URI");
+  const raw = uri.slice("skill://".length);
+  if (!raw || raw.includes("\\") || raw.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) invalid("Invalid skill path");
+  let segments;
+  try {
+    segments = raw.split("/").map(decodeURIComponent);
+  } catch {
+    invalid("Invalid URI encoding");
+  }
+  if (segments.some((s) => !s || s === "." || s === ".." || s.includes("/") || s.includes("\\") || s.includes("\0"))) invalid("Invalid skill path");
+  const locations = await skillLocations();
+  const matches = locations.filter((location) => {
+    const prefix = [...location.namespace.slice("skills/".length).split("/"), location.name];
+    return segments.length > prefix.length && prefix.every((part, i2) => segments[i2] === part);
+  }).sort((a2, b) => b.namespace.length - a2.namespace.length);
+  if (matches.length) {
+    const match = matches[0];
+    return { namespace: match.namespace, name: match.name, relative: segments.slice(match.namespace.split("/").length).join("/") };
+  }
+  const [first, ...rest] = segments;
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(first)) invalid("Invalid skill name");
+  return { name: first, relative: rest.join("/") };
+}
+async function skillLocations(overrideRoots) {
+  const roots = overrideRoots ?? [SKILLS_ROOT];
+  if (!overrideRoots) try {
+    const config3 = JSON.parse(await readFile(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    if (Array.isArray(config3.skills)) for (const value of config3.skills) {
+      if (typeof value !== "string" || !value.trim()) continue;
+      const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
+      roots.push(path21.resolve(expanded));
+    }
+  } catch (error2) {
+    if (!(error2 instanceof Error && "code" in error2 && error2.code === "ENOENT"))
+      skillWarnings.add("Cannot read settings.json: " + (error2 instanceof Error ? error2.message : String(error2)));
+  }
+  const locations = [];
+  const namespaces = /* @__PURE__ */ new Map();
+  for (const rootPath of roots) {
+    try {
+      const root2 = await realpath(rootPath);
+      const builtin = rootPath === SKILLS_ROOT;
+      const parts = root2.split(path21.sep).filter(Boolean);
+      const anchor = parts.lastIndexOf("skills");
+      const namespaceParts = anchor > 0 ? [parts[anchor - 1], ...parts.slice(anchor + 1)] : [path21.basename(root2)];
+      const namespace = builtin ? "skills/builtin" : "skills/" + namespaceParts.join("/");
+      const previous = namespaces.get(namespace);
+      if (previous && previous !== root2) {
+        const warning = `Skill namespace conflict ${namespace}: keeping ${previous}; skipping ${root2}`;
+        if (!skillWarnings.has(warning)) console.error("[Terminal Toolkit] " + warning);
+        skillWarnings.add(warning);
+        continue;
+      }
+      namespaces.set(namespace, root2);
+      for (const item of await readdir(root2, { withFileTypes: true })) {
+        if (!item.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
+        const dir = await realpath(path21.join(root2, item.name));
+        if (path21.dirname(dir) === root2) locations.push({ namespace, name: item.name, directory: dir, source: builtin ? "builtin" : "file" });
+      }
+    } catch (error2) {
+      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
+    }
+  }
+  return locations;
+}
+async function skillCatalog(overrideRoots) {
+  const result2 = [];
+  for (const location of await skillLocations(overrideRoots)) {
+    try {
+      const { frontmatter, size } = await readSkillMetadata(location);
+      result2.push({ namespace: location.namespace, name: location.name, description: frontmatter.description, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path21.sep, entrypoint: "SKILL.md", size });
+    } catch {
+    }
+  }
+  return result2;
+}
+async function readSkillMetadata(location) {
+  const file = await secureSkillFile(location.directory, "SKILL.md");
+  const source = await readFile(file, "utf8");
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
+  if (!match) invalid("Skill frontmatter missing");
+  let frontmatter;
+  try {
+    frontmatter = import_yaml.default.parse(match[1]);
+  } catch {
+    invalid("Invalid YAML frontmatter");
+  }
+  if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter) || frontmatter.name !== location.name || typeof frontmatter.description !== "string" || !frontmatter.description.trim()) invalid("Invalid skill frontmatter");
+  return { frontmatter, size: (await stat(file)).size };
+}
+async function secureSkillFile(directory, relative2) {
+  const candidate = await realpath(path21.join(directory, relative2));
+  if (!candidate.startsWith(directory + path21.sep) || !(await stat(candidate)).isFile()) throw new Error("Invalid skill resource path");
+  return candidate;
+}
+async function resolveBuiltinSkillPath(uri) {
+  if (!uri.startsWith("builtin://skills/")) throw new Error("Invalid builtin path");
+  const relative2 = uri.slice("builtin://skills/".length);
+  if (!relative2 || /[?#\\\\]/.test(relative2) || relative2.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) throw new Error("Invalid builtin path");
+  const segments = relative2.split("/");
+  if (segments.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[0])) throw new Error("Invalid builtin skill name");
+  const location = (await skillLocations()).find((s) => s.source === "builtin" && s.name === segments[0]);
+  if (!location) throw new Error("Builtin skill not found");
+  return secureSkillFile(location.directory, segments.slice(1).join("/"));
+}
+async function locateSkill(name, namespace) {
+  const matches = (await skillLocations()).filter((s) => s.name === name && (!namespace || s.namespace === namespace));
+  if (matches.length !== 1) invalid(matches.length ? "Ambiguous skill name; use a namespaced URI" : "Skill not found");
+  return matches[0];
+}
+async function secureFile(name, relative2, namespace) {
+  if (!relative2) invalid("Expected a file URI");
+  const skill = await locateSkill(name, namespace);
+  return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
+}
+async function enumerateFiles(dir, base = "") {
+  const entries = await readdir(path21.join(dir, base), { withFileTypes: true });
+  const files = [];
+  for (const item of entries) {
+    const rel = path21.posix.join(base, item.name);
+    if (item.isSymbolicLink()) continue;
+    if (item.isDirectory()) files.push(...await enumerateFiles(dir, rel));
+    else if (item.isFile()) files.push(rel);
+  }
+  return files;
+}
+async function skillEntry(location, locations) {
+  const { name, namespace } = location;
+  const duplicateName = (locations ?? await skillLocations()).some((s) => s.name === name && s.namespace !== namespace);
+  const prefix = !duplicateName && namespace === "skills/builtin" ? `skill://${name}` : `skill://${namespace.slice("skills/".length)}/${name}`;
+  const { frontmatter } = await readSkillMetadata(location);
+  const dir = location.directory;
+  const resources = [];
+  for (const rel of (await enumerateFiles(dir)).sort()) {
+    const bytes = await readFile(await secureSkillFile(location.directory, rel));
+    resources.push({
+      uri: `${prefix}/${rel.split("/").map(encodeURIComponent).join("/")}`,
+      digest: `sha256:${createHash2("sha256").update(bytes).digest("hex")}`,
+      size: bytes.length
+    });
+  }
+  return { uri: `${prefix}/SKILL.md`, frontmatter, resources };
+}
+async function skills() {
+  const locations = await skillLocations();
+  const result2 = [];
+  const skipped = [];
+  let builtIn = 0;
+  for (const location of locations.sort((a2, b) => (a2.namespace + "/" + a2.name).localeCompare(b.namespace + "/" + b.name))) {
+    try {
+      result2.push(await skillEntry(location, locations));
+      if (location.source === "builtin") builtIn++;
+    } catch (error2) {
+      skipped.push(location.namespace + "/" + location.name + ": " + (error2 instanceof Error ? error2.message : String(error2)));
+    }
+  }
+  if (!loggedSkillSummary) {
+    loggedSkillSummary = true;
+    console.error("[Terminal Toolkit] Skills: " + result2.length + " available (" + builtIn + " built-in, " + (result2.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
+    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
+    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
+  }
+  return result2;
+}
+async function logSkillsOnStartup() {
+  await skills();
+}
+function registerSkills(server) {
+  server.setRequestHandler(listRequest, async (request) => {
+    if (request.params?.cursor) invalid("Unknown skills cursor");
+    return { resultType: "complete", skills: await skills(), ttlMs: 0, cacheScope: "public" };
+  });
+  server.setRequestHandler(getRequest, async ({ params }) => {
+    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
+    if (relative2 !== "SKILL.md") invalid("skills/get expects a SKILL.md URI");
+    return { resultType: "complete", skill: await skillEntry(await locateSkill(name, namespace)), ttlMs: 0, cacheScope: "public" };
+  });
+  server.setRequestHandler(readRequest, async ({ params }) => {
+    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
+    const bytes = await readFile(await secureFile(name, relative2, namespace));
+    const isText = /\.(md|txt|json|yaml|yml|ts|js|mjs|cjs|sh|py|html|css|xml|svg)$/i.test(relative2);
+    return { resultType: "complete", ttlMs: 0, cacheScope: "public", contents: [isText ? { uri: params.uri, mimeType: relative2.endsWith(".md") ? "text/markdown" : "text/plain", text: bytes.toString("utf8") } : { uri: params.uri, mimeType: "application/octet-stream", blob: bytes.toString("base64") }] };
+  });
+  server.setRequestHandler(listResourcesRequest, async ({ params }) => {
+    if (params?.cursor) invalid("Unknown resources cursor");
+    return { resultType: "complete", ttlMs: 0, cacheScope: "public", resources: (await skills()).map((skill) => ({
+      uri: skill.uri,
+      name: skill.frontmatter.name,
+      description: skill.frontmatter.description,
+      mimeType: "text/markdown"
+    })) };
+  });
+}
+var import_yaml, SKILLS_ROOT, listRequest, getRequest, readRequest, listResourcesRequest, skillWarnings, loggedSkillSummary;
+var init_skills = __esm({
+  "src/skills.ts"() {
+    "use strict";
+    init_zod();
+    import_yaml = __toESM(require_dist4(), 1);
+    init_types();
+    SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath8(import.meta.url)), "../skills");
+    listRequest = external_exports.object({ method: external_exports.literal("skills/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
+    getRequest = external_exports.object({ method: external_exports.literal("skills/get"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
+    readRequest = external_exports.object({ method: external_exports.literal("resources/read"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
+    listResourcesRequest = external_exports.object({ method: external_exports.literal("resources/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
+    skillWarnings = /* @__PURE__ */ new Set();
+    loggedSkillSummary = false;
+  }
+});
+
+// src/tools/operators.ts
+import { spawn as spawn3 } from "node:child_process";
+import { mkdir, readFile as readFile2, writeFile } from "node:fs/promises";
+import { dirname as dirname2, join as join6, resolve } from "node:path";
+function killProcessTree(pid) {
+  if (process.platform === "win32") {
+    const killer = spawn3(
+      join6(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe"),
+      ["/F", "/T", "/PID", String(pid)],
+      { stdio: "ignore", detached: true, windowsHide: true }
+    );
+    killer.once("error", () => {
+    });
+    killer.unref();
+  } else {
+    try {
+      process.kill(-pid, "SIGKILL");
+    } catch {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {
+      }
+    }
+  }
+}
+async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal) {
+  if (signal?.aborted) throw new Error("Tool call aborted");
+  switch (name) {
+    case "read": {
+      const parsed = readSchema.parse(args2);
+      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
+      const lines = (await readFile2(target, "utf8")).split("\n");
+      const start = (parsed.offset ?? 1) - 1;
+      if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
+      return result(lines.slice(start, parsed.limit === void 0 ? void 0 : start + parsed.limit).join("\n"));
+    }
+    case "write": {
+      const parsed = writeSchema.parse(args2);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      const target = localPath(parsed.path);
+      await mkdir(dirname2(target), { recursive: true });
+      if (signal?.aborted) throw new Error("Tool call aborted");
+      await writeFile(target, parsed.content, "utf8");
+      return result(`Wrote ${parsed.path}`);
+    }
+    case "edit": {
+      const parsed = editSchema.parse(args2);
+      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      const target = localPath(parsed.path);
+      const original = await readFile2(target, "utf8");
+      const ranges = [];
+      for (const edit of parsed.edits) {
+        if (!edit.oldText) throw new Error("Each oldText must be non-empty");
+        const first = original.indexOf(edit.oldText);
+        if (first < 0) throw new Error(`oldText was not found in ${parsed.path}`);
+        if (first !== original.lastIndexOf(edit.oldText)) throw new Error(`oldText must match exactly once in ${parsed.path}`);
+        ranges.push({ start: first, end: first + edit.oldText.length, newText: edit.newText });
+      }
+      ranges.sort((a2, b) => a2.start - b.start);
+      for (let i2 = 1; i2 < ranges.length; i2++) if (ranges[i2 - 1].end > ranges[i2].start) throw new Error("Edits must not overlap");
+      let updated = original;
+      for (const edit of [...ranges].reverse()) updated = updated.slice(0, edit.start) + edit.newText + updated.slice(edit.end);
+      if (signal?.aborted) throw new Error("Tool call aborted");
+      await writeFile(target, updated, "utf8");
+      return result(`Edited ${parsed.path}`);
+    }
+    case "shell": {
+      const parsed = shellSchema.parse(args2);
+      if (signal?.aborted) throw new Error("Command aborted");
+      let timedOut = false;
+      const child = spawn3(parsed.command, {
+        cwd: operatorCwd,
+        shell,
+        detached: process.platform !== "win32",
+        windowsHide: true,
+        stdio: ["ignore", "pipe", "pipe"]
+      });
+      const stop2 = () => {
+        if (child.pid) killProcessTree(child.pid);
+      };
+      const onAbort = () => stop2();
+      signal?.addEventListener("abort", onAbort, { once: true });
+      if (signal?.aborted) stop2();
+      const timer = parsed.timeout === void 0 ? void 0 : setTimeout(() => {
+        timedOut = true;
+        stop2();
+      }, parsed.timeout * 1e3);
+      let stdout = "";
+      let stderr = "";
+      let exceeded = false;
+      const maxBuffer = 10 * 1024 * 1024;
+      const capture = (stream, chunk) => {
+        if (stream === "stdout") stdout += chunk.toString();
+        else stderr += chunk.toString();
+        if (Buffer.byteLength(stdout) + Buffer.byteLength(stderr) > maxBuffer) {
+          exceeded = true;
+          stop2();
+        }
+      };
+      child.stdout.on("data", (chunk) => capture("stdout", chunk));
+      child.stderr.on("data", (chunk) => capture("stderr", chunk));
+      try {
+        const code = await new Promise((resolve6, reject) => {
+          child.once("error", reject);
+          child.once("close", resolve6);
+        });
+        if (signal?.aborted) throw new Error("Command aborted");
+        const output2 = `${stdout}${stderr}`;
+        if (timedOut) return result(`${output2}${output2 ? "\n" : ""}Command timed out after ${parsed.timeout} second(s).`, true);
+        if (exceeded) return result("Command output exceeded 10 MiB buffer.", true);
+        if (code !== 0) return result(`${output2}${output2 ? "\n" : ""}Command exited with code ${code ?? "unknown"}.`, true);
+        return result(output2);
+      } finally {
+        if (timer) clearTimeout(timer);
+        signal?.removeEventListener("abort", onAbort);
+      }
+    }
+    default:
+      throw new Error(`Unknown operator tool: ${name}`);
+  }
+}
+var operatorCwd, readSchema, writeSchema, editSchema, shellSchema, result, operatorToolDefinitions, localPath;
+var init_operators = __esm({
+  "src/tools/operators.ts"() {
+    "use strict";
+    init_zod();
+    init_platform();
+    init_skills();
+    operatorCwd = process.cwd();
+    readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().positive().optional(), limit: external_exports.number().int().positive().optional() });
+    writeSchema = external_exports.object({ path: external_exports.string(), content: external_exports.string() });
+    editSchema = external_exports.object({ path: external_exports.string(), edits: external_exports.array(external_exports.object({ oldText: external_exports.string(), newText: external_exports.string() })).min(1) });
+    shellSchema = external_exports.object({ command: external_exports.string(), timeout: external_exports.number().positive().optional() });
+    result = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
+    operatorToolDefinitions = [
+      { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+      { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
+      { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
+      { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
+    ];
+    localPath = (path28) => resolve(operatorCwd, path28);
+  }
+});
+
+// src/tools/extra-operators.ts
+import { spawn as spawn4, spawnSync as spawnSync2 } from "node:child_process";
+import { readdir as readdir2, lstat } from "node:fs/promises";
+import { resolve as resolve2, relative } from "node:path";
+async function run(binary, args2, empty, allowNoMatch = false, rawOutput = false) {
+  return new Promise((done, fail) => {
+    const child = spawn4(binary, args2, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    let outputBytes = 0;
+    child.stdout.on("data", (data) => {
+      outputBytes += data.length;
+      if (outputBytes > 8 * 1024 * 1024) {
+        child.kill();
+        return;
+      }
+      stdout += data.toString();
+    });
+    child.stderr.on("data", (data) => {
+      if (stderr.length < 8192) stderr += data.toString();
+    });
+    child.on("error", fail);
+    child.on("close", (code) => outputBytes > 8 * 1024 * 1024 ? fail(new Error("Search output exceeded 8MB processing limit; narrow the search")) : code === 0 || allowNoMatch && code === 1 ? done(rawOutput ? stdout.trimEnd() || empty : capped(stdout.trimEnd() || empty)) : fail(new Error(stderr.trim() || binary + " exited with code " + code)));
+  });
+}
+async function handleExtraOperatorTool(name, args2) {
+  if (name === "list") {
+    const params = lsSchema.parse(args2);
+    const dir = resolve2(cwd, params.path || ".");
+    const entries = (await readdir2(dir)).sort();
+    const limit = params.limit ?? 500;
+    const lines = await Promise.all(entries.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
+    return output(capped(lines.join("\n") + (entries.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
+  }
+  if (name === "find") {
+    const params = findSchema.parse(args2);
+    const binary = executable(["fd", "fdfind"]);
+    if (!binary) throw hint("fd");
+    const target = resolve2(cwd, params.path || ".");
+    const commandArgs = ["--glob", "--color=never", "--hidden", "--max-results", String(params.limit ?? 1e3)];
+    let pattern = params.pattern;
+    if (pattern.includes("/")) {
+      commandArgs.push("--full-path");
+      if (!pattern.startsWith("/") && !pattern.startsWith("**/")) pattern = "**/" + pattern;
+    }
+    commandArgs.push("--", pattern, target);
+    const raw = await run(binary, commandArgs, "No files found matching pattern", false, true);
+    if (raw === "No files found matching pattern") return output(raw);
+    return output(capped(raw.split("\n").map((line) => line.startsWith(target) ? relative(target, line) : line).join("\n")));
+  }
+  if (name === "grep") {
+    const params = grepSchema.parse(args2);
+    const binary = executable(["rg"]);
+    if (!binary) throw hint("rg");
+    const commandArgs = ["--json", "--color=never", "--hidden"];
+    if (params.ignoreCase) commandArgs.push("--ignore-case");
+    if (params.literal) commandArgs.push("--fixed-strings");
+    if (params.context !== void 0) commandArgs.push("--context", String(params.context));
+    if (params.glob) commandArgs.push("--glob", params.glob);
+    commandArgs.push("--", params.pattern, resolve2(cwd, params.path || "."));
+    const raw = await run(binary, commandArgs, "No matches found", true, true);
+    if (raw === "No matches found") return output(raw);
+    const limit = params.limit ?? 100;
+    const lines = [];
+    let matches = 0;
+    for (const line of raw.split("\n")) {
+      if (!line) continue;
+      const event = JSON.parse(line);
+      if (event.type !== "match" && event.type !== "context") continue;
+      if (event.type === "match") {
+        if (matches >= limit) break;
+        matches++;
+      }
+      const file = event.data?.path?.text ?? "";
+      const relativePath = relative(resolve2(cwd, params.path || "."), file) || file;
+      const lineNumber = event.data?.line_number ?? 0;
+      const content = (event.data?.lines?.text ?? "").replace(/\r?\n$/, "");
+      lines.push(relativePath + (event.type === "match" ? ":" : "-") + lineNumber + ":" + content);
+    }
+    if (matches === 0) return output("No matches found");
+    return output(capped(lines.join("\n") + (matches >= limit ? "\n[" + limit + " matches limit reached]" : "")));
+  }
+  throw new Error("Unknown extra operator tool: " + name);
+}
+var cwd, output, executable, hint, capped, lsSchema, findSchema, grepSchema, extraOperatorToolDefinitions;
+var init_extra_operators = __esm({
+  "src/tools/extra-operators.ts"() {
+    "use strict";
+    init_zod();
+    cwd = process.cwd();
+    output = (value) => ({ content: [{ type: "text", text: value }] });
+    executable = (names) => names.find((name) => !spawnSync2(name, ["--version"], { stdio: "ignore" }).error);
+    hint = (name) => new Error((name === "fd" ? "fd/fdfind" : name) + " not found on PATH. Install manually: macOS: brew install " + (name === "rg" ? "ripgrep" : "fd") + "; Ubuntu/Debian: sudo apt install " + (name === "rg" ? "ripgrep" : "fd-find") + "; Termux: pkg install " + (name === "rg" ? "ripgrep" : "fd"));
+    capped = (value) => Buffer.byteLength(value) > 51200 ? Buffer.from(value).subarray(0, 51200).toString("utf8") + "\n[50KB limit reached]" : value;
+    lsSchema = external_exports.object({ path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
+    findSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
+    grepSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
+    extraOperatorToolDefinitions = [
+      { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+      { name: "grep", description: "Search text with rg, respecting .gitignore; requires system ripgrep, never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+      { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
+    ];
+  }
+});
+
+// src/tools/definitions.ts
+var definitions_exports = {};
+__export(definitions_exports, {
+  getCodemodeToolDefinitions: () => getCodemodeToolDefinitions,
+  getMcpToolDefinitions: () => getMcpToolDefinitions,
+  getToolDefinitions: () => getToolDefinitions,
+  getToolNames: () => getToolNames,
+  getToolNamespace: () => getToolNamespace,
+  namespaceRegistry: () => namespaceRegistry,
+  toolDefinitions: () => toolDefinitions
+});
+function getToolNamespace(name) {
+  return namespaceByTool.get(name) ?? "tools/pty";
+}
+function getCodemodeToolDefinitions(piExtraOperators = false) {
+  return getToolDefinitions(piExtraOperators).map((tool) => ({
+    ...tool,
+    namespace: getToolNamespace(tool.name),
+    description: TOOL_SUMMARIES[tool.name] ?? tool.description,
+    instruction: tool.description
+  }));
+}
+function getMcpToolDefinitions(piExtraOperators = false) {
+  return getToolDefinitions(piExtraOperators).map((tool) => ({
+    ...tool,
+    description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
+  }));
+}
+function getToolDefinitions(piExtraOperators = false) {
+  return [...toolDefinitions, ...operatorToolDefinitions, ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
+    ...tool,
+    annotations: {
+      readOnlyHint: READ_ONLY_TOOLS.has(tool.name),
+      destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name),
+      idempotentHint: IDEMPOTENT_TOOLS.has(tool.name),
+      openWorldHint: OPEN_WORLD_TOOLS.has(tool.name)
+    }
+  }));
+}
+function getToolNames() {
+  return toolDefinitions.map((t) => t.name);
+}
+var namespaceRegistry, namespaceByTool, toolDefinitions, TOOL_SUMMARIES, READ_ONLY_TOOLS, DESTRUCTIVE_TOOLS, IDEMPOTENT_TOOLS, OPEN_WORLD_TOOLS;
+var init_definitions = __esm({
+  "src/tools/definitions.ts"() {
+    "use strict";
+    init_type();
+    init_sendKey();
+    init_sleep();
+    init_getContent();
+    init_getBufferInfo();
+    init_screenshot();
+    init_startRecording();
+    init_stopRecording();
+    init_createSession();
+    init_listSessions();
+    init_destroySession();
+    init_resize();
+    init_getClipboard();
+    init_setClipboard();
+    init_notify();
+    init_systemInfo();
+    init_getToolStat();
+    init_operators();
+    init_extra_operators();
+    namespaceRegistry = {
+      "tools/core": {
+        defaultEnabled: true,
+        toolNames: ["read", "write", "edit", "shell", "list", "grep", "find"]
+      },
+      "tools/pty": {
+        defaultEnabled: true,
+        toolNames: [
+          "type",
+          "sendKey",
+          "getContent",
+          "getBufferInfo",
+          "takeScreenshot",
+          "startRecording",
+          "stopRecording",
+          "createSession",
+          "listSessions",
+          "destroySession",
+          "resize"
+        ]
+      },
+      "tools/misc": {
+        defaultEnabled: true,
+        toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo", "getToolStat"]
+      }
+    };
+    namespaceByTool = new Map(
+      Object.entries(namespaceRegistry).flatMap(([namespace, config3]) => config3.toolNames.map((name) => [name, namespace]))
+    );
+    toolDefinitions = [
+      typeTool,
+      sendKeyTool,
+      sleepTool,
+      getContentTool,
+      getBufferInfoTool,
+      screenshotTool,
+      startRecordingTool,
+      stopRecordingTool,
+      createSessionTool,
+      listSessionsTool,
+      destroySessionTool,
+      resizeTool,
+      getClipboardTool,
+      setClipboardTool,
+      notifyTool,
+      systemInfoTool,
+      getToolStatTool
+    ];
+    TOOL_SUMMARIES = {
+      type: "Send text input to an interactive terminal session.",
+      sendKey: "Send a key or keyboard shortcut to a terminal session.",
+      sleep: "Pause execution for a specified duration.",
+      getContent: "Read content from a terminal session buffer.",
+      getBufferInfo: "Get terminal buffer and scrollback metadata.",
+      takeScreenshot: "Capture a screenshot of a terminal session.",
+      startRecording: "Start recording a terminal session.",
+      stopRecording: "Stop and finalize a terminal recording.",
+      createSession: "Create an isolated headless PTY session, not directly visible to the user.",
+      listSessions: "List active terminal sessions.",
+      destroySession: "Destroy an additional terminal session.",
+      resize: "Resize a terminal session.",
+      getClipboard: "Read the system clipboard.",
+      setClipboard: "Write text to the system clipboard.",
+      notify: "Send an operating-system notification.",
+      systemInfo: "Summarize host environment and Primary Session state.",
+      getToolStat: "Inspect process-wide tool usage statistics.",
+      read: "Read a text file.",
+      write: "Write a text file.",
+      edit: "Edit a file by exact string replacement.",
+      shell: "Run a quick one-shot non-interactive command with the configured shell; prefer PTY for long builds and tests.",
+      list: "List directory entries.",
+      grep: "Search file contents using ripgrep.",
+      find: "Find files using fd or fdfind."
+    };
+    READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
+    DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
+    IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
+    OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
+  }
+});
+
 // node_modules/@pondwader/socks5-server/dist/index.js
 var require_dist5 = __commonJS({
   "node_modules/@pondwader/socks5-server/dist/index.js"(exports2, module2) {
@@ -41541,7 +49096,7 @@ function skipUntil(str, ptr, sep, end, banNewLines = false) {
     ptr
   });
 }
-var init_util2 = __esm({
+var init_util3 = __esm({
   "node_modules/smol-toml/dist/util.js"() {
     init_error2();
   }
@@ -41617,7 +49172,7 @@ var init_extract = __esm({
   "node_modules/smol-toml/dist/extract.js"() {
     init_primitive();
     init_struct();
-    init_util2();
+    init_util3();
     init_error2();
   }
 });
@@ -41767,7 +49322,7 @@ var init_struct = __esm({
   "node_modules/smol-toml/dist/struct.js"() {
     init_primitive();
     init_extract();
-    init_util2();
+    init_util3();
     init_error2();
     KEY_PART_RE = /^[a-zA-Z0-9-_]+[ \t]*$/;
   }
@@ -41897,11 +49452,11 @@ function parse4(toml, { maxDepth = 1e3, integersAsBigInt } = {}) {
   }
   return res;
 }
-var init_parse2 = __esm({
+var init_parse4 = __esm({
   "node_modules/smol-toml/dist/parse.js"() {
     init_struct();
     init_extract();
-    init_util2();
+    init_util3();
     init_error2();
   }
 });
@@ -42055,7 +49610,7 @@ var init_stringify2 = __esm({
 // node_modules/smol-toml/dist/index.js
 var init_dist = __esm({
   "node_modules/smol-toml/dist/index.js"() {
-    init_parse2();
+    init_parse4();
     init_stringify2();
     init_date();
     init_error2();
@@ -45777,5257 +53332,8 @@ function updateNotifier(options2) {
 import { exec as exec2 } from "child_process";
 
 // src/initializeExperiment.ts
+init_types();
 import { randomBytes } from "node:crypto";
-
-// node_modules/zod/v4/core/core.js
-var NEVER = Object.freeze({
-  status: "aborted"
-});
-// @__NO_SIDE_EFFECTS__
-function $constructor(name, initializer3, params) {
-  function init(inst, def) {
-    var _a;
-    Object.defineProperty(inst, "_zod", {
-      value: inst._zod ?? {},
-      enumerable: false
-    });
-    (_a = inst._zod).traits ?? (_a.traits = /* @__PURE__ */ new Set());
-    inst._zod.traits.add(name);
-    initializer3(inst, def);
-    for (const k in _.prototype) {
-      if (!(k in inst))
-        Object.defineProperty(inst, k, { value: _.prototype[k].bind(inst) });
-    }
-    inst._zod.constr = _;
-    inst._zod.def = def;
-  }
-  const Parent = params?.Parent ?? Object;
-  class Definition extends Parent {
-  }
-  Object.defineProperty(Definition, "name", { value: name });
-  function _(def) {
-    var _a;
-    const inst = params?.Parent ? new Definition() : this;
-    init(inst, def);
-    (_a = inst._zod).deferred ?? (_a.deferred = []);
-    for (const fn2 of inst._zod.deferred) {
-      fn2();
-    }
-    return inst;
-  }
-  Object.defineProperty(_, "init", { value: init });
-  Object.defineProperty(_, Symbol.hasInstance, {
-    value: (inst) => {
-      if (params?.Parent && inst instanceof params.Parent)
-        return true;
-      return inst?._zod?.traits?.has(name);
-    }
-  });
-  Object.defineProperty(_, "name", { value: name });
-  return _;
-}
-var $ZodAsyncError = class extends Error {
-  constructor() {
-    super(`Encountered Promise during synchronous parse. Use .parseAsync() instead.`);
-  }
-};
-var globalConfig = {};
-function config(newConfig) {
-  if (newConfig)
-    Object.assign(globalConfig, newConfig);
-  return globalConfig;
-}
-
-// node_modules/zod/v4/core/util.js
-var util_exports = {};
-__export(util_exports, {
-  BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
-  Class: () => Class,
-  NUMBER_FORMAT_RANGES: () => NUMBER_FORMAT_RANGES,
-  aborted: () => aborted,
-  allowsEval: () => allowsEval,
-  assert: () => assert,
-  assertEqual: () => assertEqual,
-  assertIs: () => assertIs,
-  assertNever: () => assertNever,
-  assertNotEqual: () => assertNotEqual,
-  assignProp: () => assignProp,
-  cached: () => cached,
-  captureStackTrace: () => captureStackTrace,
-  cleanEnum: () => cleanEnum,
-  cleanRegex: () => cleanRegex,
-  clone: () => clone,
-  createTransparentProxy: () => createTransparentProxy,
-  defineLazy: () => defineLazy,
-  esc: () => esc,
-  escapeRegex: () => escapeRegex,
-  extend: () => extend,
-  finalizeIssue: () => finalizeIssue,
-  floatSafeRemainder: () => floatSafeRemainder,
-  getElementAtPath: () => getElementAtPath,
-  getEnumValues: () => getEnumValues,
-  getLengthableOrigin: () => getLengthableOrigin,
-  getParsedType: () => getParsedType,
-  getSizableOrigin: () => getSizableOrigin,
-  isObject: () => isObject3,
-  isPlainObject: () => isPlainObject,
-  issue: () => issue,
-  joinValues: () => joinValues,
-  jsonStringifyReplacer: () => jsonStringifyReplacer,
-  merge: () => merge,
-  normalizeParams: () => normalizeParams,
-  nullish: () => nullish,
-  numKeys: () => numKeys,
-  omit: () => omit,
-  optionalKeys: () => optionalKeys,
-  partial: () => partial,
-  pick: () => pick,
-  prefixIssues: () => prefixIssues,
-  primitiveTypes: () => primitiveTypes,
-  promiseAllObject: () => promiseAllObject,
-  propertyKeyTypes: () => propertyKeyTypes,
-  randomString: () => randomString,
-  required: () => required,
-  stringifyPrimitive: () => stringifyPrimitive,
-  unwrapMessage: () => unwrapMessage
-});
-function assertEqual(val) {
-  return val;
-}
-function assertNotEqual(val) {
-  return val;
-}
-function assertIs(_arg) {
-}
-function assertNever(_x) {
-  throw new Error();
-}
-function assert(_) {
-}
-function getEnumValues(entries) {
-  const numericValues = Object.values(entries).filter((v) => typeof v === "number");
-  const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
-  return values;
-}
-function joinValues(array2, separator = "|") {
-  return array2.map((val) => stringifyPrimitive(val)).join(separator);
-}
-function jsonStringifyReplacer(_, value) {
-  if (typeof value === "bigint")
-    return value.toString();
-  return value;
-}
-function cached(getter) {
-  const set = false;
-  return {
-    get value() {
-      if (!set) {
-        const value = getter();
-        Object.defineProperty(this, "value", { value });
-        return value;
-      }
-      throw new Error("cached value already set");
-    }
-  };
-}
-function nullish(input) {
-  return input === null || input === void 0;
-}
-function cleanRegex(source) {
-  const start = source.startsWith("^") ? 1 : 0;
-  const end = source.endsWith("$") ? source.length - 1 : source.length;
-  return source.slice(start, end);
-}
-function floatSafeRemainder(val, step) {
-  const valDecCount = (val.toString().split(".")[1] || "").length;
-  const stepDecCount = (step.toString().split(".")[1] || "").length;
-  const decCount = valDecCount > stepDecCount ? valDecCount : stepDecCount;
-  const valInt = Number.parseInt(val.toFixed(decCount).replace(".", ""));
-  const stepInt = Number.parseInt(step.toFixed(decCount).replace(".", ""));
-  return valInt % stepInt / 10 ** decCount;
-}
-function defineLazy(object3, key, getter) {
-  const set = false;
-  Object.defineProperty(object3, key, {
-    get() {
-      if (!set) {
-        const value = getter();
-        object3[key] = value;
-        return value;
-      }
-      throw new Error("cached value already set");
-    },
-    set(v) {
-      Object.defineProperty(object3, key, {
-        value: v
-        // configurable: true,
-      });
-    },
-    configurable: true
-  });
-}
-function assignProp(target, prop, value) {
-  Object.defineProperty(target, prop, {
-    value,
-    writable: true,
-    enumerable: true,
-    configurable: true
-  });
-}
-function getElementAtPath(obj, path28) {
-  if (!path28)
-    return obj;
-  return path28.reduce((acc, key) => acc?.[key], obj);
-}
-function promiseAllObject(promisesObj) {
-  const keys2 = Object.keys(promisesObj);
-  const promises = keys2.map((key) => promisesObj[key]);
-  return Promise.all(promises).then((results) => {
-    const resolvedObj = {};
-    for (let i2 = 0; i2 < keys2.length; i2++) {
-      resolvedObj[keys2[i2]] = results[i2];
-    }
-    return resolvedObj;
-  });
-}
-function randomString(length = 10) {
-  const chars = "abcdefghijklmnopqrstuvwxyz";
-  let str = "";
-  for (let i2 = 0; i2 < length; i2++) {
-    str += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return str;
-}
-function esc(str) {
-  return JSON.stringify(str);
-}
-var captureStackTrace = Error.captureStackTrace ? Error.captureStackTrace : (..._args) => {
-};
-function isObject3(data) {
-  return typeof data === "object" && data !== null && !Array.isArray(data);
-}
-var allowsEval = cached(() => {
-  if (typeof navigator !== "undefined" && navigator?.userAgent?.includes("Cloudflare")) {
-    return false;
-  }
-  try {
-    const F = Function;
-    new F("");
-    return true;
-  } catch (_) {
-    return false;
-  }
-});
-function isPlainObject(o2) {
-  if (isObject3(o2) === false)
-    return false;
-  const ctor = o2.constructor;
-  if (ctor === void 0)
-    return true;
-  const prot = ctor.prototype;
-  if (isObject3(prot) === false)
-    return false;
-  if (Object.prototype.hasOwnProperty.call(prot, "isPrototypeOf") === false) {
-    return false;
-  }
-  return true;
-}
-function numKeys(data) {
-  let keyCount = 0;
-  for (const key in data) {
-    if (Object.prototype.hasOwnProperty.call(data, key)) {
-      keyCount++;
-    }
-  }
-  return keyCount;
-}
-var getParsedType = (data) => {
-  const t = typeof data;
-  switch (t) {
-    case "undefined":
-      return "undefined";
-    case "string":
-      return "string";
-    case "number":
-      return Number.isNaN(data) ? "nan" : "number";
-    case "boolean":
-      return "boolean";
-    case "function":
-      return "function";
-    case "bigint":
-      return "bigint";
-    case "symbol":
-      return "symbol";
-    case "object":
-      if (Array.isArray(data)) {
-        return "array";
-      }
-      if (data === null) {
-        return "null";
-      }
-      if (data.then && typeof data.then === "function" && data.catch && typeof data.catch === "function") {
-        return "promise";
-      }
-      if (typeof Map !== "undefined" && data instanceof Map) {
-        return "map";
-      }
-      if (typeof Set !== "undefined" && data instanceof Set) {
-        return "set";
-      }
-      if (typeof Date !== "undefined" && data instanceof Date) {
-        return "date";
-      }
-      if (typeof File !== "undefined" && data instanceof File) {
-        return "file";
-      }
-      return "object";
-    default:
-      throw new Error(`Unknown data type: ${t}`);
-  }
-};
-var propertyKeyTypes = /* @__PURE__ */ new Set(["string", "number", "symbol"]);
-var primitiveTypes = /* @__PURE__ */ new Set(["string", "number", "bigint", "boolean", "symbol", "undefined"]);
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-function clone(inst, def, params) {
-  const cl = new inst._zod.constr(def ?? inst._zod.def);
-  if (!def || params?.parent)
-    cl._zod.parent = inst;
-  return cl;
-}
-function normalizeParams(_params) {
-  const params = _params;
-  if (!params)
-    return {};
-  if (typeof params === "string")
-    return { error: () => params };
-  if (params?.message !== void 0) {
-    if (params?.error !== void 0)
-      throw new Error("Cannot specify both `message` and `error` params");
-    params.error = params.message;
-  }
-  delete params.message;
-  if (typeof params.error === "string")
-    return { ...params, error: () => params.error };
-  return params;
-}
-function createTransparentProxy(getter) {
-  let target;
-  return new Proxy({}, {
-    get(_, prop, receiver) {
-      target ?? (target = getter());
-      return Reflect.get(target, prop, receiver);
-    },
-    set(_, prop, value, receiver) {
-      target ?? (target = getter());
-      return Reflect.set(target, prop, value, receiver);
-    },
-    has(_, prop) {
-      target ?? (target = getter());
-      return Reflect.has(target, prop);
-    },
-    deleteProperty(_, prop) {
-      target ?? (target = getter());
-      return Reflect.deleteProperty(target, prop);
-    },
-    ownKeys(_) {
-      target ?? (target = getter());
-      return Reflect.ownKeys(target);
-    },
-    getOwnPropertyDescriptor(_, prop) {
-      target ?? (target = getter());
-      return Reflect.getOwnPropertyDescriptor(target, prop);
-    },
-    defineProperty(_, prop, descriptor) {
-      target ?? (target = getter());
-      return Reflect.defineProperty(target, prop, descriptor);
-    }
-  });
-}
-function stringifyPrimitive(value) {
-  if (typeof value === "bigint")
-    return value.toString() + "n";
-  if (typeof value === "string")
-    return `"${value}"`;
-  return `${value}`;
-}
-function optionalKeys(shape) {
-  return Object.keys(shape).filter((k) => {
-    return shape[k]._zod.optin === "optional" && shape[k]._zod.optout === "optional";
-  });
-}
-var NUMBER_FORMAT_RANGES = {
-  safeint: [Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER],
-  int32: [-2147483648, 2147483647],
-  uint32: [0, 4294967295],
-  float32: [-34028234663852886e22, 34028234663852886e22],
-  float64: [-Number.MAX_VALUE, Number.MAX_VALUE]
-};
-var BIGINT_FORMAT_RANGES = {
-  int64: [/* @__PURE__ */ BigInt("-9223372036854775808"), /* @__PURE__ */ BigInt("9223372036854775807")],
-  uint64: [/* @__PURE__ */ BigInt(0), /* @__PURE__ */ BigInt("18446744073709551615")]
-};
-function pick(schema, mask) {
-  const newShape = {};
-  const currDef = schema._zod.def;
-  for (const key in mask) {
-    if (!(key in currDef.shape)) {
-      throw new Error(`Unrecognized key: "${key}"`);
-    }
-    if (!mask[key])
-      continue;
-    newShape[key] = currDef.shape[key];
-  }
-  return clone(schema, {
-    ...schema._zod.def,
-    shape: newShape,
-    checks: []
-  });
-}
-function omit(schema, mask) {
-  const newShape = { ...schema._zod.def.shape };
-  const currDef = schema._zod.def;
-  for (const key in mask) {
-    if (!(key in currDef.shape)) {
-      throw new Error(`Unrecognized key: "${key}"`);
-    }
-    if (!mask[key])
-      continue;
-    delete newShape[key];
-  }
-  return clone(schema, {
-    ...schema._zod.def,
-    shape: newShape,
-    checks: []
-  });
-}
-function extend(schema, shape) {
-  if (!isPlainObject(shape)) {
-    throw new Error("Invalid input to extend: expected a plain object");
-  }
-  const def = {
-    ...schema._zod.def,
-    get shape() {
-      const _shape = { ...schema._zod.def.shape, ...shape };
-      assignProp(this, "shape", _shape);
-      return _shape;
-    },
-    checks: []
-    // delete existing checks
-  };
-  return clone(schema, def);
-}
-function merge(a2, b) {
-  return clone(a2, {
-    ...a2._zod.def,
-    get shape() {
-      const _shape = { ...a2._zod.def.shape, ...b._zod.def.shape };
-      assignProp(this, "shape", _shape);
-      return _shape;
-    },
-    catchall: b._zod.def.catchall,
-    checks: []
-    // delete existing checks
-  });
-}
-function partial(Class2, schema, mask) {
-  const oldShape = schema._zod.def.shape;
-  const shape = { ...oldShape };
-  if (mask) {
-    for (const key in mask) {
-      if (!(key in oldShape)) {
-        throw new Error(`Unrecognized key: "${key}"`);
-      }
-      if (!mask[key])
-        continue;
-      shape[key] = Class2 ? new Class2({
-        type: "optional",
-        innerType: oldShape[key]
-      }) : oldShape[key];
-    }
-  } else {
-    for (const key in oldShape) {
-      shape[key] = Class2 ? new Class2({
-        type: "optional",
-        innerType: oldShape[key]
-      }) : oldShape[key];
-    }
-  }
-  return clone(schema, {
-    ...schema._zod.def,
-    shape,
-    checks: []
-  });
-}
-function required(Class2, schema, mask) {
-  const oldShape = schema._zod.def.shape;
-  const shape = { ...oldShape };
-  if (mask) {
-    for (const key in mask) {
-      if (!(key in shape)) {
-        throw new Error(`Unrecognized key: "${key}"`);
-      }
-      if (!mask[key])
-        continue;
-      shape[key] = new Class2({
-        type: "nonoptional",
-        innerType: oldShape[key]
-      });
-    }
-  } else {
-    for (const key in oldShape) {
-      shape[key] = new Class2({
-        type: "nonoptional",
-        innerType: oldShape[key]
-      });
-    }
-  }
-  return clone(schema, {
-    ...schema._zod.def,
-    shape,
-    // optional: [],
-    checks: []
-  });
-}
-function aborted(x, startIndex = 0) {
-  for (let i2 = startIndex; i2 < x.issues.length; i2++) {
-    if (x.issues[i2]?.continue !== true)
-      return true;
-  }
-  return false;
-}
-function prefixIssues(path28, issues) {
-  return issues.map((iss) => {
-    var _a;
-    (_a = iss).path ?? (_a.path = []);
-    iss.path.unshift(path28);
-    return iss;
-  });
-}
-function unwrapMessage(message) {
-  return typeof message === "string" ? message : message?.message;
-}
-function finalizeIssue(iss, ctx, config3) {
-  const full = { ...iss, path: iss.path ?? [] };
-  if (!iss.message) {
-    const message = unwrapMessage(iss.inst?._zod.def?.error?.(iss)) ?? unwrapMessage(ctx?.error?.(iss)) ?? unwrapMessage(config3.customError?.(iss)) ?? unwrapMessage(config3.localeError?.(iss)) ?? "Invalid input";
-    full.message = message;
-  }
-  delete full.inst;
-  delete full.continue;
-  if (!ctx?.reportInput) {
-    delete full.input;
-  }
-  return full;
-}
-function getSizableOrigin(input) {
-  if (input instanceof Set)
-    return "set";
-  if (input instanceof Map)
-    return "map";
-  if (input instanceof File)
-    return "file";
-  return "unknown";
-}
-function getLengthableOrigin(input) {
-  if (Array.isArray(input))
-    return "array";
-  if (typeof input === "string")
-    return "string";
-  return "unknown";
-}
-function issue(...args2) {
-  const [iss, input, inst] = args2;
-  if (typeof iss === "string") {
-    return {
-      message: iss,
-      code: "custom",
-      input,
-      inst
-    };
-  }
-  return { ...iss };
-}
-function cleanEnum(obj) {
-  return Object.entries(obj).filter(([k, _]) => {
-    return Number.isNaN(Number.parseInt(k, 10));
-  }).map((el) => el[1]);
-}
-var Class = class {
-  constructor(..._args) {
-  }
-};
-
-// node_modules/zod/v4/core/errors.js
-var initializer = (inst, def) => {
-  inst.name = "$ZodError";
-  Object.defineProperty(inst, "_zod", {
-    value: inst._zod,
-    enumerable: false
-  });
-  Object.defineProperty(inst, "issues", {
-    value: def,
-    enumerable: false
-  });
-  Object.defineProperty(inst, "message", {
-    get() {
-      return JSON.stringify(def, jsonStringifyReplacer, 2);
-    },
-    enumerable: true
-    // configurable: false,
-  });
-  Object.defineProperty(inst, "toString", {
-    value: () => inst.message,
-    enumerable: false
-  });
-};
-var $ZodError = $constructor("$ZodError", initializer);
-var $ZodRealError = $constructor("$ZodError", initializer, { Parent: Error });
-function flattenError(error2, mapper = (issue2) => issue2.message) {
-  const fieldErrors = {};
-  const formErrors = [];
-  for (const sub of error2.issues) {
-    if (sub.path.length > 0) {
-      fieldErrors[sub.path[0]] = fieldErrors[sub.path[0]] || [];
-      fieldErrors[sub.path[0]].push(mapper(sub));
-    } else {
-      formErrors.push(mapper(sub));
-    }
-  }
-  return { formErrors, fieldErrors };
-}
-function formatError(error2, _mapper) {
-  const mapper = _mapper || function(issue2) {
-    return issue2.message;
-  };
-  const fieldErrors = { _errors: [] };
-  const processError = (error3) => {
-    for (const issue2 of error3.issues) {
-      if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }));
-      } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues });
-      } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues });
-      } else if (issue2.path.length === 0) {
-        fieldErrors._errors.push(mapper(issue2));
-      } else {
-        let curr = fieldErrors;
-        let i2 = 0;
-        while (i2 < issue2.path.length) {
-          const el = issue2.path[i2];
-          const terminal = i2 === issue2.path.length - 1;
-          if (!terminal) {
-            curr[el] = curr[el] || { _errors: [] };
-          } else {
-            curr[el] = curr[el] || { _errors: [] };
-            curr[el]._errors.push(mapper(issue2));
-          }
-          curr = curr[el];
-          i2++;
-        }
-      }
-    }
-  };
-  processError(error2);
-  return fieldErrors;
-}
-
-// node_modules/zod/v4/core/parse.js
-var _parse = (_Err) => (schema, value, _ctx, _params) => {
-  const ctx = _ctx ? Object.assign(_ctx, { async: false }) : { async: false };
-  const result2 = schema._zod.run({ value, issues: [] }, ctx);
-  if (result2 instanceof Promise) {
-    throw new $ZodAsyncError();
-  }
-  if (result2.issues.length) {
-    const e = new (_params?.Err ?? _Err)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())));
-    captureStackTrace(e, _params?.callee);
-    throw e;
-  }
-  return result2.value;
-};
-var _parseAsync = (_Err) => async (schema, value, _ctx, params) => {
-  const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
-  let result2 = schema._zod.run({ value, issues: [] }, ctx);
-  if (result2 instanceof Promise)
-    result2 = await result2;
-  if (result2.issues.length) {
-    const e = new (params?.Err ?? _Err)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())));
-    captureStackTrace(e, params?.callee);
-    throw e;
-  }
-  return result2.value;
-};
-var _safeParse = (_Err) => (schema, value, _ctx) => {
-  const ctx = _ctx ? { ..._ctx, async: false } : { async: false };
-  const result2 = schema._zod.run({ value, issues: [] }, ctx);
-  if (result2 instanceof Promise) {
-    throw new $ZodAsyncError();
-  }
-  return result2.issues.length ? {
-    success: false,
-    error: new (_Err ?? $ZodError)(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
-  } : { success: true, data: result2.value };
-};
-var safeParse = /* @__PURE__ */ _safeParse($ZodRealError);
-var _safeParseAsync = (_Err) => async (schema, value, _ctx) => {
-  const ctx = _ctx ? Object.assign(_ctx, { async: true }) : { async: true };
-  let result2 = schema._zod.run({ value, issues: [] }, ctx);
-  if (result2 instanceof Promise)
-    result2 = await result2;
-  return result2.issues.length ? {
-    success: false,
-    error: new _Err(result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
-  } : { success: true, data: result2.value };
-};
-var safeParseAsync = /* @__PURE__ */ _safeParseAsync($ZodRealError);
-
-// node_modules/zod/v4/core/regexes.js
-var cuid = /^[cC][^\s-]{8,}$/;
-var cuid2 = /^[0-9a-z]+$/;
-var ulid = /^[0-9A-HJKMNP-TV-Za-hjkmnp-tv-z]{26}$/;
-var xid = /^[0-9a-vA-V]{20}$/;
-var ksuid = /^[A-Za-z0-9]{27}$/;
-var nanoid = /^[a-zA-Z0-9_-]{21}$/;
-var duration = /^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$/;
-var guid = /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})$/;
-var uuid = (version5) => {
-  if (!version5)
-    return /^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000)$/;
-  return new RegExp(`^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-${version5}[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$`);
-};
-var email = /^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
-var _emoji = `^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$`;
-function emoji() {
-  return new RegExp(_emoji, "u");
-}
-var ipv4 = /^(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])$/;
-var ipv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})$/;
-var cidrv4 = /^((25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\.){3}(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])\/([0-9]|[1-2][0-9]|3[0-2])$/;
-var cidrv6 = /^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|::|([0-9a-fA-F]{1,4})?::([0-9a-fA-F]{1,4}:?){0,6})\/(12[0-8]|1[01][0-9]|[1-9]?[0-9])$/;
-var base64 = /^$|^(?:[0-9a-zA-Z+/]{4})*(?:(?:[0-9a-zA-Z+/]{2}==)|(?:[0-9a-zA-Z+/]{3}=))?$/;
-var base64url = /^[A-Za-z0-9_-]*$/;
-var hostname = /^([a-zA-Z0-9-]+\.)*[a-zA-Z0-9-]+$/;
-var e164 = /^\+(?:[0-9]){6,14}[0-9]$/;
-var dateSource = `(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))`;
-var date = /* @__PURE__ */ new RegExp(`^${dateSource}$`);
-function timeSource(args2) {
-  const hhmm = `(?:[01]\\d|2[0-3]):[0-5]\\d`;
-  const regex2 = typeof args2.precision === "number" ? args2.precision === -1 ? `${hhmm}` : args2.precision === 0 ? `${hhmm}:[0-5]\\d` : `${hhmm}:[0-5]\\d\\.\\d{${args2.precision}}` : `${hhmm}(?::[0-5]\\d(?:\\.\\d+)?)?`;
-  return regex2;
-}
-function time(args2) {
-  return new RegExp(`^${timeSource(args2)}$`);
-}
-function datetime(args2) {
-  const time3 = timeSource({ precision: args2.precision });
-  const opts = ["Z"];
-  if (args2.local)
-    opts.push("");
-  if (args2.offset)
-    opts.push(`([+-]\\d{2}:\\d{2})`);
-  const timeRegex2 = `${time3}(?:${opts.join("|")})`;
-  return new RegExp(`^${dateSource}T(?:${timeRegex2})$`);
-}
-var string = (params) => {
-  const regex2 = params ? `[\\s\\S]{${params?.minimum ?? 0},${params?.maximum ?? ""}}` : `[\\s\\S]*`;
-  return new RegExp(`^${regex2}$`);
-};
-var integer = /^\d+$/;
-var number = /^-?\d+(?:\.\d+)?/i;
-var boolean = /true|false/i;
-var _null = /null/i;
-var lowercase = /^[^A-Z]*$/;
-var uppercase = /^[^a-z]*$/;
-
-// node_modules/zod/v4/core/checks.js
-var $ZodCheck = /* @__PURE__ */ $constructor("$ZodCheck", (inst, def) => {
-  var _a;
-  inst._zod ?? (inst._zod = {});
-  inst._zod.def = def;
-  (_a = inst._zod).onattach ?? (_a.onattach = []);
-});
-var numericOriginMap = {
-  number: "number",
-  bigint: "bigint",
-  object: "date"
-};
-var $ZodCheckLessThan = /* @__PURE__ */ $constructor("$ZodCheckLessThan", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  const origin = numericOriginMap[typeof def.value];
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    const curr = (def.inclusive ? bag.maximum : bag.exclusiveMaximum) ?? Number.POSITIVE_INFINITY;
-    if (def.value < curr) {
-      if (def.inclusive)
-        bag.maximum = def.value;
-      else
-        bag.exclusiveMaximum = def.value;
-    }
-  });
-  inst._zod.check = (payload) => {
-    if (def.inclusive ? payload.value <= def.value : payload.value < def.value) {
-      return;
-    }
-    payload.issues.push({
-      origin,
-      code: "too_big",
-      maximum: def.value,
-      input: payload.value,
-      inclusive: def.inclusive,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckGreaterThan = /* @__PURE__ */ $constructor("$ZodCheckGreaterThan", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  const origin = numericOriginMap[typeof def.value];
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    const curr = (def.inclusive ? bag.minimum : bag.exclusiveMinimum) ?? Number.NEGATIVE_INFINITY;
-    if (def.value > curr) {
-      if (def.inclusive)
-        bag.minimum = def.value;
-      else
-        bag.exclusiveMinimum = def.value;
-    }
-  });
-  inst._zod.check = (payload) => {
-    if (def.inclusive ? payload.value >= def.value : payload.value > def.value) {
-      return;
-    }
-    payload.issues.push({
-      origin,
-      code: "too_small",
-      minimum: def.value,
-      input: payload.value,
-      inclusive: def.inclusive,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckMultipleOf = /* @__PURE__ */ $constructor("$ZodCheckMultipleOf", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    var _a;
-    (_a = inst2._zod.bag).multipleOf ?? (_a.multipleOf = def.value);
-  });
-  inst._zod.check = (payload) => {
-    if (typeof payload.value !== typeof def.value)
-      throw new Error("Cannot mix number and bigint in multiple_of check.");
-    const isMultiple = typeof payload.value === "bigint" ? payload.value % def.value === BigInt(0) : floatSafeRemainder(payload.value, def.value) === 0;
-    if (isMultiple)
-      return;
-    payload.issues.push({
-      origin: typeof payload.value,
-      code: "not_multiple_of",
-      divisor: def.value,
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckNumberFormat = /* @__PURE__ */ $constructor("$ZodCheckNumberFormat", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  def.format = def.format || "float64";
-  const isInt = def.format?.includes("int");
-  const origin = isInt ? "int" : "number";
-  const [minimum, maximum] = NUMBER_FORMAT_RANGES[def.format];
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.format = def.format;
-    bag.minimum = minimum;
-    bag.maximum = maximum;
-    if (isInt)
-      bag.pattern = integer;
-  });
-  inst._zod.check = (payload) => {
-    const input = payload.value;
-    if (isInt) {
-      if (!Number.isInteger(input)) {
-        payload.issues.push({
-          expected: origin,
-          format: def.format,
-          code: "invalid_type",
-          input,
-          inst
-        });
-        return;
-      }
-      if (!Number.isSafeInteger(input)) {
-        if (input > 0) {
-          payload.issues.push({
-            input,
-            code: "too_big",
-            maximum: Number.MAX_SAFE_INTEGER,
-            note: "Integers must be within the safe integer range.",
-            inst,
-            origin,
-            continue: !def.abort
-          });
-        } else {
-          payload.issues.push({
-            input,
-            code: "too_small",
-            minimum: Number.MIN_SAFE_INTEGER,
-            note: "Integers must be within the safe integer range.",
-            inst,
-            origin,
-            continue: !def.abort
-          });
-        }
-        return;
-      }
-    }
-    if (input < minimum) {
-      payload.issues.push({
-        origin: "number",
-        input,
-        code: "too_small",
-        minimum,
-        inclusive: true,
-        inst,
-        continue: !def.abort
-      });
-    }
-    if (input > maximum) {
-      payload.issues.push({
-        origin: "number",
-        input,
-        code: "too_big",
-        maximum,
-        inst
-      });
-    }
-  };
-});
-var $ZodCheckMaxLength = /* @__PURE__ */ $constructor("$ZodCheckMaxLength", (inst, def) => {
-  var _a;
-  $ZodCheck.init(inst, def);
-  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
-    const val = payload.value;
-    return !nullish(val) && val.length !== void 0;
-  });
-  inst._zod.onattach.push((inst2) => {
-    const curr = inst2._zod.bag.maximum ?? Number.POSITIVE_INFINITY;
-    if (def.maximum < curr)
-      inst2._zod.bag.maximum = def.maximum;
-  });
-  inst._zod.check = (payload) => {
-    const input = payload.value;
-    const length = input.length;
-    if (length <= def.maximum)
-      return;
-    const origin = getLengthableOrigin(input);
-    payload.issues.push({
-      origin,
-      code: "too_big",
-      maximum: def.maximum,
-      inclusive: true,
-      input,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckMinLength = /* @__PURE__ */ $constructor("$ZodCheckMinLength", (inst, def) => {
-  var _a;
-  $ZodCheck.init(inst, def);
-  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
-    const val = payload.value;
-    return !nullish(val) && val.length !== void 0;
-  });
-  inst._zod.onattach.push((inst2) => {
-    const curr = inst2._zod.bag.minimum ?? Number.NEGATIVE_INFINITY;
-    if (def.minimum > curr)
-      inst2._zod.bag.minimum = def.minimum;
-  });
-  inst._zod.check = (payload) => {
-    const input = payload.value;
-    const length = input.length;
-    if (length >= def.minimum)
-      return;
-    const origin = getLengthableOrigin(input);
-    payload.issues.push({
-      origin,
-      code: "too_small",
-      minimum: def.minimum,
-      inclusive: true,
-      input,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckLengthEquals = /* @__PURE__ */ $constructor("$ZodCheckLengthEquals", (inst, def) => {
-  var _a;
-  $ZodCheck.init(inst, def);
-  (_a = inst._zod.def).when ?? (_a.when = (payload) => {
-    const val = payload.value;
-    return !nullish(val) && val.length !== void 0;
-  });
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.minimum = def.length;
-    bag.maximum = def.length;
-    bag.length = def.length;
-  });
-  inst._zod.check = (payload) => {
-    const input = payload.value;
-    const length = input.length;
-    if (length === def.length)
-      return;
-    const origin = getLengthableOrigin(input);
-    const tooBig = length > def.length;
-    payload.issues.push({
-      origin,
-      ...tooBig ? { code: "too_big", maximum: def.length } : { code: "too_small", minimum: def.length },
-      inclusive: true,
-      exact: true,
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckStringFormat = /* @__PURE__ */ $constructor("$ZodCheckStringFormat", (inst, def) => {
-  var _a, _b;
-  $ZodCheck.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.format = def.format;
-    if (def.pattern) {
-      bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
-      bag.patterns.add(def.pattern);
-    }
-  });
-  if (def.pattern)
-    (_a = inst._zod).check ?? (_a.check = (payload) => {
-      def.pattern.lastIndex = 0;
-      if (def.pattern.test(payload.value))
-        return;
-      payload.issues.push({
-        origin: "string",
-        code: "invalid_format",
-        format: def.format,
-        input: payload.value,
-        ...def.pattern ? { pattern: def.pattern.toString() } : {},
-        inst,
-        continue: !def.abort
-      });
-    });
-  else
-    (_b = inst._zod).check ?? (_b.check = () => {
-    });
-});
-var $ZodCheckRegex = /* @__PURE__ */ $constructor("$ZodCheckRegex", (inst, def) => {
-  $ZodCheckStringFormat.init(inst, def);
-  inst._zod.check = (payload) => {
-    def.pattern.lastIndex = 0;
-    if (def.pattern.test(payload.value))
-      return;
-    payload.issues.push({
-      origin: "string",
-      code: "invalid_format",
-      format: "regex",
-      input: payload.value,
-      pattern: def.pattern.toString(),
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckLowerCase = /* @__PURE__ */ $constructor("$ZodCheckLowerCase", (inst, def) => {
-  def.pattern ?? (def.pattern = lowercase);
-  $ZodCheckStringFormat.init(inst, def);
-});
-var $ZodCheckUpperCase = /* @__PURE__ */ $constructor("$ZodCheckUpperCase", (inst, def) => {
-  def.pattern ?? (def.pattern = uppercase);
-  $ZodCheckStringFormat.init(inst, def);
-});
-var $ZodCheckIncludes = /* @__PURE__ */ $constructor("$ZodCheckIncludes", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  const escapedRegex = escapeRegex(def.includes);
-  const pattern = new RegExp(typeof def.position === "number" ? `^.{${def.position}}${escapedRegex}` : escapedRegex);
-  def.pattern = pattern;
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
-    bag.patterns.add(pattern);
-  });
-  inst._zod.check = (payload) => {
-    if (payload.value.includes(def.includes, def.position))
-      return;
-    payload.issues.push({
-      origin: "string",
-      code: "invalid_format",
-      format: "includes",
-      includes: def.includes,
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckStartsWith = /* @__PURE__ */ $constructor("$ZodCheckStartsWith", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  const pattern = new RegExp(`^${escapeRegex(def.prefix)}.*`);
-  def.pattern ?? (def.pattern = pattern);
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
-    bag.patterns.add(pattern);
-  });
-  inst._zod.check = (payload) => {
-    if (payload.value.startsWith(def.prefix))
-      return;
-    payload.issues.push({
-      origin: "string",
-      code: "invalid_format",
-      format: "starts_with",
-      prefix: def.prefix,
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckEndsWith = /* @__PURE__ */ $constructor("$ZodCheckEndsWith", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  const pattern = new RegExp(`.*${escapeRegex(def.suffix)}$`);
-  def.pattern ?? (def.pattern = pattern);
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.patterns ?? (bag.patterns = /* @__PURE__ */ new Set());
-    bag.patterns.add(pattern);
-  });
-  inst._zod.check = (payload) => {
-    if (payload.value.endsWith(def.suffix))
-      return;
-    payload.issues.push({
-      origin: "string",
-      code: "invalid_format",
-      format: "ends_with",
-      suffix: def.suffix,
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodCheckOverwrite = /* @__PURE__ */ $constructor("$ZodCheckOverwrite", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  inst._zod.check = (payload) => {
-    payload.value = def.tx(payload.value);
-  };
-});
-
-// node_modules/zod/v4/core/doc.js
-var Doc = class {
-  constructor(args2 = []) {
-    this.content = [];
-    this.indent = 0;
-    if (this)
-      this.args = args2;
-  }
-  indented(fn2) {
-    this.indent += 1;
-    fn2(this);
-    this.indent -= 1;
-  }
-  write(arg) {
-    if (typeof arg === "function") {
-      arg(this, { execution: "sync" });
-      arg(this, { execution: "async" });
-      return;
-    }
-    const content = arg;
-    const lines = content.split("\n").filter((x) => x);
-    const minIndent = Math.min(...lines.map((x) => x.length - x.trimStart().length));
-    const dedented = lines.map((x) => x.slice(minIndent)).map((x) => " ".repeat(this.indent * 2) + x);
-    for (const line of dedented) {
-      this.content.push(line);
-    }
-  }
-  compile() {
-    const F = Function;
-    const args2 = this?.args;
-    const content = this?.content ?? [``];
-    const lines = [...content.map((x) => `  ${x}`)];
-    return new F(...args2, lines.join("\n"));
-  }
-};
-
-// node_modules/zod/v4/core/versions.js
-var version = {
-  major: 4,
-  minor: 0,
-  patch: 0
-};
-
-// node_modules/zod/v4/core/schemas.js
-var $ZodType = /* @__PURE__ */ $constructor("$ZodType", (inst, def) => {
-  var _a;
-  inst ?? (inst = {});
-  inst._zod.def = def;
-  inst._zod.bag = inst._zod.bag || {};
-  inst._zod.version = version;
-  const checks = [...inst._zod.def.checks ?? []];
-  if (inst._zod.traits.has("$ZodCheck")) {
-    checks.unshift(inst);
-  }
-  for (const ch of checks) {
-    for (const fn2 of ch._zod.onattach) {
-      fn2(inst);
-    }
-  }
-  if (checks.length === 0) {
-    (_a = inst._zod).deferred ?? (_a.deferred = []);
-    inst._zod.deferred?.push(() => {
-      inst._zod.run = inst._zod.parse;
-    });
-  } else {
-    const runChecks = (payload, checks2, ctx) => {
-      let isAborted2 = aborted(payload);
-      let asyncResult;
-      for (const ch of checks2) {
-        if (ch._zod.def.when) {
-          const shouldRun = ch._zod.def.when(payload);
-          if (!shouldRun)
-            continue;
-        } else if (isAborted2) {
-          continue;
-        }
-        const currLen = payload.issues.length;
-        const _ = ch._zod.check(payload);
-        if (_ instanceof Promise && ctx?.async === false) {
-          throw new $ZodAsyncError();
-        }
-        if (asyncResult || _ instanceof Promise) {
-          asyncResult = (asyncResult ?? Promise.resolve()).then(async () => {
-            await _;
-            const nextLen = payload.issues.length;
-            if (nextLen === currLen)
-              return;
-            if (!isAborted2)
-              isAborted2 = aborted(payload, currLen);
-          });
-        } else {
-          const nextLen = payload.issues.length;
-          if (nextLen === currLen)
-            continue;
-          if (!isAborted2)
-            isAborted2 = aborted(payload, currLen);
-        }
-      }
-      if (asyncResult) {
-        return asyncResult.then(() => {
-          return payload;
-        });
-      }
-      return payload;
-    };
-    inst._zod.run = (payload, ctx) => {
-      const result2 = inst._zod.parse(payload, ctx);
-      if (result2 instanceof Promise) {
-        if (ctx.async === false)
-          throw new $ZodAsyncError();
-        return result2.then((result3) => runChecks(result3, checks, ctx));
-      }
-      return runChecks(result2, checks, ctx);
-    };
-  }
-  inst["~standard"] = {
-    validate: (value) => {
-      try {
-        const r = safeParse(inst, value);
-        return r.success ? { value: r.data } : { issues: r.error?.issues };
-      } catch (_) {
-        return safeParseAsync(inst, value).then((r) => r.success ? { value: r.data } : { issues: r.error?.issues });
-      }
-    },
-    vendor: "zod",
-    version: 1
-  };
-});
-var $ZodString = /* @__PURE__ */ $constructor("$ZodString", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.pattern = [...inst?._zod.bag?.patterns ?? []].pop() ?? string(inst._zod.bag);
-  inst._zod.parse = (payload, _) => {
-    if (def.coerce)
-      try {
-        payload.value = String(payload.value);
-      } catch (_2) {
-      }
-    if (typeof payload.value === "string")
-      return payload;
-    payload.issues.push({
-      expected: "string",
-      code: "invalid_type",
-      input: payload.value,
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodStringFormat = /* @__PURE__ */ $constructor("$ZodStringFormat", (inst, def) => {
-  $ZodCheckStringFormat.init(inst, def);
-  $ZodString.init(inst, def);
-});
-var $ZodGUID = /* @__PURE__ */ $constructor("$ZodGUID", (inst, def) => {
-  def.pattern ?? (def.pattern = guid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodUUID = /* @__PURE__ */ $constructor("$ZodUUID", (inst, def) => {
-  if (def.version) {
-    const versionMap = {
-      v1: 1,
-      v2: 2,
-      v3: 3,
-      v4: 4,
-      v5: 5,
-      v6: 6,
-      v7: 7,
-      v8: 8
-    };
-    const v = versionMap[def.version];
-    if (v === void 0)
-      throw new Error(`Invalid UUID version: "${def.version}"`);
-    def.pattern ?? (def.pattern = uuid(v));
-  } else
-    def.pattern ?? (def.pattern = uuid());
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodEmail = /* @__PURE__ */ $constructor("$ZodEmail", (inst, def) => {
-  def.pattern ?? (def.pattern = email);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodURL = /* @__PURE__ */ $constructor("$ZodURL", (inst, def) => {
-  $ZodStringFormat.init(inst, def);
-  inst._zod.check = (payload) => {
-    try {
-      const orig = payload.value;
-      const url = new URL(orig);
-      const href = url.href;
-      if (def.hostname) {
-        def.hostname.lastIndex = 0;
-        if (!def.hostname.test(url.hostname)) {
-          payload.issues.push({
-            code: "invalid_format",
-            format: "url",
-            note: "Invalid hostname",
-            pattern: hostname.source,
-            input: payload.value,
-            inst,
-            continue: !def.abort
-          });
-        }
-      }
-      if (def.protocol) {
-        def.protocol.lastIndex = 0;
-        if (!def.protocol.test(url.protocol.endsWith(":") ? url.protocol.slice(0, -1) : url.protocol)) {
-          payload.issues.push({
-            code: "invalid_format",
-            format: "url",
-            note: "Invalid protocol",
-            pattern: def.protocol.source,
-            input: payload.value,
-            inst,
-            continue: !def.abort
-          });
-        }
-      }
-      if (!orig.endsWith("/") && href.endsWith("/")) {
-        payload.value = href.slice(0, -1);
-      } else {
-        payload.value = href;
-      }
-      return;
-    } catch (_) {
-      payload.issues.push({
-        code: "invalid_format",
-        format: "url",
-        input: payload.value,
-        inst,
-        continue: !def.abort
-      });
-    }
-  };
-});
-var $ZodEmoji = /* @__PURE__ */ $constructor("$ZodEmoji", (inst, def) => {
-  def.pattern ?? (def.pattern = emoji());
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodNanoID = /* @__PURE__ */ $constructor("$ZodNanoID", (inst, def) => {
-  def.pattern ?? (def.pattern = nanoid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodCUID = /* @__PURE__ */ $constructor("$ZodCUID", (inst, def) => {
-  def.pattern ?? (def.pattern = cuid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodCUID2 = /* @__PURE__ */ $constructor("$ZodCUID2", (inst, def) => {
-  def.pattern ?? (def.pattern = cuid2);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodULID = /* @__PURE__ */ $constructor("$ZodULID", (inst, def) => {
-  def.pattern ?? (def.pattern = ulid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodXID = /* @__PURE__ */ $constructor("$ZodXID", (inst, def) => {
-  def.pattern ?? (def.pattern = xid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodKSUID = /* @__PURE__ */ $constructor("$ZodKSUID", (inst, def) => {
-  def.pattern ?? (def.pattern = ksuid);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodISODateTime = /* @__PURE__ */ $constructor("$ZodISODateTime", (inst, def) => {
-  def.pattern ?? (def.pattern = datetime(def));
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodISODate = /* @__PURE__ */ $constructor("$ZodISODate", (inst, def) => {
-  def.pattern ?? (def.pattern = date);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodISOTime = /* @__PURE__ */ $constructor("$ZodISOTime", (inst, def) => {
-  def.pattern ?? (def.pattern = time(def));
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodISODuration = /* @__PURE__ */ $constructor("$ZodISODuration", (inst, def) => {
-  def.pattern ?? (def.pattern = duration);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodIPv4 = /* @__PURE__ */ $constructor("$ZodIPv4", (inst, def) => {
-  def.pattern ?? (def.pattern = ipv4);
-  $ZodStringFormat.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.format = `ipv4`;
-  });
-});
-var $ZodIPv6 = /* @__PURE__ */ $constructor("$ZodIPv6", (inst, def) => {
-  def.pattern ?? (def.pattern = ipv6);
-  $ZodStringFormat.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    const bag = inst2._zod.bag;
-    bag.format = `ipv6`;
-  });
-  inst._zod.check = (payload) => {
-    try {
-      new URL(`http://[${payload.value}]`);
-    } catch {
-      payload.issues.push({
-        code: "invalid_format",
-        format: "ipv6",
-        input: payload.value,
-        inst,
-        continue: !def.abort
-      });
-    }
-  };
-});
-var $ZodCIDRv4 = /* @__PURE__ */ $constructor("$ZodCIDRv4", (inst, def) => {
-  def.pattern ?? (def.pattern = cidrv4);
-  $ZodStringFormat.init(inst, def);
-});
-var $ZodCIDRv6 = /* @__PURE__ */ $constructor("$ZodCIDRv6", (inst, def) => {
-  def.pattern ?? (def.pattern = cidrv6);
-  $ZodStringFormat.init(inst, def);
-  inst._zod.check = (payload) => {
-    const [address, prefix] = payload.value.split("/");
-    try {
-      if (!prefix)
-        throw new Error();
-      const prefixNum = Number(prefix);
-      if (`${prefixNum}` !== prefix)
-        throw new Error();
-      if (prefixNum < 0 || prefixNum > 128)
-        throw new Error();
-      new URL(`http://[${address}]`);
-    } catch {
-      payload.issues.push({
-        code: "invalid_format",
-        format: "cidrv6",
-        input: payload.value,
-        inst,
-        continue: !def.abort
-      });
-    }
-  };
-});
-function isValidBase64(data) {
-  if (data === "")
-    return true;
-  if (data.length % 4 !== 0)
-    return false;
-  try {
-    atob(data);
-    return true;
-  } catch {
-    return false;
-  }
-}
-var $ZodBase64 = /* @__PURE__ */ $constructor("$ZodBase64", (inst, def) => {
-  def.pattern ?? (def.pattern = base64);
-  $ZodStringFormat.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    inst2._zod.bag.contentEncoding = "base64";
-  });
-  inst._zod.check = (payload) => {
-    if (isValidBase64(payload.value))
-      return;
-    payload.issues.push({
-      code: "invalid_format",
-      format: "base64",
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-function isValidBase64URL(data) {
-  if (!base64url.test(data))
-    return false;
-  const base642 = data.replace(/[-_]/g, (c3) => c3 === "-" ? "+" : "/");
-  const padded = base642.padEnd(Math.ceil(base642.length / 4) * 4, "=");
-  return isValidBase64(padded);
-}
-var $ZodBase64URL = /* @__PURE__ */ $constructor("$ZodBase64URL", (inst, def) => {
-  def.pattern ?? (def.pattern = base64url);
-  $ZodStringFormat.init(inst, def);
-  inst._zod.onattach.push((inst2) => {
-    inst2._zod.bag.contentEncoding = "base64url";
-  });
-  inst._zod.check = (payload) => {
-    if (isValidBase64URL(payload.value))
-      return;
-    payload.issues.push({
-      code: "invalid_format",
-      format: "base64url",
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodE164 = /* @__PURE__ */ $constructor("$ZodE164", (inst, def) => {
-  def.pattern ?? (def.pattern = e164);
-  $ZodStringFormat.init(inst, def);
-});
-function isValidJWT(token, algorithm = null) {
-  try {
-    const tokensParts = token.split(".");
-    if (tokensParts.length !== 3)
-      return false;
-    const [header] = tokensParts;
-    if (!header)
-      return false;
-    const parsedHeader = JSON.parse(atob(header));
-    if ("typ" in parsedHeader && parsedHeader?.typ !== "JWT")
-      return false;
-    if (!parsedHeader.alg)
-      return false;
-    if (algorithm && (!("alg" in parsedHeader) || parsedHeader.alg !== algorithm))
-      return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-var $ZodJWT = /* @__PURE__ */ $constructor("$ZodJWT", (inst, def) => {
-  $ZodStringFormat.init(inst, def);
-  inst._zod.check = (payload) => {
-    if (isValidJWT(payload.value, def.alg))
-      return;
-    payload.issues.push({
-      code: "invalid_format",
-      format: "jwt",
-      input: payload.value,
-      inst,
-      continue: !def.abort
-    });
-  };
-});
-var $ZodNumber = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.pattern = inst._zod.bag.pattern ?? number;
-  inst._zod.parse = (payload, _ctx) => {
-    if (def.coerce)
-      try {
-        payload.value = Number(payload.value);
-      } catch (_) {
-      }
-    const input = payload.value;
-    if (typeof input === "number" && !Number.isNaN(input) && Number.isFinite(input)) {
-      return payload;
-    }
-    const received = typeof input === "number" ? Number.isNaN(input) ? "NaN" : !Number.isFinite(input) ? "Infinity" : void 0 : void 0;
-    payload.issues.push({
-      expected: "number",
-      code: "invalid_type",
-      input,
-      inst,
-      ...received ? { received } : {}
-    });
-    return payload;
-  };
-});
-var $ZodNumberFormat = /* @__PURE__ */ $constructor("$ZodNumber", (inst, def) => {
-  $ZodCheckNumberFormat.init(inst, def);
-  $ZodNumber.init(inst, def);
-});
-var $ZodBoolean = /* @__PURE__ */ $constructor("$ZodBoolean", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.pattern = boolean;
-  inst._zod.parse = (payload, _ctx) => {
-    if (def.coerce)
-      try {
-        payload.value = Boolean(payload.value);
-      } catch (_) {
-      }
-    const input = payload.value;
-    if (typeof input === "boolean")
-      return payload;
-    payload.issues.push({
-      expected: "boolean",
-      code: "invalid_type",
-      input,
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodNull = /* @__PURE__ */ $constructor("$ZodNull", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.pattern = _null;
-  inst._zod.values = /* @__PURE__ */ new Set([null]);
-  inst._zod.parse = (payload, _ctx) => {
-    const input = payload.value;
-    if (input === null)
-      return payload;
-    payload.issues.push({
-      expected: "null",
-      code: "invalid_type",
-      input,
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodUnknown = /* @__PURE__ */ $constructor("$ZodUnknown", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload) => payload;
-});
-var $ZodNever = /* @__PURE__ */ $constructor("$ZodNever", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, _ctx) => {
-    payload.issues.push({
-      expected: "never",
-      code: "invalid_type",
-      input: payload.value,
-      inst
-    });
-    return payload;
-  };
-});
-function handleArrayResult(result2, final, index) {
-  if (result2.issues.length) {
-    final.issues.push(...prefixIssues(index, result2.issues));
-  }
-  final.value[index] = result2.value;
-}
-var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, ctx) => {
-    const input = payload.value;
-    if (!Array.isArray(input)) {
-      payload.issues.push({
-        expected: "array",
-        code: "invalid_type",
-        input,
-        inst
-      });
-      return payload;
-    }
-    payload.value = Array(input.length);
-    const proms = [];
-    for (let i2 = 0; i2 < input.length; i2++) {
-      const item = input[i2];
-      const result2 = def.element._zod.run({
-        value: item,
-        issues: []
-      }, ctx);
-      if (result2 instanceof Promise) {
-        proms.push(result2.then((result3) => handleArrayResult(result3, payload, i2)));
-      } else {
-        handleArrayResult(result2, payload, i2);
-      }
-    }
-    if (proms.length) {
-      return Promise.all(proms).then(() => payload);
-    }
-    return payload;
-  };
-});
-function handleObjectResult(result2, final, key) {
-  if (result2.issues.length) {
-    final.issues.push(...prefixIssues(key, result2.issues));
-  }
-  final.value[key] = result2.value;
-}
-function handleOptionalObjectResult(result2, final, key, input) {
-  if (result2.issues.length) {
-    if (input[key] === void 0) {
-      if (key in input) {
-        final.value[key] = void 0;
-      } else {
-        final.value[key] = result2.value;
-      }
-    } else {
-      final.issues.push(...prefixIssues(key, result2.issues));
-    }
-  } else if (result2.value === void 0) {
-    if (key in input)
-      final.value[key] = void 0;
-  } else {
-    final.value[key] = result2.value;
-  }
-}
-var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
-  $ZodType.init(inst, def);
-  const _normalized = cached(() => {
-    const keys2 = Object.keys(def.shape);
-    for (const k of keys2) {
-      if (!(def.shape[k] instanceof $ZodType)) {
-        throw new Error(`Invalid element at key "${k}": expected a Zod schema`);
-      }
-    }
-    const okeys = optionalKeys(def.shape);
-    return {
-      shape: def.shape,
-      keys: keys2,
-      keySet: new Set(keys2),
-      numKeys: keys2.length,
-      optionalKeys: new Set(okeys)
-    };
-  });
-  defineLazy(inst._zod, "propValues", () => {
-    const shape = def.shape;
-    const propValues = {};
-    for (const key in shape) {
-      const field = shape[key]._zod;
-      if (field.values) {
-        propValues[key] ?? (propValues[key] = /* @__PURE__ */ new Set());
-        for (const v of field.values)
-          propValues[key].add(v);
-      }
-    }
-    return propValues;
-  });
-  const generateFastpass = (shape) => {
-    const doc = new Doc(["shape", "payload", "ctx"]);
-    const normalized = _normalized.value;
-    const parseStr = (key) => {
-      const k = esc(key);
-      return `shape[${k}]._zod.run({ value: input[${k}], issues: [] }, ctx)`;
-    };
-    doc.write(`const input = payload.value;`);
-    const ids = /* @__PURE__ */ Object.create(null);
-    let counter = 0;
-    for (const key of normalized.keys) {
-      ids[key] = `key_${counter++}`;
-    }
-    doc.write(`const newResult = {}`);
-    for (const key of normalized.keys) {
-      if (normalized.optionalKeys.has(key)) {
-        const id = ids[key];
-        doc.write(`const ${id} = ${parseStr(key)};`);
-        const k = esc(key);
-        doc.write(`
-        if (${id}.issues.length) {
-          if (input[${k}] === undefined) {
-            if (${k} in input) {
-              newResult[${k}] = undefined;
-            }
-          } else {
-            payload.issues = payload.issues.concat(
-              ${id}.issues.map((iss) => ({
-                ...iss,
-                path: iss.path ? [${k}, ...iss.path] : [${k}],
-              }))
-            );
-          }
-        } else if (${id}.value === undefined) {
-          if (${k} in input) newResult[${k}] = undefined;
-        } else {
-          newResult[${k}] = ${id}.value;
-        }
-        `);
-      } else {
-        const id = ids[key];
-        doc.write(`const ${id} = ${parseStr(key)};`);
-        doc.write(`
-          if (${id}.issues.length) payload.issues = payload.issues.concat(${id}.issues.map(iss => ({
-            ...iss,
-            path: iss.path ? [${esc(key)}, ...iss.path] : [${esc(key)}]
-          })));`);
-        doc.write(`newResult[${esc(key)}] = ${id}.value`);
-      }
-    }
-    doc.write(`payload.value = newResult;`);
-    doc.write(`return payload;`);
-    const fn2 = doc.compile();
-    return (payload, ctx) => fn2(shape, payload, ctx);
-  };
-  let fastpass;
-  const isObject6 = isObject3;
-  const jit = !globalConfig.jitless;
-  const allowsEval2 = allowsEval;
-  const fastEnabled = jit && allowsEval2.value;
-  const catchall = def.catchall;
-  let value;
-  inst._zod.parse = (payload, ctx) => {
-    value ?? (value = _normalized.value);
-    const input = payload.value;
-    if (!isObject6(input)) {
-      payload.issues.push({
-        expected: "object",
-        code: "invalid_type",
-        input,
-        inst
-      });
-      return payload;
-    }
-    const proms = [];
-    if (jit && fastEnabled && ctx?.async === false && ctx.jitless !== true) {
-      if (!fastpass)
-        fastpass = generateFastpass(def.shape);
-      payload = fastpass(payload, ctx);
-    } else {
-      payload.value = {};
-      const shape = value.shape;
-      for (const key of value.keys) {
-        const el = shape[key];
-        const r = el._zod.run({ value: input[key], issues: [] }, ctx);
-        const isOptional = el._zod.optin === "optional" && el._zod.optout === "optional";
-        if (r instanceof Promise) {
-          proms.push(r.then((r2) => isOptional ? handleOptionalObjectResult(r2, payload, key, input) : handleObjectResult(r2, payload, key)));
-        } else if (isOptional) {
-          handleOptionalObjectResult(r, payload, key, input);
-        } else {
-          handleObjectResult(r, payload, key);
-        }
-      }
-    }
-    if (!catchall) {
-      return proms.length ? Promise.all(proms).then(() => payload) : payload;
-    }
-    const unrecognized = [];
-    const keySet = value.keySet;
-    const _catchall = catchall._zod;
-    const t = _catchall.def.type;
-    for (const key of Object.keys(input)) {
-      if (keySet.has(key))
-        continue;
-      if (t === "never") {
-        unrecognized.push(key);
-        continue;
-      }
-      const r = _catchall.run({ value: input[key], issues: [] }, ctx);
-      if (r instanceof Promise) {
-        proms.push(r.then((r2) => handleObjectResult(r2, payload, key)));
-      } else {
-        handleObjectResult(r, payload, key);
-      }
-    }
-    if (unrecognized.length) {
-      payload.issues.push({
-        code: "unrecognized_keys",
-        keys: unrecognized,
-        input,
-        inst
-      });
-    }
-    if (!proms.length)
-      return payload;
-    return Promise.all(proms).then(() => {
-      return payload;
-    });
-  };
-});
-function handleUnionResults(results, final, inst, ctx) {
-  for (const result2 of results) {
-    if (result2.issues.length === 0) {
-      final.value = result2.value;
-      return final;
-    }
-  }
-  final.issues.push({
-    code: "invalid_union",
-    input: final.value,
-    inst,
-    errors: results.map((result2) => result2.issues.map((iss) => finalizeIssue(iss, ctx, config())))
-  });
-  return final;
-}
-var $ZodUnion = /* @__PURE__ */ $constructor("$ZodUnion", (inst, def) => {
-  $ZodType.init(inst, def);
-  defineLazy(inst._zod, "optin", () => def.options.some((o2) => o2._zod.optin === "optional") ? "optional" : void 0);
-  defineLazy(inst._zod, "optout", () => def.options.some((o2) => o2._zod.optout === "optional") ? "optional" : void 0);
-  defineLazy(inst._zod, "values", () => {
-    if (def.options.every((o2) => o2._zod.values)) {
-      return new Set(def.options.flatMap((option) => Array.from(option._zod.values)));
-    }
-    return void 0;
-  });
-  defineLazy(inst._zod, "pattern", () => {
-    if (def.options.every((o2) => o2._zod.pattern)) {
-      const patterns = def.options.map((o2) => o2._zod.pattern);
-      return new RegExp(`^(${patterns.map((p) => cleanRegex(p.source)).join("|")})$`);
-    }
-    return void 0;
-  });
-  inst._zod.parse = (payload, ctx) => {
-    let async = false;
-    const results = [];
-    for (const option of def.options) {
-      const result2 = option._zod.run({
-        value: payload.value,
-        issues: []
-      }, ctx);
-      if (result2 instanceof Promise) {
-        results.push(result2);
-        async = true;
-      } else {
-        if (result2.issues.length === 0)
-          return result2;
-        results.push(result2);
-      }
-    }
-    if (!async)
-      return handleUnionResults(results, payload, inst, ctx);
-    return Promise.all(results).then((results2) => {
-      return handleUnionResults(results2, payload, inst, ctx);
-    });
-  };
-});
-var $ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("$ZodDiscriminatedUnion", (inst, def) => {
-  $ZodUnion.init(inst, def);
-  const _super = inst._zod.parse;
-  defineLazy(inst._zod, "propValues", () => {
-    const propValues = {};
-    for (const option of def.options) {
-      const pv = option._zod.propValues;
-      if (!pv || Object.keys(pv).length === 0)
-        throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(option)}"`);
-      for (const [k, v] of Object.entries(pv)) {
-        if (!propValues[k])
-          propValues[k] = /* @__PURE__ */ new Set();
-        for (const val of v) {
-          propValues[k].add(val);
-        }
-      }
-    }
-    return propValues;
-  });
-  const disc = cached(() => {
-    const opts = def.options;
-    const map = /* @__PURE__ */ new Map();
-    for (const o2 of opts) {
-      const values = o2._zod.propValues[def.discriminator];
-      if (!values || values.size === 0)
-        throw new Error(`Invalid discriminated union option at index "${def.options.indexOf(o2)}"`);
-      for (const v of values) {
-        if (map.has(v)) {
-          throw new Error(`Duplicate discriminator value "${String(v)}"`);
-        }
-        map.set(v, o2);
-      }
-    }
-    return map;
-  });
-  inst._zod.parse = (payload, ctx) => {
-    const input = payload.value;
-    if (!isObject3(input)) {
-      payload.issues.push({
-        code: "invalid_type",
-        expected: "object",
-        input,
-        inst
-      });
-      return payload;
-    }
-    const opt = disc.value.get(input?.[def.discriminator]);
-    if (opt) {
-      return opt._zod.run(payload, ctx);
-    }
-    if (def.unionFallback) {
-      return _super(payload, ctx);
-    }
-    payload.issues.push({
-      code: "invalid_union",
-      errors: [],
-      note: "No matching discriminator",
-      input,
-      path: [def.discriminator],
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodIntersection = /* @__PURE__ */ $constructor("$ZodIntersection", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, ctx) => {
-    const input = payload.value;
-    const left = def.left._zod.run({ value: input, issues: [] }, ctx);
-    const right = def.right._zod.run({ value: input, issues: [] }, ctx);
-    const async = left instanceof Promise || right instanceof Promise;
-    if (async) {
-      return Promise.all([left, right]).then(([left2, right2]) => {
-        return handleIntersectionResults(payload, left2, right2);
-      });
-    }
-    return handleIntersectionResults(payload, left, right);
-  };
-});
-function mergeValues(a2, b) {
-  if (a2 === b) {
-    return { valid: true, data: a2 };
-  }
-  if (a2 instanceof Date && b instanceof Date && +a2 === +b) {
-    return { valid: true, data: a2 };
-  }
-  if (isPlainObject(a2) && isPlainObject(b)) {
-    const bKeys = Object.keys(b);
-    const sharedKeys = Object.keys(a2).filter((key) => bKeys.indexOf(key) !== -1);
-    const newObj = { ...a2, ...b };
-    for (const key of sharedKeys) {
-      const sharedValue = mergeValues(a2[key], b[key]);
-      if (!sharedValue.valid) {
-        return {
-          valid: false,
-          mergeErrorPath: [key, ...sharedValue.mergeErrorPath]
-        };
-      }
-      newObj[key] = sharedValue.data;
-    }
-    return { valid: true, data: newObj };
-  }
-  if (Array.isArray(a2) && Array.isArray(b)) {
-    if (a2.length !== b.length) {
-      return { valid: false, mergeErrorPath: [] };
-    }
-    const newArray = [];
-    for (let index = 0; index < a2.length; index++) {
-      const itemA = a2[index];
-      const itemB = b[index];
-      const sharedValue = mergeValues(itemA, itemB);
-      if (!sharedValue.valid) {
-        return {
-          valid: false,
-          mergeErrorPath: [index, ...sharedValue.mergeErrorPath]
-        };
-      }
-      newArray.push(sharedValue.data);
-    }
-    return { valid: true, data: newArray };
-  }
-  return { valid: false, mergeErrorPath: [] };
-}
-function handleIntersectionResults(result2, left, right) {
-  if (left.issues.length) {
-    result2.issues.push(...left.issues);
-  }
-  if (right.issues.length) {
-    result2.issues.push(...right.issues);
-  }
-  if (aborted(result2))
-    return result2;
-  const merged = mergeValues(left.value, right.value);
-  if (!merged.valid) {
-    throw new Error(`Unmergable intersection. Error path: ${JSON.stringify(merged.mergeErrorPath)}`);
-  }
-  result2.value = merged.data;
-  return result2;
-}
-var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, ctx) => {
-    const input = payload.value;
-    if (!isPlainObject(input)) {
-      payload.issues.push({
-        expected: "record",
-        code: "invalid_type",
-        input,
-        inst
-      });
-      return payload;
-    }
-    const proms = [];
-    if (def.keyType._zod.values) {
-      const values = def.keyType._zod.values;
-      payload.value = {};
-      for (const key of values) {
-        if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
-          const result2 = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
-          if (result2 instanceof Promise) {
-            proms.push(result2.then((result3) => {
-              if (result3.issues.length) {
-                payload.issues.push(...prefixIssues(key, result3.issues));
-              }
-              payload.value[key] = result3.value;
-            }));
-          } else {
-            if (result2.issues.length) {
-              payload.issues.push(...prefixIssues(key, result2.issues));
-            }
-            payload.value[key] = result2.value;
-          }
-        }
-      }
-      let unrecognized;
-      for (const key in input) {
-        if (!values.has(key)) {
-          unrecognized = unrecognized ?? [];
-          unrecognized.push(key);
-        }
-      }
-      if (unrecognized && unrecognized.length > 0) {
-        payload.issues.push({
-          code: "unrecognized_keys",
-          input,
-          inst,
-          keys: unrecognized
-        });
-      }
-    } else {
-      payload.value = {};
-      for (const key of Reflect.ownKeys(input)) {
-        if (key === "__proto__")
-          continue;
-        const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
-        if (keyResult instanceof Promise) {
-          throw new Error("Async schemas not supported in object keys currently");
-        }
-        if (keyResult.issues.length) {
-          payload.issues.push({
-            origin: "record",
-            code: "invalid_key",
-            issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
-            input: key,
-            path: [key],
-            inst
-          });
-          payload.value[keyResult.value] = keyResult.value;
-          continue;
-        }
-        const result2 = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
-        if (result2 instanceof Promise) {
-          proms.push(result2.then((result3) => {
-            if (result3.issues.length) {
-              payload.issues.push(...prefixIssues(key, result3.issues));
-            }
-            payload.value[keyResult.value] = result3.value;
-          }));
-        } else {
-          if (result2.issues.length) {
-            payload.issues.push(...prefixIssues(key, result2.issues));
-          }
-          payload.value[keyResult.value] = result2.value;
-        }
-      }
-    }
-    if (proms.length) {
-      return Promise.all(proms).then(() => payload);
-    }
-    return payload;
-  };
-});
-var $ZodEnum = /* @__PURE__ */ $constructor("$ZodEnum", (inst, def) => {
-  $ZodType.init(inst, def);
-  const values = getEnumValues(def.entries);
-  inst._zod.values = new Set(values);
-  inst._zod.pattern = new RegExp(`^(${values.filter((k) => propertyKeyTypes.has(typeof k)).map((o2) => typeof o2 === "string" ? escapeRegex(o2) : o2.toString()).join("|")})$`);
-  inst._zod.parse = (payload, _ctx) => {
-    const input = payload.value;
-    if (inst._zod.values.has(input)) {
-      return payload;
-    }
-    payload.issues.push({
-      code: "invalid_value",
-      values,
-      input,
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodLiteral = /* @__PURE__ */ $constructor("$ZodLiteral", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.values = new Set(def.values);
-  inst._zod.pattern = new RegExp(`^(${def.values.map((o2) => typeof o2 === "string" ? escapeRegex(o2) : o2 ? o2.toString() : String(o2)).join("|")})$`);
-  inst._zod.parse = (payload, _ctx) => {
-    const input = payload.value;
-    if (inst._zod.values.has(input)) {
-      return payload;
-    }
-    payload.issues.push({
-      code: "invalid_value",
-      values: def.values,
-      input,
-      inst
-    });
-    return payload;
-  };
-});
-var $ZodTransform = /* @__PURE__ */ $constructor("$ZodTransform", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, _ctx) => {
-    const _out = def.transform(payload.value, payload);
-    if (_ctx.async) {
-      const output2 = _out instanceof Promise ? _out : Promise.resolve(_out);
-      return output2.then((output3) => {
-        payload.value = output3;
-        return payload;
-      });
-    }
-    if (_out instanceof Promise) {
-      throw new $ZodAsyncError();
-    }
-    payload.value = _out;
-    return payload;
-  };
-});
-var $ZodOptional = /* @__PURE__ */ $constructor("$ZodOptional", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.optin = "optional";
-  inst._zod.optout = "optional";
-  defineLazy(inst._zod, "values", () => {
-    return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, void 0]) : void 0;
-  });
-  defineLazy(inst._zod, "pattern", () => {
-    const pattern = def.innerType._zod.pattern;
-    return pattern ? new RegExp(`^(${cleanRegex(pattern.source)})?$`) : void 0;
-  });
-  inst._zod.parse = (payload, ctx) => {
-    if (def.innerType._zod.optin === "optional") {
-      return def.innerType._zod.run(payload, ctx);
-    }
-    if (payload.value === void 0) {
-      return payload;
-    }
-    return def.innerType._zod.run(payload, ctx);
-  };
-});
-var $ZodNullable = /* @__PURE__ */ $constructor("$ZodNullable", (inst, def) => {
-  $ZodType.init(inst, def);
-  defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
-  defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
-  defineLazy(inst._zod, "pattern", () => {
-    const pattern = def.innerType._zod.pattern;
-    return pattern ? new RegExp(`^(${cleanRegex(pattern.source)}|null)$`) : void 0;
-  });
-  defineLazy(inst._zod, "values", () => {
-    return def.innerType._zod.values ? /* @__PURE__ */ new Set([...def.innerType._zod.values, null]) : void 0;
-  });
-  inst._zod.parse = (payload, ctx) => {
-    if (payload.value === null)
-      return payload;
-    return def.innerType._zod.run(payload, ctx);
-  };
-});
-var $ZodDefault = /* @__PURE__ */ $constructor("$ZodDefault", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.optin = "optional";
-  defineLazy(inst._zod, "values", () => def.innerType._zod.values);
-  inst._zod.parse = (payload, ctx) => {
-    if (payload.value === void 0) {
-      payload.value = def.defaultValue;
-      return payload;
-    }
-    const result2 = def.innerType._zod.run(payload, ctx);
-    if (result2 instanceof Promise) {
-      return result2.then((result3) => handleDefaultResult(result3, def));
-    }
-    return handleDefaultResult(result2, def);
-  };
-});
-function handleDefaultResult(payload, def) {
-  if (payload.value === void 0) {
-    payload.value = def.defaultValue;
-  }
-  return payload;
-}
-var $ZodPrefault = /* @__PURE__ */ $constructor("$ZodPrefault", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.optin = "optional";
-  defineLazy(inst._zod, "values", () => def.innerType._zod.values);
-  inst._zod.parse = (payload, ctx) => {
-    if (payload.value === void 0) {
-      payload.value = def.defaultValue;
-    }
-    return def.innerType._zod.run(payload, ctx);
-  };
-});
-var $ZodNonOptional = /* @__PURE__ */ $constructor("$ZodNonOptional", (inst, def) => {
-  $ZodType.init(inst, def);
-  defineLazy(inst._zod, "values", () => {
-    const v = def.innerType._zod.values;
-    return v ? new Set([...v].filter((x) => x !== void 0)) : void 0;
-  });
-  inst._zod.parse = (payload, ctx) => {
-    const result2 = def.innerType._zod.run(payload, ctx);
-    if (result2 instanceof Promise) {
-      return result2.then((result3) => handleNonOptionalResult(result3, inst));
-    }
-    return handleNonOptionalResult(result2, inst);
-  };
-});
-function handleNonOptionalResult(payload, inst) {
-  if (!payload.issues.length && payload.value === void 0) {
-    payload.issues.push({
-      code: "invalid_type",
-      expected: "nonoptional",
-      input: payload.value,
-      inst
-    });
-  }
-  return payload;
-}
-var $ZodCatch = /* @__PURE__ */ $constructor("$ZodCatch", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst._zod.optin = "optional";
-  defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
-  defineLazy(inst._zod, "values", () => def.innerType._zod.values);
-  inst._zod.parse = (payload, ctx) => {
-    const result2 = def.innerType._zod.run(payload, ctx);
-    if (result2 instanceof Promise) {
-      return result2.then((result3) => {
-        payload.value = result3.value;
-        if (result3.issues.length) {
-          payload.value = def.catchValue({
-            ...payload,
-            error: {
-              issues: result3.issues.map((iss) => finalizeIssue(iss, ctx, config()))
-            },
-            input: payload.value
-          });
-          payload.issues = [];
-        }
-        return payload;
-      });
-    }
-    payload.value = result2.value;
-    if (result2.issues.length) {
-      payload.value = def.catchValue({
-        ...payload,
-        error: {
-          issues: result2.issues.map((iss) => finalizeIssue(iss, ctx, config()))
-        },
-        input: payload.value
-      });
-      payload.issues = [];
-    }
-    return payload;
-  };
-});
-var $ZodPipe = /* @__PURE__ */ $constructor("$ZodPipe", (inst, def) => {
-  $ZodType.init(inst, def);
-  defineLazy(inst._zod, "values", () => def.in._zod.values);
-  defineLazy(inst._zod, "optin", () => def.in._zod.optin);
-  defineLazy(inst._zod, "optout", () => def.out._zod.optout);
-  inst._zod.parse = (payload, ctx) => {
-    const left = def.in._zod.run(payload, ctx);
-    if (left instanceof Promise) {
-      return left.then((left2) => handlePipeResult(left2, def, ctx));
-    }
-    return handlePipeResult(left, def, ctx);
-  };
-});
-function handlePipeResult(left, def, ctx) {
-  if (aborted(left)) {
-    return left;
-  }
-  return def.out._zod.run({ value: left.value, issues: left.issues }, ctx);
-}
-var $ZodReadonly = /* @__PURE__ */ $constructor("$ZodReadonly", (inst, def) => {
-  $ZodType.init(inst, def);
-  defineLazy(inst._zod, "propValues", () => def.innerType._zod.propValues);
-  defineLazy(inst._zod, "values", () => def.innerType._zod.values);
-  defineLazy(inst._zod, "optin", () => def.innerType._zod.optin);
-  defineLazy(inst._zod, "optout", () => def.innerType._zod.optout);
-  inst._zod.parse = (payload, ctx) => {
-    const result2 = def.innerType._zod.run(payload, ctx);
-    if (result2 instanceof Promise) {
-      return result2.then(handleReadonlyResult);
-    }
-    return handleReadonlyResult(result2);
-  };
-});
-function handleReadonlyResult(payload) {
-  payload.value = Object.freeze(payload.value);
-  return payload;
-}
-var $ZodCustom = /* @__PURE__ */ $constructor("$ZodCustom", (inst, def) => {
-  $ZodCheck.init(inst, def);
-  $ZodType.init(inst, def);
-  inst._zod.parse = (payload, _) => {
-    return payload;
-  };
-  inst._zod.check = (payload) => {
-    const input = payload.value;
-    const r = def.fn(input);
-    if (r instanceof Promise) {
-      return r.then((r2) => handleRefineResult(r2, payload, input, inst));
-    }
-    handleRefineResult(r, payload, input, inst);
-    return;
-  };
-});
-function handleRefineResult(result2, payload, input, inst) {
-  if (!result2) {
-    const _iss = {
-      code: "custom",
-      input,
-      inst,
-      // incorporates params.error into issue reporting
-      path: [...inst._zod.def.path ?? []],
-      // incorporates params.error into issue reporting
-      continue: !inst._zod.def.abort
-      // params: inst._zod.def.params,
-    };
-    if (inst._zod.def.params)
-      _iss.params = inst._zod.def.params;
-    payload.issues.push(issue(_iss));
-  }
-}
-
-// node_modules/zod/v4/locales/en.js
-var parsedType = (data) => {
-  const t = typeof data;
-  switch (t) {
-    case "number": {
-      return Number.isNaN(data) ? "NaN" : "number";
-    }
-    case "object": {
-      if (Array.isArray(data)) {
-        return "array";
-      }
-      if (data === null) {
-        return "null";
-      }
-      if (Object.getPrototypeOf(data) !== Object.prototype && data.constructor) {
-        return data.constructor.name;
-      }
-    }
-  }
-  return t;
-};
-var error = () => {
-  const Sizable = {
-    string: { unit: "characters", verb: "to have" },
-    file: { unit: "bytes", verb: "to have" },
-    array: { unit: "items", verb: "to have" },
-    set: { unit: "items", verb: "to have" }
-  };
-  function getSizing(origin) {
-    return Sizable[origin] ?? null;
-  }
-  const Nouns = {
-    regex: "input",
-    email: "email address",
-    url: "URL",
-    emoji: "emoji",
-    uuid: "UUID",
-    uuidv4: "UUIDv4",
-    uuidv6: "UUIDv6",
-    nanoid: "nanoid",
-    guid: "GUID",
-    cuid: "cuid",
-    cuid2: "cuid2",
-    ulid: "ULID",
-    xid: "XID",
-    ksuid: "KSUID",
-    datetime: "ISO datetime",
-    date: "ISO date",
-    time: "ISO time",
-    duration: "ISO duration",
-    ipv4: "IPv4 address",
-    ipv6: "IPv6 address",
-    cidrv4: "IPv4 range",
-    cidrv6: "IPv6 range",
-    base64: "base64-encoded string",
-    base64url: "base64url-encoded string",
-    json_string: "JSON string",
-    e164: "E.164 number",
-    jwt: "JWT",
-    template_literal: "input"
-  };
-  return (issue2) => {
-    switch (issue2.code) {
-      case "invalid_type":
-        return `Invalid input: expected ${issue2.expected}, received ${parsedType(issue2.input)}`;
-      case "invalid_value":
-        if (issue2.values.length === 1)
-          return `Invalid input: expected ${stringifyPrimitive(issue2.values[0])}`;
-        return `Invalid option: expected one of ${joinValues(issue2.values, "|")}`;
-      case "too_big": {
-        const adj = issue2.inclusive ? "<=" : "<";
-        const sizing = getSizing(issue2.origin);
-        if (sizing)
-          return `Too big: expected ${issue2.origin ?? "value"} to have ${adj}${issue2.maximum.toString()} ${sizing.unit ?? "elements"}`;
-        return `Too big: expected ${issue2.origin ?? "value"} to be ${adj}${issue2.maximum.toString()}`;
-      }
-      case "too_small": {
-        const adj = issue2.inclusive ? ">=" : ">";
-        const sizing = getSizing(issue2.origin);
-        if (sizing) {
-          return `Too small: expected ${issue2.origin} to have ${adj}${issue2.minimum.toString()} ${sizing.unit}`;
-        }
-        return `Too small: expected ${issue2.origin} to be ${adj}${issue2.minimum.toString()}`;
-      }
-      case "invalid_format": {
-        const _issue = issue2;
-        if (_issue.format === "starts_with") {
-          return `Invalid string: must start with "${_issue.prefix}"`;
-        }
-        if (_issue.format === "ends_with")
-          return `Invalid string: must end with "${_issue.suffix}"`;
-        if (_issue.format === "includes")
-          return `Invalid string: must include "${_issue.includes}"`;
-        if (_issue.format === "regex")
-          return `Invalid string: must match pattern ${_issue.pattern}`;
-        return `Invalid ${Nouns[_issue.format] ?? issue2.format}`;
-      }
-      case "not_multiple_of":
-        return `Invalid number: must be a multiple of ${issue2.divisor}`;
-      case "unrecognized_keys":
-        return `Unrecognized key${issue2.keys.length > 1 ? "s" : ""}: ${joinValues(issue2.keys, ", ")}`;
-      case "invalid_key":
-        return `Invalid key in ${issue2.origin}`;
-      case "invalid_union":
-        return "Invalid input";
-      case "invalid_element":
-        return `Invalid value in ${issue2.origin}`;
-      default:
-        return `Invalid input`;
-    }
-  };
-};
-function en_default() {
-  return {
-    localeError: error()
-  };
-}
-
-// node_modules/zod/v4/core/registries.js
-var $ZodRegistry = class {
-  constructor() {
-    this._map = /* @__PURE__ */ new Map();
-    this._idmap = /* @__PURE__ */ new Map();
-  }
-  add(schema, ..._meta) {
-    const meta = _meta[0];
-    this._map.set(schema, meta);
-    if (meta && typeof meta === "object" && "id" in meta) {
-      if (this._idmap.has(meta.id)) {
-        throw new Error(`ID ${meta.id} already exists in the registry`);
-      }
-      this._idmap.set(meta.id, schema);
-    }
-    return this;
-  }
-  clear() {
-    this._map = /* @__PURE__ */ new Map();
-    this._idmap = /* @__PURE__ */ new Map();
-    return this;
-  }
-  remove(schema) {
-    const meta = this._map.get(schema);
-    if (meta && typeof meta === "object" && "id" in meta) {
-      this._idmap.delete(meta.id);
-    }
-    this._map.delete(schema);
-    return this;
-  }
-  get(schema) {
-    const p = schema._zod.parent;
-    if (p) {
-      const pm = { ...this.get(p) ?? {} };
-      delete pm.id;
-      return { ...pm, ...this._map.get(schema) };
-    }
-    return this._map.get(schema);
-  }
-  has(schema) {
-    return this._map.has(schema);
-  }
-};
-function registry() {
-  return new $ZodRegistry();
-}
-var globalRegistry = /* @__PURE__ */ registry();
-
-// node_modules/zod/v4/core/api.js
-function _string(Class2, params) {
-  return new Class2({
-    type: "string",
-    ...normalizeParams(params)
-  });
-}
-function _email(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "email",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _guid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "guid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _uuid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "uuid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _uuidv4(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "uuid",
-    check: "string_format",
-    abort: false,
-    version: "v4",
-    ...normalizeParams(params)
-  });
-}
-function _uuidv6(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "uuid",
-    check: "string_format",
-    abort: false,
-    version: "v6",
-    ...normalizeParams(params)
-  });
-}
-function _uuidv7(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "uuid",
-    check: "string_format",
-    abort: false,
-    version: "v7",
-    ...normalizeParams(params)
-  });
-}
-function _url(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "url",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _emoji2(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "emoji",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _nanoid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "nanoid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _cuid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "cuid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _cuid2(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "cuid2",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _ulid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "ulid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _xid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "xid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _ksuid(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "ksuid",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _ipv4(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "ipv4",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _ipv6(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "ipv6",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _cidrv4(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "cidrv4",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _cidrv6(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "cidrv6",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _base64(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "base64",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _base64url(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "base64url",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _e164(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "e164",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _jwt(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "jwt",
-    check: "string_format",
-    abort: false,
-    ...normalizeParams(params)
-  });
-}
-function _isoDateTime(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "datetime",
-    check: "string_format",
-    offset: false,
-    local: false,
-    precision: null,
-    ...normalizeParams(params)
-  });
-}
-function _isoDate(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "date",
-    check: "string_format",
-    ...normalizeParams(params)
-  });
-}
-function _isoTime(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "time",
-    check: "string_format",
-    precision: null,
-    ...normalizeParams(params)
-  });
-}
-function _isoDuration(Class2, params) {
-  return new Class2({
-    type: "string",
-    format: "duration",
-    check: "string_format",
-    ...normalizeParams(params)
-  });
-}
-function _number(Class2, params) {
-  return new Class2({
-    type: "number",
-    checks: [],
-    ...normalizeParams(params)
-  });
-}
-function _int(Class2, params) {
-  return new Class2({
-    type: "number",
-    check: "number_format",
-    abort: false,
-    format: "safeint",
-    ...normalizeParams(params)
-  });
-}
-function _boolean(Class2, params) {
-  return new Class2({
-    type: "boolean",
-    ...normalizeParams(params)
-  });
-}
-function _null2(Class2, params) {
-  return new Class2({
-    type: "null",
-    ...normalizeParams(params)
-  });
-}
-function _unknown(Class2) {
-  return new Class2({
-    type: "unknown"
-  });
-}
-function _never(Class2, params) {
-  return new Class2({
-    type: "never",
-    ...normalizeParams(params)
-  });
-}
-function _lt(value, params) {
-  return new $ZodCheckLessThan({
-    check: "less_than",
-    ...normalizeParams(params),
-    value,
-    inclusive: false
-  });
-}
-function _lte(value, params) {
-  return new $ZodCheckLessThan({
-    check: "less_than",
-    ...normalizeParams(params),
-    value,
-    inclusive: true
-  });
-}
-function _gt(value, params) {
-  return new $ZodCheckGreaterThan({
-    check: "greater_than",
-    ...normalizeParams(params),
-    value,
-    inclusive: false
-  });
-}
-function _gte(value, params) {
-  return new $ZodCheckGreaterThan({
-    check: "greater_than",
-    ...normalizeParams(params),
-    value,
-    inclusive: true
-  });
-}
-function _multipleOf(value, params) {
-  return new $ZodCheckMultipleOf({
-    check: "multiple_of",
-    ...normalizeParams(params),
-    value
-  });
-}
-function _maxLength(maximum, params) {
-  const ch = new $ZodCheckMaxLength({
-    check: "max_length",
-    ...normalizeParams(params),
-    maximum
-  });
-  return ch;
-}
-function _minLength(minimum, params) {
-  return new $ZodCheckMinLength({
-    check: "min_length",
-    ...normalizeParams(params),
-    minimum
-  });
-}
-function _length(length, params) {
-  return new $ZodCheckLengthEquals({
-    check: "length_equals",
-    ...normalizeParams(params),
-    length
-  });
-}
-function _regex(pattern, params) {
-  return new $ZodCheckRegex({
-    check: "string_format",
-    format: "regex",
-    ...normalizeParams(params),
-    pattern
-  });
-}
-function _lowercase(params) {
-  return new $ZodCheckLowerCase({
-    check: "string_format",
-    format: "lowercase",
-    ...normalizeParams(params)
-  });
-}
-function _uppercase(params) {
-  return new $ZodCheckUpperCase({
-    check: "string_format",
-    format: "uppercase",
-    ...normalizeParams(params)
-  });
-}
-function _includes(includes, params) {
-  return new $ZodCheckIncludes({
-    check: "string_format",
-    format: "includes",
-    ...normalizeParams(params),
-    includes
-  });
-}
-function _startsWith(prefix, params) {
-  return new $ZodCheckStartsWith({
-    check: "string_format",
-    format: "starts_with",
-    ...normalizeParams(params),
-    prefix
-  });
-}
-function _endsWith(suffix, params) {
-  return new $ZodCheckEndsWith({
-    check: "string_format",
-    format: "ends_with",
-    ...normalizeParams(params),
-    suffix
-  });
-}
-function _overwrite(tx) {
-  return new $ZodCheckOverwrite({
-    check: "overwrite",
-    tx
-  });
-}
-function _normalize(form) {
-  return _overwrite((input) => input.normalize(form));
-}
-function _trim() {
-  return _overwrite((input) => input.trim());
-}
-function _toLowerCase() {
-  return _overwrite((input) => input.toLowerCase());
-}
-function _toUpperCase() {
-  return _overwrite((input) => input.toUpperCase());
-}
-function _array(Class2, element, params) {
-  return new Class2({
-    type: "array",
-    element,
-    // get element() {
-    //   return element;
-    // },
-    ...normalizeParams(params)
-  });
-}
-function _custom(Class2, fn2, _params) {
-  const norm = normalizeParams(_params);
-  norm.abort ?? (norm.abort = true);
-  const schema = new Class2({
-    type: "custom",
-    check: "custom",
-    fn: fn2,
-    ...norm
-  });
-  return schema;
-}
-function _refine(Class2, fn2, _params) {
-  const schema = new Class2({
-    type: "custom",
-    check: "custom",
-    fn: fn2,
-    ...normalizeParams(_params)
-  });
-  return schema;
-}
-
-// node_modules/zod/v4/classic/iso.js
-var iso_exports = {};
-__export(iso_exports, {
-  ZodISODate: () => ZodISODate,
-  ZodISODateTime: () => ZodISODateTime,
-  ZodISODuration: () => ZodISODuration,
-  ZodISOTime: () => ZodISOTime,
-  date: () => date2,
-  datetime: () => datetime2,
-  duration: () => duration2,
-  time: () => time2
-});
-var ZodISODateTime = /* @__PURE__ */ $constructor("ZodISODateTime", (inst, def) => {
-  $ZodISODateTime.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-function datetime2(params) {
-  return _isoDateTime(ZodISODateTime, params);
-}
-var ZodISODate = /* @__PURE__ */ $constructor("ZodISODate", (inst, def) => {
-  $ZodISODate.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-function date2(params) {
-  return _isoDate(ZodISODate, params);
-}
-var ZodISOTime = /* @__PURE__ */ $constructor("ZodISOTime", (inst, def) => {
-  $ZodISOTime.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-function time2(params) {
-  return _isoTime(ZodISOTime, params);
-}
-var ZodISODuration = /* @__PURE__ */ $constructor("ZodISODuration", (inst, def) => {
-  $ZodISODuration.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-function duration2(params) {
-  return _isoDuration(ZodISODuration, params);
-}
-
-// node_modules/zod/v4/classic/errors.js
-var initializer2 = (inst, issues) => {
-  $ZodError.init(inst, issues);
-  inst.name = "ZodError";
-  Object.defineProperties(inst, {
-    format: {
-      value: (mapper) => formatError(inst, mapper)
-      // enumerable: false,
-    },
-    flatten: {
-      value: (mapper) => flattenError(inst, mapper)
-      // enumerable: false,
-    },
-    addIssue: {
-      value: (issue2) => inst.issues.push(issue2)
-      // enumerable: false,
-    },
-    addIssues: {
-      value: (issues2) => inst.issues.push(...issues2)
-      // enumerable: false,
-    },
-    isEmpty: {
-      get() {
-        return inst.issues.length === 0;
-      }
-      // enumerable: false,
-    }
-  });
-};
-var ZodError = $constructor("ZodError", initializer2);
-var ZodRealError = $constructor("ZodError", initializer2, {
-  Parent: Error
-});
-
-// node_modules/zod/v4/classic/parse.js
-var parse = /* @__PURE__ */ _parse(ZodRealError);
-var parseAsync = /* @__PURE__ */ _parseAsync(ZodRealError);
-var safeParse2 = /* @__PURE__ */ _safeParse(ZodRealError);
-var safeParseAsync2 = /* @__PURE__ */ _safeParseAsync(ZodRealError);
-
-// node_modules/zod/v4/classic/schemas.js
-var ZodType = /* @__PURE__ */ $constructor("ZodType", (inst, def) => {
-  $ZodType.init(inst, def);
-  inst.def = def;
-  Object.defineProperty(inst, "_def", { value: def });
-  inst.check = (...checks) => {
-    return inst.clone(
-      {
-        ...def,
-        checks: [
-          ...def.checks ?? [],
-          ...checks.map((ch) => typeof ch === "function" ? { _zod: { check: ch, def: { check: "custom" }, onattach: [] } } : ch)
-        ]
-      }
-      // { parent: true }
-    );
-  };
-  inst.clone = (def2, params) => clone(inst, def2, params);
-  inst.brand = () => inst;
-  inst.register = ((reg, meta) => {
-    reg.add(inst, meta);
-    return inst;
-  });
-  inst.parse = (data, params) => parse(inst, data, params, { callee: inst.parse });
-  inst.safeParse = (data, params) => safeParse2(inst, data, params);
-  inst.parseAsync = async (data, params) => parseAsync(inst, data, params, { callee: inst.parseAsync });
-  inst.safeParseAsync = async (data, params) => safeParseAsync2(inst, data, params);
-  inst.spa = inst.safeParseAsync;
-  inst.refine = (check2, params) => inst.check(refine(check2, params));
-  inst.superRefine = (refinement) => inst.check(superRefine(refinement));
-  inst.overwrite = (fn2) => inst.check(_overwrite(fn2));
-  inst.optional = () => optional(inst);
-  inst.nullable = () => nullable(inst);
-  inst.nullish = () => optional(nullable(inst));
-  inst.nonoptional = (params) => nonoptional(inst, params);
-  inst.array = () => array(inst);
-  inst.or = (arg) => union([inst, arg]);
-  inst.and = (arg) => intersection(inst, arg);
-  inst.transform = (tx) => pipe(inst, transform(tx));
-  inst.default = (def2) => _default(inst, def2);
-  inst.prefault = (def2) => prefault(inst, def2);
-  inst.catch = (params) => _catch(inst, params);
-  inst.pipe = (target) => pipe(inst, target);
-  inst.readonly = () => readonly(inst);
-  inst.describe = (description) => {
-    const cl = inst.clone();
-    globalRegistry.add(cl, { description });
-    return cl;
-  };
-  Object.defineProperty(inst, "description", {
-    get() {
-      return globalRegistry.get(inst)?.description;
-    },
-    configurable: true
-  });
-  inst.meta = (...args2) => {
-    if (args2.length === 0) {
-      return globalRegistry.get(inst);
-    }
-    const cl = inst.clone();
-    globalRegistry.add(cl, args2[0]);
-    return cl;
-  };
-  inst.isOptional = () => inst.safeParse(void 0).success;
-  inst.isNullable = () => inst.safeParse(null).success;
-  return inst;
-});
-var _ZodString = /* @__PURE__ */ $constructor("_ZodString", (inst, def) => {
-  $ZodString.init(inst, def);
-  ZodType.init(inst, def);
-  const bag = inst._zod.bag;
-  inst.format = bag.format ?? null;
-  inst.minLength = bag.minimum ?? null;
-  inst.maxLength = bag.maximum ?? null;
-  inst.regex = (...args2) => inst.check(_regex(...args2));
-  inst.includes = (...args2) => inst.check(_includes(...args2));
-  inst.startsWith = (...args2) => inst.check(_startsWith(...args2));
-  inst.endsWith = (...args2) => inst.check(_endsWith(...args2));
-  inst.min = (...args2) => inst.check(_minLength(...args2));
-  inst.max = (...args2) => inst.check(_maxLength(...args2));
-  inst.length = (...args2) => inst.check(_length(...args2));
-  inst.nonempty = (...args2) => inst.check(_minLength(1, ...args2));
-  inst.lowercase = (params) => inst.check(_lowercase(params));
-  inst.uppercase = (params) => inst.check(_uppercase(params));
-  inst.trim = () => inst.check(_trim());
-  inst.normalize = (...args2) => inst.check(_normalize(...args2));
-  inst.toLowerCase = () => inst.check(_toLowerCase());
-  inst.toUpperCase = () => inst.check(_toUpperCase());
-});
-var ZodString = /* @__PURE__ */ $constructor("ZodString", (inst, def) => {
-  $ZodString.init(inst, def);
-  _ZodString.init(inst, def);
-  inst.email = (params) => inst.check(_email(ZodEmail, params));
-  inst.url = (params) => inst.check(_url(ZodURL, params));
-  inst.jwt = (params) => inst.check(_jwt(ZodJWT, params));
-  inst.emoji = (params) => inst.check(_emoji2(ZodEmoji, params));
-  inst.guid = (params) => inst.check(_guid(ZodGUID, params));
-  inst.uuid = (params) => inst.check(_uuid(ZodUUID, params));
-  inst.uuidv4 = (params) => inst.check(_uuidv4(ZodUUID, params));
-  inst.uuidv6 = (params) => inst.check(_uuidv6(ZodUUID, params));
-  inst.uuidv7 = (params) => inst.check(_uuidv7(ZodUUID, params));
-  inst.nanoid = (params) => inst.check(_nanoid(ZodNanoID, params));
-  inst.guid = (params) => inst.check(_guid(ZodGUID, params));
-  inst.cuid = (params) => inst.check(_cuid(ZodCUID, params));
-  inst.cuid2 = (params) => inst.check(_cuid2(ZodCUID2, params));
-  inst.ulid = (params) => inst.check(_ulid(ZodULID, params));
-  inst.base64 = (params) => inst.check(_base64(ZodBase64, params));
-  inst.base64url = (params) => inst.check(_base64url(ZodBase64URL, params));
-  inst.xid = (params) => inst.check(_xid(ZodXID, params));
-  inst.ksuid = (params) => inst.check(_ksuid(ZodKSUID, params));
-  inst.ipv4 = (params) => inst.check(_ipv4(ZodIPv4, params));
-  inst.ipv6 = (params) => inst.check(_ipv6(ZodIPv6, params));
-  inst.cidrv4 = (params) => inst.check(_cidrv4(ZodCIDRv4, params));
-  inst.cidrv6 = (params) => inst.check(_cidrv6(ZodCIDRv6, params));
-  inst.e164 = (params) => inst.check(_e164(ZodE164, params));
-  inst.datetime = (params) => inst.check(datetime2(params));
-  inst.date = (params) => inst.check(date2(params));
-  inst.time = (params) => inst.check(time2(params));
-  inst.duration = (params) => inst.check(duration2(params));
-});
-function string2(params) {
-  return _string(ZodString, params);
-}
-var ZodStringFormat = /* @__PURE__ */ $constructor("ZodStringFormat", (inst, def) => {
-  $ZodStringFormat.init(inst, def);
-  _ZodString.init(inst, def);
-});
-var ZodEmail = /* @__PURE__ */ $constructor("ZodEmail", (inst, def) => {
-  $ZodEmail.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodGUID = /* @__PURE__ */ $constructor("ZodGUID", (inst, def) => {
-  $ZodGUID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodUUID = /* @__PURE__ */ $constructor("ZodUUID", (inst, def) => {
-  $ZodUUID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodURL = /* @__PURE__ */ $constructor("ZodURL", (inst, def) => {
-  $ZodURL.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodEmoji = /* @__PURE__ */ $constructor("ZodEmoji", (inst, def) => {
-  $ZodEmoji.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodNanoID = /* @__PURE__ */ $constructor("ZodNanoID", (inst, def) => {
-  $ZodNanoID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodCUID = /* @__PURE__ */ $constructor("ZodCUID", (inst, def) => {
-  $ZodCUID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodCUID2 = /* @__PURE__ */ $constructor("ZodCUID2", (inst, def) => {
-  $ZodCUID2.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodULID = /* @__PURE__ */ $constructor("ZodULID", (inst, def) => {
-  $ZodULID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodXID = /* @__PURE__ */ $constructor("ZodXID", (inst, def) => {
-  $ZodXID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodKSUID = /* @__PURE__ */ $constructor("ZodKSUID", (inst, def) => {
-  $ZodKSUID.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodIPv4 = /* @__PURE__ */ $constructor("ZodIPv4", (inst, def) => {
-  $ZodIPv4.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodIPv6 = /* @__PURE__ */ $constructor("ZodIPv6", (inst, def) => {
-  $ZodIPv6.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodCIDRv4 = /* @__PURE__ */ $constructor("ZodCIDRv4", (inst, def) => {
-  $ZodCIDRv4.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodCIDRv6 = /* @__PURE__ */ $constructor("ZodCIDRv6", (inst, def) => {
-  $ZodCIDRv6.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodBase64 = /* @__PURE__ */ $constructor("ZodBase64", (inst, def) => {
-  $ZodBase64.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodBase64URL = /* @__PURE__ */ $constructor("ZodBase64URL", (inst, def) => {
-  $ZodBase64URL.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodE164 = /* @__PURE__ */ $constructor("ZodE164", (inst, def) => {
-  $ZodE164.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodJWT = /* @__PURE__ */ $constructor("ZodJWT", (inst, def) => {
-  $ZodJWT.init(inst, def);
-  ZodStringFormat.init(inst, def);
-});
-var ZodNumber = /* @__PURE__ */ $constructor("ZodNumber", (inst, def) => {
-  $ZodNumber.init(inst, def);
-  ZodType.init(inst, def);
-  inst.gt = (value, params) => inst.check(_gt(value, params));
-  inst.gte = (value, params) => inst.check(_gte(value, params));
-  inst.min = (value, params) => inst.check(_gte(value, params));
-  inst.lt = (value, params) => inst.check(_lt(value, params));
-  inst.lte = (value, params) => inst.check(_lte(value, params));
-  inst.max = (value, params) => inst.check(_lte(value, params));
-  inst.int = (params) => inst.check(int(params));
-  inst.safe = (params) => inst.check(int(params));
-  inst.positive = (params) => inst.check(_gt(0, params));
-  inst.nonnegative = (params) => inst.check(_gte(0, params));
-  inst.negative = (params) => inst.check(_lt(0, params));
-  inst.nonpositive = (params) => inst.check(_lte(0, params));
-  inst.multipleOf = (value, params) => inst.check(_multipleOf(value, params));
-  inst.step = (value, params) => inst.check(_multipleOf(value, params));
-  inst.finite = () => inst;
-  const bag = inst._zod.bag;
-  inst.minValue = Math.max(bag.minimum ?? Number.NEGATIVE_INFINITY, bag.exclusiveMinimum ?? Number.NEGATIVE_INFINITY) ?? null;
-  inst.maxValue = Math.min(bag.maximum ?? Number.POSITIVE_INFINITY, bag.exclusiveMaximum ?? Number.POSITIVE_INFINITY) ?? null;
-  inst.isInt = (bag.format ?? "").includes("int") || Number.isSafeInteger(bag.multipleOf ?? 0.5);
-  inst.isFinite = true;
-  inst.format = bag.format ?? null;
-});
-function number2(params) {
-  return _number(ZodNumber, params);
-}
-var ZodNumberFormat = /* @__PURE__ */ $constructor("ZodNumberFormat", (inst, def) => {
-  $ZodNumberFormat.init(inst, def);
-  ZodNumber.init(inst, def);
-});
-function int(params) {
-  return _int(ZodNumberFormat, params);
-}
-var ZodBoolean = /* @__PURE__ */ $constructor("ZodBoolean", (inst, def) => {
-  $ZodBoolean.init(inst, def);
-  ZodType.init(inst, def);
-});
-function boolean2(params) {
-  return _boolean(ZodBoolean, params);
-}
-var ZodNull = /* @__PURE__ */ $constructor("ZodNull", (inst, def) => {
-  $ZodNull.init(inst, def);
-  ZodType.init(inst, def);
-});
-function _null3(params) {
-  return _null2(ZodNull, params);
-}
-var ZodUnknown = /* @__PURE__ */ $constructor("ZodUnknown", (inst, def) => {
-  $ZodUnknown.init(inst, def);
-  ZodType.init(inst, def);
-});
-function unknown() {
-  return _unknown(ZodUnknown);
-}
-var ZodNever = /* @__PURE__ */ $constructor("ZodNever", (inst, def) => {
-  $ZodNever.init(inst, def);
-  ZodType.init(inst, def);
-});
-function never(params) {
-  return _never(ZodNever, params);
-}
-var ZodArray = /* @__PURE__ */ $constructor("ZodArray", (inst, def) => {
-  $ZodArray.init(inst, def);
-  ZodType.init(inst, def);
-  inst.element = def.element;
-  inst.min = (minLength, params) => inst.check(_minLength(minLength, params));
-  inst.nonempty = (params) => inst.check(_minLength(1, params));
-  inst.max = (maxLength, params) => inst.check(_maxLength(maxLength, params));
-  inst.length = (len, params) => inst.check(_length(len, params));
-  inst.unwrap = () => inst.element;
-});
-function array(element, params) {
-  return _array(ZodArray, element, params);
-}
-var ZodObject = /* @__PURE__ */ $constructor("ZodObject", (inst, def) => {
-  $ZodObject.init(inst, def);
-  ZodType.init(inst, def);
-  util_exports.defineLazy(inst, "shape", () => def.shape);
-  inst.keyof = () => _enum(Object.keys(inst._zod.def.shape));
-  inst.catchall = (catchall) => inst.clone({ ...inst._zod.def, catchall });
-  inst.passthrough = () => inst.clone({ ...inst._zod.def, catchall: unknown() });
-  inst.loose = () => inst.clone({ ...inst._zod.def, catchall: unknown() });
-  inst.strict = () => inst.clone({ ...inst._zod.def, catchall: never() });
-  inst.strip = () => inst.clone({ ...inst._zod.def, catchall: void 0 });
-  inst.extend = (incoming) => {
-    return util_exports.extend(inst, incoming);
-  };
-  inst.merge = (other) => util_exports.merge(inst, other);
-  inst.pick = (mask) => util_exports.pick(inst, mask);
-  inst.omit = (mask) => util_exports.omit(inst, mask);
-  inst.partial = (...args2) => util_exports.partial(ZodOptional, inst, args2[0]);
-  inst.required = (...args2) => util_exports.required(ZodNonOptional, inst, args2[0]);
-});
-function object(shape, params) {
-  const def = {
-    type: "object",
-    get shape() {
-      util_exports.assignProp(this, "shape", { ...shape });
-      return this.shape;
-    },
-    ...util_exports.normalizeParams(params)
-  };
-  return new ZodObject(def);
-}
-function looseObject(shape, params) {
-  return new ZodObject({
-    type: "object",
-    get shape() {
-      util_exports.assignProp(this, "shape", { ...shape });
-      return this.shape;
-    },
-    catchall: unknown(),
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodUnion = /* @__PURE__ */ $constructor("ZodUnion", (inst, def) => {
-  $ZodUnion.init(inst, def);
-  ZodType.init(inst, def);
-  inst.options = def.options;
-});
-function union(options2, params) {
-  return new ZodUnion({
-    type: "union",
-    options: options2,
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodDiscriminatedUnion = /* @__PURE__ */ $constructor("ZodDiscriminatedUnion", (inst, def) => {
-  ZodUnion.init(inst, def);
-  $ZodDiscriminatedUnion.init(inst, def);
-});
-function discriminatedUnion(discriminator, options2, params) {
-  return new ZodDiscriminatedUnion({
-    type: "union",
-    options: options2,
-    discriminator,
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodIntersection = /* @__PURE__ */ $constructor("ZodIntersection", (inst, def) => {
-  $ZodIntersection.init(inst, def);
-  ZodType.init(inst, def);
-});
-function intersection(left, right) {
-  return new ZodIntersection({
-    type: "intersection",
-    left,
-    right
-  });
-}
-var ZodRecord = /* @__PURE__ */ $constructor("ZodRecord", (inst, def) => {
-  $ZodRecord.init(inst, def);
-  ZodType.init(inst, def);
-  inst.keyType = def.keyType;
-  inst.valueType = def.valueType;
-});
-function record(keyType, valueType, params) {
-  return new ZodRecord({
-    type: "record",
-    keyType,
-    valueType,
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodEnum = /* @__PURE__ */ $constructor("ZodEnum", (inst, def) => {
-  $ZodEnum.init(inst, def);
-  ZodType.init(inst, def);
-  inst.enum = def.entries;
-  inst.options = Object.values(def.entries);
-  const keys2 = new Set(Object.keys(def.entries));
-  inst.extract = (values, params) => {
-    const newEntries = {};
-    for (const value of values) {
-      if (keys2.has(value)) {
-        newEntries[value] = def.entries[value];
-      } else
-        throw new Error(`Key ${value} not found in enum`);
-    }
-    return new ZodEnum({
-      ...def,
-      checks: [],
-      ...util_exports.normalizeParams(params),
-      entries: newEntries
-    });
-  };
-  inst.exclude = (values, params) => {
-    const newEntries = { ...def.entries };
-    for (const value of values) {
-      if (keys2.has(value)) {
-        delete newEntries[value];
-      } else
-        throw new Error(`Key ${value} not found in enum`);
-    }
-    return new ZodEnum({
-      ...def,
-      checks: [],
-      ...util_exports.normalizeParams(params),
-      entries: newEntries
-    });
-  };
-});
-function _enum(values, params) {
-  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
-  return new ZodEnum({
-    type: "enum",
-    entries,
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodLiteral = /* @__PURE__ */ $constructor("ZodLiteral", (inst, def) => {
-  $ZodLiteral.init(inst, def);
-  ZodType.init(inst, def);
-  inst.values = new Set(def.values);
-  Object.defineProperty(inst, "value", {
-    get() {
-      if (def.values.length > 1) {
-        throw new Error("This schema contains multiple valid literal values. Use `.values` instead.");
-      }
-      return def.values[0];
-    }
-  });
-});
-function literal(value, params) {
-  return new ZodLiteral({
-    type: "literal",
-    values: Array.isArray(value) ? value : [value],
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodTransform = /* @__PURE__ */ $constructor("ZodTransform", (inst, def) => {
-  $ZodTransform.init(inst, def);
-  ZodType.init(inst, def);
-  inst._zod.parse = (payload, _ctx) => {
-    payload.addIssue = (issue2) => {
-      if (typeof issue2 === "string") {
-        payload.issues.push(util_exports.issue(issue2, payload.value, def));
-      } else {
-        const _issue = issue2;
-        if (_issue.fatal)
-          _issue.continue = false;
-        _issue.code ?? (_issue.code = "custom");
-        _issue.input ?? (_issue.input = payload.value);
-        _issue.inst ?? (_issue.inst = inst);
-        _issue.continue ?? (_issue.continue = true);
-        payload.issues.push(util_exports.issue(_issue));
-      }
-    };
-    const output2 = def.transform(payload.value, payload);
-    if (output2 instanceof Promise) {
-      return output2.then((output3) => {
-        payload.value = output3;
-        return payload;
-      });
-    }
-    payload.value = output2;
-    return payload;
-  };
-});
-function transform(fn2) {
-  return new ZodTransform({
-    type: "transform",
-    transform: fn2
-  });
-}
-var ZodOptional = /* @__PURE__ */ $constructor("ZodOptional", (inst, def) => {
-  $ZodOptional.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-});
-function optional(innerType) {
-  return new ZodOptional({
-    type: "optional",
-    innerType
-  });
-}
-var ZodNullable = /* @__PURE__ */ $constructor("ZodNullable", (inst, def) => {
-  $ZodNullable.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-});
-function nullable(innerType) {
-  return new ZodNullable({
-    type: "nullable",
-    innerType
-  });
-}
-var ZodDefault = /* @__PURE__ */ $constructor("ZodDefault", (inst, def) => {
-  $ZodDefault.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-  inst.removeDefault = inst.unwrap;
-});
-function _default(innerType, defaultValue) {
-  return new ZodDefault({
-    type: "default",
-    innerType,
-    get defaultValue() {
-      return typeof defaultValue === "function" ? defaultValue() : defaultValue;
-    }
-  });
-}
-var ZodPrefault = /* @__PURE__ */ $constructor("ZodPrefault", (inst, def) => {
-  $ZodPrefault.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-});
-function prefault(innerType, defaultValue) {
-  return new ZodPrefault({
-    type: "prefault",
-    innerType,
-    get defaultValue() {
-      return typeof defaultValue === "function" ? defaultValue() : defaultValue;
-    }
-  });
-}
-var ZodNonOptional = /* @__PURE__ */ $constructor("ZodNonOptional", (inst, def) => {
-  $ZodNonOptional.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-});
-function nonoptional(innerType, params) {
-  return new ZodNonOptional({
-    type: "nonoptional",
-    innerType,
-    ...util_exports.normalizeParams(params)
-  });
-}
-var ZodCatch = /* @__PURE__ */ $constructor("ZodCatch", (inst, def) => {
-  $ZodCatch.init(inst, def);
-  ZodType.init(inst, def);
-  inst.unwrap = () => inst._zod.def.innerType;
-  inst.removeCatch = inst.unwrap;
-});
-function _catch(innerType, catchValue) {
-  return new ZodCatch({
-    type: "catch",
-    innerType,
-    catchValue: typeof catchValue === "function" ? catchValue : () => catchValue
-  });
-}
-var ZodPipe = /* @__PURE__ */ $constructor("ZodPipe", (inst, def) => {
-  $ZodPipe.init(inst, def);
-  ZodType.init(inst, def);
-  inst.in = def.in;
-  inst.out = def.out;
-});
-function pipe(in_, out) {
-  return new ZodPipe({
-    type: "pipe",
-    in: in_,
-    out
-    // ...util.normalizeParams(params),
-  });
-}
-var ZodReadonly = /* @__PURE__ */ $constructor("ZodReadonly", (inst, def) => {
-  $ZodReadonly.init(inst, def);
-  ZodType.init(inst, def);
-});
-function readonly(innerType) {
-  return new ZodReadonly({
-    type: "readonly",
-    innerType
-  });
-}
-var ZodCustom = /* @__PURE__ */ $constructor("ZodCustom", (inst, def) => {
-  $ZodCustom.init(inst, def);
-  ZodType.init(inst, def);
-});
-function check(fn2) {
-  const ch = new $ZodCheck({
-    check: "custom"
-    // ...util.normalizeParams(params),
-  });
-  ch._zod.check = fn2;
-  return ch;
-}
-function custom(fn2, _params) {
-  return _custom(ZodCustom, fn2 ?? (() => true), _params);
-}
-function refine(fn2, _params = {}) {
-  return _refine(ZodCustom, fn2, _params);
-}
-function superRefine(fn2) {
-  const ch = check((payload) => {
-    payload.addIssue = (issue2) => {
-      if (typeof issue2 === "string") {
-        payload.issues.push(util_exports.issue(issue2, payload.value, ch._zod.def));
-      } else {
-        const _issue = issue2;
-        if (_issue.fatal)
-          _issue.continue = false;
-        _issue.code ?? (_issue.code = "custom");
-        _issue.input ?? (_issue.input = payload.value);
-        _issue.inst ?? (_issue.inst = ch);
-        _issue.continue ?? (_issue.continue = !ch._zod.def.abort);
-        payload.issues.push(util_exports.issue(_issue));
-      }
-    };
-    return fn2(payload.value, payload);
-  });
-  return ch;
-}
-function preprocess(fn2, schema) {
-  return pipe(transform(fn2), schema);
-}
-
-// node_modules/zod/v4/classic/external.js
-config(en_default());
-
-// node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
-var LATEST_PROTOCOL_VERSION = "2025-11-25";
-var SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, "2025-06-18", "2025-03-26", "2024-11-05", "2024-10-07"];
-var RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
-var JSONRPC_VERSION = "2.0";
-var AssertObjectSchema = custom((v) => v !== null && (typeof v === "object" || typeof v === "function"));
-var ProgressTokenSchema = union([string2(), number2().int()]);
-var CursorSchema = string2();
-var TaskCreationParamsSchema = looseObject({
-  /**
-   * Requested duration in milliseconds to retain task from creation.
-   */
-  ttl: number2().optional(),
-  /**
-   * Time in milliseconds to wait between task status requests.
-   */
-  pollInterval: number2().optional()
-});
-var TaskMetadataSchema = object({
-  ttl: number2().optional()
-});
-var RelatedTaskMetadataSchema = object({
-  taskId: string2()
-});
-var RequestMetaSchema = looseObject({
-  /**
-   * If specified, the caller is requesting out-of-band progress notifications for this request (as represented by notifications/progress). The value of this parameter is an opaque token that will be attached to any subsequent notifications. The receiver is not obligated to provide these notifications.
-   */
-  progressToken: ProgressTokenSchema.optional(),
-  /**
-   * If specified, this request is related to the provided task.
-   */
-  [RELATED_TASK_META_KEY]: RelatedTaskMetadataSchema.optional()
-});
-var BaseRequestParamsSchema = object({
-  /**
-   * See [General fields: `_meta`](/specification/draft/basic/index#meta) for notes on `_meta` usage.
-   */
-  _meta: RequestMetaSchema.optional()
-});
-var TaskAugmentedRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * If specified, the caller is requesting task-augmented execution for this request.
-   * The request will return a CreateTaskResult immediately, and the actual result can be
-   * retrieved later via tasks/result.
-   *
-   * Task augmentation is subject to capability negotiation - receivers MUST declare support
-   * for task augmentation of specific request types in their capabilities.
-   */
-  task: TaskMetadataSchema.optional()
-});
-var isTaskAugmentedRequestParams = (value) => TaskAugmentedRequestParamsSchema.safeParse(value).success;
-var RequestSchema = object({
-  method: string2(),
-  params: BaseRequestParamsSchema.loose().optional()
-});
-var NotificationsParamsSchema = object({
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: RequestMetaSchema.optional()
-});
-var NotificationSchema = object({
-  method: string2(),
-  params: NotificationsParamsSchema.loose().optional()
-});
-var ResultSchema = looseObject({
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: RequestMetaSchema.optional()
-});
-var RequestIdSchema = union([string2(), number2().int()]);
-var JSONRPCRequestSchema = object({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: RequestIdSchema,
-  ...RequestSchema.shape
-}).strict();
-var isJSONRPCRequest = (value) => JSONRPCRequestSchema.safeParse(value).success;
-var JSONRPCNotificationSchema = object({
-  jsonrpc: literal(JSONRPC_VERSION),
-  ...NotificationSchema.shape
-}).strict();
-var isJSONRPCNotification = (value) => JSONRPCNotificationSchema.safeParse(value).success;
-var JSONRPCResultResponseSchema = object({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: RequestIdSchema,
-  result: ResultSchema
-}).strict();
-var isJSONRPCResultResponse = (value) => JSONRPCResultResponseSchema.safeParse(value).success;
-var ErrorCode;
-(function(ErrorCode2) {
-  ErrorCode2[ErrorCode2["ConnectionClosed"] = -32e3] = "ConnectionClosed";
-  ErrorCode2[ErrorCode2["RequestTimeout"] = -32001] = "RequestTimeout";
-  ErrorCode2[ErrorCode2["ParseError"] = -32700] = "ParseError";
-  ErrorCode2[ErrorCode2["InvalidRequest"] = -32600] = "InvalidRequest";
-  ErrorCode2[ErrorCode2["MethodNotFound"] = -32601] = "MethodNotFound";
-  ErrorCode2[ErrorCode2["InvalidParams"] = -32602] = "InvalidParams";
-  ErrorCode2[ErrorCode2["InternalError"] = -32603] = "InternalError";
-  ErrorCode2[ErrorCode2["UrlElicitationRequired"] = -32042] = "UrlElicitationRequired";
-})(ErrorCode || (ErrorCode = {}));
-var JSONRPCErrorResponseSchema = object({
-  jsonrpc: literal(JSONRPC_VERSION),
-  id: RequestIdSchema.optional(),
-  error: object({
-    /**
-     * The error type that occurred.
-     */
-    code: number2().int(),
-    /**
-     * A short description of the error. The message SHOULD be limited to a concise single sentence.
-     */
-    message: string2(),
-    /**
-     * Additional information about the error. The value of this member is defined by the sender (e.g. detailed error information, nested errors etc.).
-     */
-    data: unknown().optional()
-  })
-}).strict();
-var isJSONRPCErrorResponse = (value) => JSONRPCErrorResponseSchema.safeParse(value).success;
-var JSONRPCMessageSchema = union([
-  JSONRPCRequestSchema,
-  JSONRPCNotificationSchema,
-  JSONRPCResultResponseSchema,
-  JSONRPCErrorResponseSchema
-]);
-var JSONRPCResponseSchema = union([JSONRPCResultResponseSchema, JSONRPCErrorResponseSchema]);
-var EmptyResultSchema = ResultSchema.strict();
-var CancelledNotificationParamsSchema = NotificationsParamsSchema.extend({
-  /**
-   * The ID of the request to cancel.
-   *
-   * This MUST correspond to the ID of a request previously issued in the same direction.
-   */
-  requestId: RequestIdSchema.optional(),
-  /**
-   * An optional string describing the reason for the cancellation. This MAY be logged or presented to the user.
-   */
-  reason: string2().optional()
-});
-var CancelledNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/cancelled"),
-  params: CancelledNotificationParamsSchema
-});
-var IconSchema = object({
-  /**
-   * URL or data URI for the icon.
-   */
-  src: string2(),
-  /**
-   * Optional MIME type for the icon.
-   */
-  mimeType: string2().optional(),
-  /**
-   * Optional array of strings that specify sizes at which the icon can be used.
-   * Each string should be in WxH format (e.g., `"48x48"`, `"96x96"`) or `"any"` for scalable formats like SVG.
-   *
-   * If not provided, the client should assume that the icon can be used at any size.
-   */
-  sizes: array(string2()).optional(),
-  /**
-   * Optional specifier for the theme this icon is designed for. `light` indicates
-   * the icon is designed to be used with a light background, and `dark` indicates
-   * the icon is designed to be used with a dark background.
-   *
-   * If not provided, the client should assume the icon can be used with any theme.
-   */
-  theme: _enum(["light", "dark"]).optional()
-});
-var IconsSchema = object({
-  /**
-   * Optional set of sized icons that the client can display in a user interface.
-   *
-   * Clients that support rendering icons MUST support at least the following MIME types:
-   * - `image/png` - PNG images (safe, universal compatibility)
-   * - `image/jpeg` (and `image/jpg`) - JPEG images (safe, universal compatibility)
-   *
-   * Clients that support rendering icons SHOULD also support:
-   * - `image/svg+xml` - SVG images (scalable but requires security precautions)
-   * - `image/webp` - WebP images (modern, efficient format)
-   */
-  icons: array(IconSchema).optional()
-});
-var BaseMetadataSchema = object({
-  /** Intended for programmatic or logical use, but used as a display name in past specs or fallback */
-  name: string2(),
-  /**
-   * Intended for UI and end-user contexts — optimized to be human-readable and easily understood,
-   * even by those unfamiliar with domain-specific terminology.
-   *
-   * If not provided, the name should be used for display (except for Tool,
-   * where `annotations.title` should be given precedence over using `name`,
-   * if present).
-   */
-  title: string2().optional()
-});
-var ImplementationSchema = BaseMetadataSchema.extend({
-  ...BaseMetadataSchema.shape,
-  ...IconsSchema.shape,
-  version: string2(),
-  /**
-   * An optional URL of the website for this implementation.
-   */
-  websiteUrl: string2().optional(),
-  /**
-   * An optional human-readable description of what this implementation does.
-   *
-   * This can be used by clients or servers to provide context about their purpose
-   * and capabilities. For example, a server might describe the types of resources
-   * or tools it provides, while a client might describe its intended use case.
-   */
-  description: string2().optional()
-});
-var FormElicitationCapabilitySchema = intersection(object({
-  applyDefaults: boolean2().optional()
-}), record(string2(), unknown()));
-var ElicitationCapabilitySchema = preprocess((value) => {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    if (Object.keys(value).length === 0) {
-      return { form: {} };
-    }
-  }
-  return value;
-}, intersection(object({
-  form: FormElicitationCapabilitySchema.optional(),
-  url: AssertObjectSchema.optional()
-}), record(string2(), unknown()).optional()));
-var ClientTasksCapabilitySchema = looseObject({
-  /**
-   * Present if the client supports listing tasks.
-   */
-  list: AssertObjectSchema.optional(),
-  /**
-   * Present if the client supports cancelling tasks.
-   */
-  cancel: AssertObjectSchema.optional(),
-  /**
-   * Capabilities for task creation on specific request types.
-   */
-  requests: looseObject({
-    /**
-     * Task support for sampling requests.
-     */
-    sampling: looseObject({
-      createMessage: AssertObjectSchema.optional()
-    }).optional(),
-    /**
-     * Task support for elicitation requests.
-     */
-    elicitation: looseObject({
-      create: AssertObjectSchema.optional()
-    }).optional()
-  }).optional()
-});
-var ServerTasksCapabilitySchema = looseObject({
-  /**
-   * Present if the server supports listing tasks.
-   */
-  list: AssertObjectSchema.optional(),
-  /**
-   * Present if the server supports cancelling tasks.
-   */
-  cancel: AssertObjectSchema.optional(),
-  /**
-   * Capabilities for task creation on specific request types.
-   */
-  requests: looseObject({
-    /**
-     * Task support for tool requests.
-     */
-    tools: looseObject({
-      call: AssertObjectSchema.optional()
-    }).optional()
-  }).optional()
-});
-var ClientCapabilitiesSchema = object({
-  /**
-   * Experimental, non-standard capabilities that the client supports.
-   */
-  experimental: record(string2(), AssertObjectSchema).optional(),
-  /**
-   * Present if the client supports sampling from an LLM.
-   */
-  sampling: object({
-    /**
-     * Present if the client supports context inclusion via includeContext parameter.
-     * If not declared, servers SHOULD only use `includeContext: "none"` (or omit it).
-     */
-    context: AssertObjectSchema.optional(),
-    /**
-     * Present if the client supports tool use via tools and toolChoice parameters.
-     */
-    tools: AssertObjectSchema.optional()
-  }).optional(),
-  /**
-   * Present if the client supports eliciting user input.
-   */
-  elicitation: ElicitationCapabilitySchema.optional(),
-  /**
-   * Present if the client supports listing roots.
-   */
-  roots: object({
-    /**
-     * Whether the client supports issuing notifications for changes to the roots list.
-     */
-    listChanged: boolean2().optional()
-  }).optional(),
-  /**
-   * Present if the client supports task creation.
-   */
-  tasks: ClientTasksCapabilitySchema.optional(),
-  /**
-   * Extensions that the client supports. Keys are extension identifiers (vendor-prefix/extension-name).
-   */
-  extensions: record(string2(), AssertObjectSchema).optional()
-});
-var InitializeRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * The latest version of the Model Context Protocol that the client supports. The client MAY decide to support older versions as well.
-   */
-  protocolVersion: string2(),
-  capabilities: ClientCapabilitiesSchema,
-  clientInfo: ImplementationSchema
-});
-var InitializeRequestSchema = RequestSchema.extend({
-  method: literal("initialize"),
-  params: InitializeRequestParamsSchema
-});
-var ServerCapabilitiesSchema = object({
-  /**
-   * Experimental, non-standard capabilities that the server supports.
-   */
-  experimental: record(string2(), AssertObjectSchema).optional(),
-  /**
-   * Present if the server supports sending log messages to the client.
-   */
-  logging: AssertObjectSchema.optional(),
-  /**
-   * Present if the server supports sending completions to the client.
-   */
-  completions: AssertObjectSchema.optional(),
-  /**
-   * Present if the server offers any prompt templates.
-   */
-  prompts: object({
-    /**
-     * Whether this server supports issuing notifications for changes to the prompt list.
-     */
-    listChanged: boolean2().optional()
-  }).optional(),
-  /**
-   * Present if the server offers any resources to read.
-   */
-  resources: object({
-    /**
-     * Whether this server supports clients subscribing to resource updates.
-     */
-    subscribe: boolean2().optional(),
-    /**
-     * Whether this server supports issuing notifications for changes to the resource list.
-     */
-    listChanged: boolean2().optional()
-  }).optional(),
-  /**
-   * Present if the server offers any tools to call.
-   */
-  tools: object({
-    /**
-     * Whether this server supports issuing notifications for changes to the tool list.
-     */
-    listChanged: boolean2().optional()
-  }).optional(),
-  /**
-   * Present if the server supports task creation.
-   */
-  tasks: ServerTasksCapabilitySchema.optional(),
-  /**
-   * Extensions that the server supports. Keys are extension identifiers (vendor-prefix/extension-name).
-   */
-  extensions: record(string2(), AssertObjectSchema).optional()
-});
-var InitializeResultSchema = ResultSchema.extend({
-  /**
-   * The version of the Model Context Protocol that the server wants to use. This may not match the version that the client requested. If the client cannot support this version, it MUST disconnect.
-   */
-  protocolVersion: string2(),
-  capabilities: ServerCapabilitiesSchema,
-  serverInfo: ImplementationSchema,
-  /**
-   * Instructions describing how to use the server and its features.
-   *
-   * This can be used by clients to improve the LLM's understanding of available tools, resources, etc. It can be thought of like a "hint" to the model. For example, this information MAY be added to the system prompt.
-   */
-  instructions: string2().optional()
-});
-var InitializedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/initialized"),
-  params: NotificationsParamsSchema.optional()
-});
-var PingRequestSchema = RequestSchema.extend({
-  method: literal("ping"),
-  params: BaseRequestParamsSchema.optional()
-});
-var ProgressSchema = object({
-  /**
-   * The progress thus far. This should increase every time progress is made, even if the total is unknown.
-   */
-  progress: number2(),
-  /**
-   * Total number of items to process (or total progress required), if known.
-   */
-  total: optional(number2()),
-  /**
-   * An optional message describing the current progress.
-   */
-  message: optional(string2())
-});
-var ProgressNotificationParamsSchema = object({
-  ...NotificationsParamsSchema.shape,
-  ...ProgressSchema.shape,
-  /**
-   * The progress token which was given in the initial request, used to associate this notification with the request that is proceeding.
-   */
-  progressToken: ProgressTokenSchema
-});
-var ProgressNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/progress"),
-  params: ProgressNotificationParamsSchema
-});
-var PaginatedRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * An opaque token representing the current pagination position.
-   * If provided, the server should return results starting after this cursor.
-   */
-  cursor: CursorSchema.optional()
-});
-var PaginatedRequestSchema = RequestSchema.extend({
-  params: PaginatedRequestParamsSchema.optional()
-});
-var PaginatedResultSchema = ResultSchema.extend({
-  /**
-   * An opaque token representing the pagination position after the last returned result.
-   * If present, there may be more results available.
-   */
-  nextCursor: CursorSchema.optional()
-});
-var TaskStatusSchema = _enum(["working", "input_required", "completed", "failed", "cancelled"]);
-var TaskSchema = object({
-  taskId: string2(),
-  status: TaskStatusSchema,
-  /**
-   * Time in milliseconds to keep task results available after completion.
-   * If null, the task has unlimited lifetime until manually cleaned up.
-   */
-  ttl: union([number2(), _null3()]),
-  /**
-   * ISO 8601 timestamp when the task was created.
-   */
-  createdAt: string2(),
-  /**
-   * ISO 8601 timestamp when the task was last updated.
-   */
-  lastUpdatedAt: string2(),
-  pollInterval: optional(number2()),
-  /**
-   * Optional diagnostic message for failed tasks or other status information.
-   */
-  statusMessage: optional(string2())
-});
-var CreateTaskResultSchema = ResultSchema.extend({
-  task: TaskSchema
-});
-var TaskStatusNotificationParamsSchema = NotificationsParamsSchema.merge(TaskSchema);
-var TaskStatusNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/tasks/status"),
-  params: TaskStatusNotificationParamsSchema
-});
-var GetTaskRequestSchema = RequestSchema.extend({
-  method: literal("tasks/get"),
-  params: BaseRequestParamsSchema.extend({
-    taskId: string2()
-  })
-});
-var GetTaskResultSchema = ResultSchema.merge(TaskSchema);
-var GetTaskPayloadRequestSchema = RequestSchema.extend({
-  method: literal("tasks/result"),
-  params: BaseRequestParamsSchema.extend({
-    taskId: string2()
-  })
-});
-var GetTaskPayloadResultSchema = ResultSchema.loose();
-var ListTasksRequestSchema = PaginatedRequestSchema.extend({
-  method: literal("tasks/list")
-});
-var ListTasksResultSchema = PaginatedResultSchema.extend({
-  tasks: array(TaskSchema)
-});
-var CancelTaskRequestSchema = RequestSchema.extend({
-  method: literal("tasks/cancel"),
-  params: BaseRequestParamsSchema.extend({
-    taskId: string2()
-  })
-});
-var CancelTaskResultSchema = ResultSchema.merge(TaskSchema);
-var ResourceContentsSchema = object({
-  /**
-   * The URI of this resource.
-   */
-  uri: string2(),
-  /**
-   * The MIME type of this resource, if known.
-   */
-  mimeType: optional(string2()),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var TextResourceContentsSchema = ResourceContentsSchema.extend({
-  /**
-   * The text of the item. This must only be set if the item can actually be represented as text (not binary data).
-   */
-  text: string2()
-});
-var Base64Schema = string2().refine((val) => {
-  try {
-    atob(val);
-    return true;
-  } catch {
-    return false;
-  }
-}, { message: "Invalid Base64 string" });
-var BlobResourceContentsSchema = ResourceContentsSchema.extend({
-  /**
-   * A base64-encoded string representing the binary data of the item.
-   */
-  blob: Base64Schema
-});
-var RoleSchema = _enum(["user", "assistant"]);
-var AnnotationsSchema = object({
-  /**
-   * Intended audience(s) for the resource.
-   */
-  audience: array(RoleSchema).optional(),
-  /**
-   * Importance hint for the resource, from 0 (least) to 1 (most).
-   */
-  priority: number2().min(0).max(1).optional(),
-  /**
-   * ISO 8601 timestamp for the most recent modification.
-   */
-  lastModified: iso_exports.datetime({ offset: true }).optional()
-});
-var ResourceSchema = object({
-  ...BaseMetadataSchema.shape,
-  ...IconsSchema.shape,
-  /**
-   * The URI of this resource.
-   */
-  uri: string2(),
-  /**
-   * A description of what this resource represents.
-   *
-   * This can be used by clients to improve the LLM's understanding of available resources. It can be thought of like a "hint" to the model.
-   */
-  description: optional(string2()),
-  /**
-   * The MIME type of this resource, if known.
-   */
-  mimeType: optional(string2()),
-  /**
-   * The size of the raw resource content, in bytes (i.e., before base64 encoding or any tokenization), if known.
-   *
-   * This can be used by Hosts to display file sizes and estimate context window usage.
-   */
-  size: optional(number2()),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: optional(looseObject({}))
-});
-var ResourceTemplateSchema = object({
-  ...BaseMetadataSchema.shape,
-  ...IconsSchema.shape,
-  /**
-   * A URI template (according to RFC 6570) that can be used to construct resource URIs.
-   */
-  uriTemplate: string2(),
-  /**
-   * A description of what this template is for.
-   *
-   * This can be used by clients to improve the LLM's understanding of available resources. It can be thought of like a "hint" to the model.
-   */
-  description: optional(string2()),
-  /**
-   * The MIME type for all resources that match this template. This should only be included if all resources matching this template have the same type.
-   */
-  mimeType: optional(string2()),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: optional(looseObject({}))
-});
-var ListResourcesRequestSchema = PaginatedRequestSchema.extend({
-  method: literal("resources/list")
-});
-var ListResourcesResultSchema = PaginatedResultSchema.extend({
-  resources: array(ResourceSchema)
-});
-var ListResourceTemplatesRequestSchema = PaginatedRequestSchema.extend({
-  method: literal("resources/templates/list")
-});
-var ListResourceTemplatesResultSchema = PaginatedResultSchema.extend({
-  resourceTemplates: array(ResourceTemplateSchema)
-});
-var ResourceRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * The URI of the resource to read. The URI can use any protocol; it is up to the server how to interpret it.
-   *
-   * @format uri
-   */
-  uri: string2()
-});
-var ReadResourceRequestParamsSchema = ResourceRequestParamsSchema;
-var ReadResourceRequestSchema = RequestSchema.extend({
-  method: literal("resources/read"),
-  params: ReadResourceRequestParamsSchema
-});
-var ReadResourceResultSchema = ResultSchema.extend({
-  contents: array(union([TextResourceContentsSchema, BlobResourceContentsSchema]))
-});
-var ResourceListChangedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/resources/list_changed"),
-  params: NotificationsParamsSchema.optional()
-});
-var SubscribeRequestParamsSchema = ResourceRequestParamsSchema;
-var SubscribeRequestSchema = RequestSchema.extend({
-  method: literal("resources/subscribe"),
-  params: SubscribeRequestParamsSchema
-});
-var UnsubscribeRequestParamsSchema = ResourceRequestParamsSchema;
-var UnsubscribeRequestSchema = RequestSchema.extend({
-  method: literal("resources/unsubscribe"),
-  params: UnsubscribeRequestParamsSchema
-});
-var ResourceUpdatedNotificationParamsSchema = NotificationsParamsSchema.extend({
-  /**
-   * The URI of the resource that has been updated. This might be a sub-resource of the one that the client actually subscribed to.
-   */
-  uri: string2()
-});
-var ResourceUpdatedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/resources/updated"),
-  params: ResourceUpdatedNotificationParamsSchema
-});
-var PromptArgumentSchema = object({
-  /**
-   * The name of the argument.
-   */
-  name: string2(),
-  /**
-   * A human-readable description of the argument.
-   */
-  description: optional(string2()),
-  /**
-   * Whether this argument must be provided.
-   */
-  required: optional(boolean2())
-});
-var PromptSchema = object({
-  ...BaseMetadataSchema.shape,
-  ...IconsSchema.shape,
-  /**
-   * An optional description of what this prompt provides
-   */
-  description: optional(string2()),
-  /**
-   * A list of arguments to use for templating the prompt.
-   */
-  arguments: optional(array(PromptArgumentSchema)),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: optional(looseObject({}))
-});
-var ListPromptsRequestSchema = PaginatedRequestSchema.extend({
-  method: literal("prompts/list")
-});
-var ListPromptsResultSchema = PaginatedResultSchema.extend({
-  prompts: array(PromptSchema)
-});
-var GetPromptRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * The name of the prompt or prompt template.
-   */
-  name: string2(),
-  /**
-   * Arguments to use for templating the prompt.
-   */
-  arguments: record(string2(), string2()).optional()
-});
-var GetPromptRequestSchema = RequestSchema.extend({
-  method: literal("prompts/get"),
-  params: GetPromptRequestParamsSchema
-});
-var TextContentSchema = object({
-  type: literal("text"),
-  /**
-   * The text content of the message.
-   */
-  text: string2(),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var ImageContentSchema = object({
-  type: literal("image"),
-  /**
-   * The base64-encoded image data.
-   */
-  data: Base64Schema,
-  /**
-   * The MIME type of the image. Different providers may support different image types.
-   */
-  mimeType: string2(),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var AudioContentSchema = object({
-  type: literal("audio"),
-  /**
-   * The base64-encoded audio data.
-   */
-  data: Base64Schema,
-  /**
-   * The MIME type of the audio. Different providers may support different audio types.
-   */
-  mimeType: string2(),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var ToolUseContentSchema = object({
-  type: literal("tool_use"),
-  /**
-   * The name of the tool to invoke.
-   * Must match a tool name from the request's tools array.
-   */
-  name: string2(),
-  /**
-   * Unique identifier for this tool call.
-   * Used to correlate with ToolResultContent in subsequent messages.
-   */
-  id: string2(),
-  /**
-   * Arguments to pass to the tool.
-   * Must conform to the tool's inputSchema.
-   */
-  input: record(string2(), unknown()),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var EmbeddedResourceSchema = object({
-  type: literal("resource"),
-  resource: union([TextResourceContentsSchema, BlobResourceContentsSchema]),
-  /**
-   * Optional annotations for the client.
-   */
-  annotations: AnnotationsSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var ResourceLinkSchema = ResourceSchema.extend({
-  type: literal("resource_link")
-});
-var ContentBlockSchema = union([
-  TextContentSchema,
-  ImageContentSchema,
-  AudioContentSchema,
-  ResourceLinkSchema,
-  EmbeddedResourceSchema
-]);
-var PromptMessageSchema = object({
-  role: RoleSchema,
-  content: ContentBlockSchema
-});
-var GetPromptResultSchema = ResultSchema.extend({
-  /**
-   * An optional description for the prompt.
-   */
-  description: string2().optional(),
-  messages: array(PromptMessageSchema)
-});
-var PromptListChangedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/prompts/list_changed"),
-  params: NotificationsParamsSchema.optional()
-});
-var ToolAnnotationsSchema = object({
-  /**
-   * A human-readable title for the tool.
-   */
-  title: string2().optional(),
-  /**
-   * If true, the tool does not modify its environment.
-   *
-   * Default: false
-   */
-  readOnlyHint: boolean2().optional(),
-  /**
-   * If true, the tool may perform destructive updates to its environment.
-   * If false, the tool performs only additive updates.
-   *
-   * (This property is meaningful only when `readOnlyHint == false`)
-   *
-   * Default: true
-   */
-  destructiveHint: boolean2().optional(),
-  /**
-   * If true, calling the tool repeatedly with the same arguments
-   * will have no additional effect on the its environment.
-   *
-   * (This property is meaningful only when `readOnlyHint == false`)
-   *
-   * Default: false
-   */
-  idempotentHint: boolean2().optional(),
-  /**
-   * If true, this tool may interact with an "open world" of external
-   * entities. If false, the tool's domain of interaction is closed.
-   * For example, the world of a web search tool is open, whereas that
-   * of a memory tool is not.
-   *
-   * Default: true
-   */
-  openWorldHint: boolean2().optional()
-});
-var ToolExecutionSchema = object({
-  /**
-   * Indicates the tool's preference for task-augmented execution.
-   * - "required": Clients MUST invoke the tool as a task
-   * - "optional": Clients MAY invoke the tool as a task or normal request
-   * - "forbidden": Clients MUST NOT attempt to invoke the tool as a task
-   *
-   * If not present, defaults to "forbidden".
-   */
-  taskSupport: _enum(["required", "optional", "forbidden"]).optional()
-});
-var ToolSchema = object({
-  ...BaseMetadataSchema.shape,
-  ...IconsSchema.shape,
-  /**
-   * A human-readable description of the tool.
-   */
-  description: string2().optional(),
-  /**
-   * A JSON Schema 2020-12 object defining the expected parameters for the tool.
-   * Must have type: 'object' at the root level per MCP spec.
-   */
-  inputSchema: object({
-    type: literal("object"),
-    properties: record(string2(), AssertObjectSchema).optional(),
-    required: array(string2()).optional()
-  }).catchall(unknown()),
-  /**
-   * An optional JSON Schema 2020-12 object defining the structure of the tool's output
-   * returned in the structuredContent field of a CallToolResult.
-   * Must have type: 'object' at the root level per MCP spec.
-   */
-  outputSchema: object({
-    type: literal("object"),
-    properties: record(string2(), AssertObjectSchema).optional(),
-    required: array(string2()).optional()
-  }).catchall(unknown()).optional(),
-  /**
-   * Optional additional tool information.
-   */
-  annotations: ToolAnnotationsSchema.optional(),
-  /**
-   * Execution-related properties for this tool.
-   */
-  execution: ToolExecutionSchema.optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var ListToolsRequestSchema = PaginatedRequestSchema.extend({
-  method: literal("tools/list")
-});
-var ListToolsResultSchema = PaginatedResultSchema.extend({
-  tools: array(ToolSchema)
-});
-var CallToolResultSchema = ResultSchema.extend({
-  /**
-   * A list of content objects that represent the result of the tool call.
-   *
-   * If the Tool does not define an outputSchema, this field MUST be present in the result.
-   * For backwards compatibility, this field is always present, but it may be empty.
-   */
-  content: array(ContentBlockSchema).default([]),
-  /**
-   * An object containing structured tool output.
-   *
-   * If the Tool defines an outputSchema, this field MUST be present in the result, and contain a JSON object that matches the schema.
-   */
-  structuredContent: record(string2(), unknown()).optional(),
-  /**
-   * Whether the tool call ended in an error.
-   *
-   * If not set, this is assumed to be false (the call was successful).
-   *
-   * Any errors that originate from the tool SHOULD be reported inside the result
-   * object, with `isError` set to true, _not_ as an MCP protocol-level error
-   * response. Otherwise, the LLM would not be able to see that an error occurred
-   * and self-correct.
-   *
-   * However, any errors in _finding_ the tool, an error indicating that the
-   * server does not support tool calls, or any other exceptional conditions,
-   * should be reported as an MCP error response.
-   */
-  isError: boolean2().optional()
-});
-var CompatibilityCallToolResultSchema = CallToolResultSchema.or(ResultSchema.extend({
-  toolResult: unknown()
-}));
-var CallToolRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
-  /**
-   * The name of the tool to call.
-   */
-  name: string2(),
-  /**
-   * Arguments to pass to the tool.
-   */
-  arguments: record(string2(), unknown()).optional()
-});
-var CallToolRequestSchema = RequestSchema.extend({
-  method: literal("tools/call"),
-  params: CallToolRequestParamsSchema
-});
-var ToolListChangedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/tools/list_changed"),
-  params: NotificationsParamsSchema.optional()
-});
-var ListChangedOptionsBaseSchema = object({
-  /**
-   * If true, the list will be refreshed automatically when a list changed notification is received.
-   * The callback will be called with the updated list.
-   *
-   * If false, the callback will be called with null items, allowing manual refresh.
-   *
-   * @default true
-   */
-  autoRefresh: boolean2().default(true),
-  /**
-   * Debounce time in milliseconds for list changed notification processing.
-   *
-   * Multiple notifications received within this timeframe will only trigger one refresh.
-   * Set to 0 to disable debouncing.
-   *
-   * @default 300
-   */
-  debounceMs: number2().int().nonnegative().default(300)
-});
-var LoggingLevelSchema = _enum(["debug", "info", "notice", "warning", "error", "critical", "alert", "emergency"]);
-var SetLevelRequestParamsSchema = BaseRequestParamsSchema.extend({
-  /**
-   * The level of logging that the client wants to receive from the server. The server should send all logs at this level and higher (i.e., more severe) to the client as notifications/logging/message.
-   */
-  level: LoggingLevelSchema
-});
-var SetLevelRequestSchema = RequestSchema.extend({
-  method: literal("logging/setLevel"),
-  params: SetLevelRequestParamsSchema
-});
-var LoggingMessageNotificationParamsSchema = NotificationsParamsSchema.extend({
-  /**
-   * The severity of this log message.
-   */
-  level: LoggingLevelSchema,
-  /**
-   * An optional name of the logger issuing this message.
-   */
-  logger: string2().optional(),
-  /**
-   * The data to be logged, such as a string message or an object. Any JSON serializable type is allowed here.
-   */
-  data: unknown()
-});
-var LoggingMessageNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/message"),
-  params: LoggingMessageNotificationParamsSchema
-});
-var ModelHintSchema = object({
-  /**
-   * A hint for a model name.
-   */
-  name: string2().optional()
-});
-var ModelPreferencesSchema = object({
-  /**
-   * Optional hints to use for model selection.
-   */
-  hints: array(ModelHintSchema).optional(),
-  /**
-   * How much to prioritize cost when selecting a model.
-   */
-  costPriority: number2().min(0).max(1).optional(),
-  /**
-   * How much to prioritize sampling speed (latency) when selecting a model.
-   */
-  speedPriority: number2().min(0).max(1).optional(),
-  /**
-   * How much to prioritize intelligence and capabilities when selecting a model.
-   */
-  intelligencePriority: number2().min(0).max(1).optional()
-});
-var ToolChoiceSchema = object({
-  /**
-   * Controls when tools are used:
-   * - "auto": Model decides whether to use tools (default)
-   * - "required": Model MUST use at least one tool before completing
-   * - "none": Model MUST NOT use any tools
-   */
-  mode: _enum(["auto", "required", "none"]).optional()
-});
-var ToolResultContentSchema = object({
-  type: literal("tool_result"),
-  toolUseId: string2().describe("The unique identifier for the corresponding tool call."),
-  content: array(ContentBlockSchema).default([]),
-  structuredContent: object({}).loose().optional(),
-  isError: boolean2().optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var SamplingContentSchema = discriminatedUnion("type", [TextContentSchema, ImageContentSchema, AudioContentSchema]);
-var SamplingMessageContentBlockSchema = discriminatedUnion("type", [
-  TextContentSchema,
-  ImageContentSchema,
-  AudioContentSchema,
-  ToolUseContentSchema,
-  ToolResultContentSchema
-]);
-var SamplingMessageSchema = object({
-  role: RoleSchema,
-  content: union([SamplingMessageContentBlockSchema, array(SamplingMessageContentBlockSchema)]),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var CreateMessageRequestParamsSchema = TaskAugmentedRequestParamsSchema.extend({
-  messages: array(SamplingMessageSchema),
-  /**
-   * The server's preferences for which model to select. The client MAY modify or omit this request.
-   */
-  modelPreferences: ModelPreferencesSchema.optional(),
-  /**
-   * An optional system prompt the server wants to use for sampling. The client MAY modify or omit this prompt.
-   */
-  systemPrompt: string2().optional(),
-  /**
-   * A request to include context from one or more MCP servers (including the caller), to be attached to the prompt.
-   * The client MAY ignore this request.
-   *
-   * Default is "none". Values "thisServer" and "allServers" are soft-deprecated. Servers SHOULD only use these values if the client
-   * declares ClientCapabilities.sampling.context. These values may be removed in future spec releases.
-   */
-  includeContext: _enum(["none", "thisServer", "allServers"]).optional(),
-  temperature: number2().optional(),
-  /**
-   * The requested maximum number of tokens to sample (to prevent runaway completions).
-   *
-   * The client MAY choose to sample fewer tokens than the requested maximum.
-   */
-  maxTokens: number2().int(),
-  stopSequences: array(string2()).optional(),
-  /**
-   * Optional metadata to pass through to the LLM provider. The format of this metadata is provider-specific.
-   */
-  metadata: AssertObjectSchema.optional(),
-  /**
-   * Tools that the model may use during generation.
-   * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
-   */
-  tools: array(ToolSchema).optional(),
-  /**
-   * Controls how the model uses tools.
-   * The client MUST return an error if this field is provided but ClientCapabilities.sampling.tools is not declared.
-   * Default is `{ mode: "auto" }`.
-   */
-  toolChoice: ToolChoiceSchema.optional()
-});
-var CreateMessageRequestSchema = RequestSchema.extend({
-  method: literal("sampling/createMessage"),
-  params: CreateMessageRequestParamsSchema
-});
-var CreateMessageResultSchema = ResultSchema.extend({
-  /**
-   * The name of the model that generated the message.
-   */
-  model: string2(),
-  /**
-   * The reason why sampling stopped, if known.
-   *
-   * Standard values:
-   * - "endTurn": Natural end of the assistant's turn
-   * - "stopSequence": A stop sequence was encountered
-   * - "maxTokens": Maximum token limit was reached
-   *
-   * This field is an open string to allow for provider-specific stop reasons.
-   */
-  stopReason: optional(_enum(["endTurn", "stopSequence", "maxTokens"]).or(string2())),
-  role: RoleSchema,
-  /**
-   * Response content. Single content block (text, image, or audio).
-   */
-  content: SamplingContentSchema
-});
-var CreateMessageResultWithToolsSchema = ResultSchema.extend({
-  /**
-   * The name of the model that generated the message.
-   */
-  model: string2(),
-  /**
-   * The reason why sampling stopped, if known.
-   *
-   * Standard values:
-   * - "endTurn": Natural end of the assistant's turn
-   * - "stopSequence": A stop sequence was encountered
-   * - "maxTokens": Maximum token limit was reached
-   * - "toolUse": The model wants to use one or more tools
-   *
-   * This field is an open string to allow for provider-specific stop reasons.
-   */
-  stopReason: optional(_enum(["endTurn", "stopSequence", "maxTokens", "toolUse"]).or(string2())),
-  role: RoleSchema,
-  /**
-   * Response content. May be a single block or array. May include ToolUseContent if stopReason is "toolUse".
-   */
-  content: union([SamplingMessageContentBlockSchema, array(SamplingMessageContentBlockSchema)])
-});
-var BooleanSchemaSchema = object({
-  type: literal("boolean"),
-  title: string2().optional(),
-  description: string2().optional(),
-  default: boolean2().optional()
-});
-var StringSchemaSchema = object({
-  type: literal("string"),
-  title: string2().optional(),
-  description: string2().optional(),
-  minLength: number2().optional(),
-  maxLength: number2().optional(),
-  format: _enum(["email", "uri", "date", "date-time"]).optional(),
-  default: string2().optional()
-});
-var NumberSchemaSchema = object({
-  type: _enum(["number", "integer"]),
-  title: string2().optional(),
-  description: string2().optional(),
-  minimum: number2().optional(),
-  maximum: number2().optional(),
-  default: number2().optional()
-});
-var UntitledSingleSelectEnumSchemaSchema = object({
-  type: literal("string"),
-  title: string2().optional(),
-  description: string2().optional(),
-  enum: array(string2()),
-  default: string2().optional()
-});
-var TitledSingleSelectEnumSchemaSchema = object({
-  type: literal("string"),
-  title: string2().optional(),
-  description: string2().optional(),
-  oneOf: array(object({
-    const: string2(),
-    title: string2()
-  })),
-  default: string2().optional()
-});
-var LegacyTitledEnumSchemaSchema = object({
-  type: literal("string"),
-  title: string2().optional(),
-  description: string2().optional(),
-  enum: array(string2()),
-  enumNames: array(string2()).optional(),
-  default: string2().optional()
-});
-var SingleSelectEnumSchemaSchema = union([UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema]);
-var UntitledMultiSelectEnumSchemaSchema = object({
-  type: literal("array"),
-  title: string2().optional(),
-  description: string2().optional(),
-  minItems: number2().optional(),
-  maxItems: number2().optional(),
-  items: object({
-    type: literal("string"),
-    enum: array(string2())
-  }),
-  default: array(string2()).optional()
-});
-var TitledMultiSelectEnumSchemaSchema = object({
-  type: literal("array"),
-  title: string2().optional(),
-  description: string2().optional(),
-  minItems: number2().optional(),
-  maxItems: number2().optional(),
-  items: object({
-    anyOf: array(object({
-      const: string2(),
-      title: string2()
-    }))
-  }),
-  default: array(string2()).optional()
-});
-var MultiSelectEnumSchemaSchema = union([UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema]);
-var EnumSchemaSchema = union([LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema]);
-var PrimitiveSchemaDefinitionSchema = union([EnumSchemaSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema]);
-var ElicitRequestFormParamsSchema = TaskAugmentedRequestParamsSchema.extend({
-  /**
-   * The elicitation mode.
-   *
-   * Optional for backward compatibility. Clients MUST treat missing mode as "form".
-   */
-  mode: literal("form").optional(),
-  /**
-   * The message to present to the user describing what information is being requested.
-   */
-  message: string2(),
-  /**
-   * A restricted subset of JSON Schema.
-   * Only top-level properties are allowed, without nesting.
-   */
-  requestedSchema: object({
-    type: literal("object"),
-    properties: record(string2(), PrimitiveSchemaDefinitionSchema),
-    required: array(string2()).optional()
-  })
-});
-var ElicitRequestURLParamsSchema = TaskAugmentedRequestParamsSchema.extend({
-  /**
-   * The elicitation mode.
-   */
-  mode: literal("url"),
-  /**
-   * The message to present to the user explaining why the interaction is needed.
-   */
-  message: string2(),
-  /**
-   * The ID of the elicitation, which must be unique within the context of the server.
-   * The client MUST treat this ID as an opaque value.
-   */
-  elicitationId: string2(),
-  /**
-   * The URL that the user should navigate to.
-   */
-  url: string2().url()
-});
-var ElicitRequestParamsSchema = union([ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema]);
-var ElicitRequestSchema = RequestSchema.extend({
-  method: literal("elicitation/create"),
-  params: ElicitRequestParamsSchema
-});
-var ElicitationCompleteNotificationParamsSchema = NotificationsParamsSchema.extend({
-  /**
-   * The ID of the elicitation that completed.
-   */
-  elicitationId: string2()
-});
-var ElicitationCompleteNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/elicitation/complete"),
-  params: ElicitationCompleteNotificationParamsSchema
-});
-var ElicitResultSchema = ResultSchema.extend({
-  /**
-   * The user action in response to the elicitation.
-   * - "accept": User submitted the form/confirmed the action
-   * - "decline": User explicitly decline the action
-   * - "cancel": User dismissed without making an explicit choice
-   */
-  action: _enum(["accept", "decline", "cancel"]),
-  /**
-   * The submitted form data, only present when action is "accept".
-   * Contains values matching the requested schema.
-   * Per MCP spec, content is "typically omitted" for decline/cancel actions.
-   * We normalize null to undefined for leniency while maintaining type compatibility.
-   */
-  content: preprocess((val) => val === null ? void 0 : val, record(string2(), union([string2(), number2(), boolean2(), array(string2())])).optional())
-});
-var ResourceTemplateReferenceSchema = object({
-  type: literal("ref/resource"),
-  /**
-   * The URI or URI template of the resource.
-   */
-  uri: string2()
-});
-var PromptReferenceSchema = object({
-  type: literal("ref/prompt"),
-  /**
-   * The name of the prompt or prompt template
-   */
-  name: string2()
-});
-var CompleteRequestParamsSchema = BaseRequestParamsSchema.extend({
-  ref: union([PromptReferenceSchema, ResourceTemplateReferenceSchema]),
-  /**
-   * The argument's information
-   */
-  argument: object({
-    /**
-     * The name of the argument
-     */
-    name: string2(),
-    /**
-     * The value of the argument to use for completion matching.
-     */
-    value: string2()
-  }),
-  context: object({
-    /**
-     * Previously-resolved variables in a URI template or prompt.
-     */
-    arguments: record(string2(), string2()).optional()
-  }).optional()
-});
-var CompleteRequestSchema = RequestSchema.extend({
-  method: literal("completion/complete"),
-  params: CompleteRequestParamsSchema
-});
-var CompleteResultSchema = ResultSchema.extend({
-  completion: looseObject({
-    /**
-     * An array of completion values. Must not exceed 100 items.
-     */
-    values: array(string2()).max(100),
-    /**
-     * The total number of completion options available. This can exceed the number of values actually sent in the response.
-     */
-    total: optional(number2().int()),
-    /**
-     * Indicates whether there are additional completion options beyond those provided in the current response, even if the exact total is unknown.
-     */
-    hasMore: optional(boolean2())
-  })
-});
-var RootSchema = object({
-  /**
-   * The URI identifying the root. This *must* start with file:// for now.
-   */
-  uri: string2().startsWith("file://"),
-  /**
-   * An optional name for the root.
-   */
-  name: string2().optional(),
-  /**
-   * See [MCP specification](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/47339c03c143bb4ec01a26e721a1b8fe66634ebe/docs/specification/draft/basic/index.mdx#general-fields)
-   * for notes on _meta usage.
-   */
-  _meta: record(string2(), unknown()).optional()
-});
-var ListRootsRequestSchema = RequestSchema.extend({
-  method: literal("roots/list"),
-  params: BaseRequestParamsSchema.optional()
-});
-var ListRootsResultSchema = ResultSchema.extend({
-  roots: array(RootSchema)
-});
-var RootsListChangedNotificationSchema = NotificationSchema.extend({
-  method: literal("notifications/roots/list_changed"),
-  params: NotificationsParamsSchema.optional()
-});
-var ClientRequestSchema = union([
-  PingRequestSchema,
-  InitializeRequestSchema,
-  CompleteRequestSchema,
-  SetLevelRequestSchema,
-  GetPromptRequestSchema,
-  ListPromptsRequestSchema,
-  ListResourcesRequestSchema,
-  ListResourceTemplatesRequestSchema,
-  ReadResourceRequestSchema,
-  SubscribeRequestSchema,
-  UnsubscribeRequestSchema,
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-  GetTaskRequestSchema,
-  GetTaskPayloadRequestSchema,
-  ListTasksRequestSchema,
-  CancelTaskRequestSchema
-]);
-var ClientNotificationSchema = union([
-  CancelledNotificationSchema,
-  ProgressNotificationSchema,
-  InitializedNotificationSchema,
-  RootsListChangedNotificationSchema,
-  TaskStatusNotificationSchema
-]);
-var ClientResultSchema = union([
-  EmptyResultSchema,
-  CreateMessageResultSchema,
-  CreateMessageResultWithToolsSchema,
-  ElicitResultSchema,
-  ListRootsResultSchema,
-  GetTaskResultSchema,
-  ListTasksResultSchema,
-  CreateTaskResultSchema
-]);
-var ServerRequestSchema = union([
-  PingRequestSchema,
-  CreateMessageRequestSchema,
-  ElicitRequestSchema,
-  ListRootsRequestSchema,
-  GetTaskRequestSchema,
-  GetTaskPayloadRequestSchema,
-  ListTasksRequestSchema,
-  CancelTaskRequestSchema
-]);
-var ServerNotificationSchema = union([
-  CancelledNotificationSchema,
-  ProgressNotificationSchema,
-  LoggingMessageNotificationSchema,
-  ResourceUpdatedNotificationSchema,
-  ResourceListChangedNotificationSchema,
-  ToolListChangedNotificationSchema,
-  PromptListChangedNotificationSchema,
-  TaskStatusNotificationSchema,
-  ElicitationCompleteNotificationSchema
-]);
-var ServerResultSchema = union([
-  EmptyResultSchema,
-  InitializeResultSchema,
-  CompleteResultSchema,
-  GetPromptResultSchema,
-  ListPromptsResultSchema,
-  ListResourcesResultSchema,
-  ListResourceTemplatesResultSchema,
-  ReadResourceResultSchema,
-  CallToolResultSchema,
-  ListToolsResultSchema,
-  GetTaskResultSchema,
-  ListTasksResultSchema,
-  CreateTaskResultSchema
-]);
-var McpError = class _McpError extends Error {
-  constructor(code, message, data) {
-    super(`MCP error ${code}: ${message}`);
-    this.code = code;
-    this.data = data;
-    this.name = "McpError";
-  }
-  /**
-   * Factory method to create the appropriate error type based on the error code and data
-   */
-  static fromError(code, message, data) {
-    if (code === ErrorCode.UrlElicitationRequired && data) {
-      const errorData = data;
-      if (errorData.elicitations) {
-        return new UrlElicitationRequiredError(errorData.elicitations, message);
-      }
-    }
-    return new _McpError(code, message, data);
-  }
-};
-var UrlElicitationRequiredError = class extends McpError {
-  constructor(elicitations, message = `URL elicitation${elicitations.length > 1 ? "s" : ""} required`) {
-    super(ErrorCode.UrlElicitationRequired, message, {
-      elicitations
-    });
-  }
-  get elicitations() {
-    return this.data?.elicitations ?? [];
-  }
-};
-
-// src/initializeExperiment.ts
 function enableInitializeExperiment(server) {
   let sequence = 0;
   server.setRequestHandler(InitializeRequestSchema, async (request) => {
@@ -51059,6 +53365,9 @@ function enableToolsListChangedExperiment(server) {
 
 // src/server.ts
 init_mcpEventsExperiment();
+
+// node_modules/zod/v4/mini/parse.js
+init_core2();
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/server/zod-compat.js
 function isZ4Schema(s) {
@@ -51122,6 +53431,9 @@ function getLiteralValue(schema) {
     return directValue;
   return void 0;
 }
+
+// node_modules/@modelcontextprotocol/sdk/dist/esm/shared/protocol.js
+init_types();
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/experimental/tasks/interfaces.js
 function isTerminal(status) {
@@ -52106,6 +54418,9 @@ function mergeCapabilities(base, additional) {
   return result2;
 }
 
+// node_modules/@modelcontextprotocol/sdk/dist/esm/server/index.js
+init_types();
+
 // node_modules/@modelcontextprotocol/sdk/dist/esm/validation/ajv-provider.js
 var import_ajv = __toESM(require_ajv(), 1);
 var import_ajv_formats = __toESM(require_dist3(), 1);
@@ -52175,6 +54490,7 @@ var AjvJsonSchemaValidator = class {
 };
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/experimental/tasks/server.js
+init_types();
 var ExperimentalServerTasks = class {
   constructor(_server) {
     this._server = _server;
@@ -52797,6 +55113,7 @@ var Server = class extends Protocol {
 import process11 from "node:process";
 
 // node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
+init_types();
 var STDIO_DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
 var ReadBuffer = class {
   constructor(options2) {
@@ -52902,59 +55219,10 @@ var StdioServerTransport = class {
 
 // src/terminal/session.ts
 var import_headless = __toESM(require_xterm_headless(), 1);
+init_platform();
 import * as fs6 from "fs";
 import * as os6 from "os";
 import * as path10 from "path";
-
-// src/utils/platform.ts
-import * as path9 from "path";
-import * as os5 from "os";
-function getDefaultRecordDir() {
-  if (process.env.TERMINAL_TOOLKIT_RECORD_DIR) {
-    return process.env.TERMINAL_TOOLKIT_RECORD_DIR;
-  }
-  const stateHome = process.env.XDG_STATE_HOME || path9.join(os5.homedir(), ".local", "state");
-  return path9.join(stateHome, "terminal-toolkit", "recordings");
-}
-function getDefaultSocketPath() {
-  if (process.env.TERMINAL_TOOLKIT_SOCKET) {
-    return process.env.TERMINAL_TOOLKIT_SOCKET;
-  }
-  if (process.platform === "win32") {
-    return "\\\\.\\pipe\\terminal-toolkit";
-  }
-  return path9.join(os5.tmpdir(), "terminal-toolkit.sock");
-}
-function resolveSocketPath(socketPath) {
-  return socketPath || getDefaultSocketPath();
-}
-function getDefaultCols() {
-  const envVal = process.env.TERMINAL_TOOLKIT_COLS;
-  if (envVal) {
-    const parsed = parseInt(envVal, 10);
-    if (!isNaN(parsed) && parsed > 0) return parsed;
-  }
-  return 120;
-}
-function getDefaultRows() {
-  const envVal = process.env.TERMINAL_TOOLKIT_ROWS;
-  if (envVal) {
-    const parsed = parseInt(envVal, 10);
-    if (!isNaN(parsed) && parsed > 0) return parsed;
-  }
-  return 40;
-}
-function getDefaultShell() {
-  if (process.env.TERMINAL_TOOLKIT_SHELL) {
-    return process.env.TERMINAL_TOOLKIT_SHELL;
-  }
-  if (process.platform === "win32") {
-    return process.env.COMSPEC || "cmd.exe";
-  }
-  return process.env.SHELL || "/bin/bash";
-}
-
-// src/terminal/session.ts
 var { Terminal } = import_headless.default;
 var ptyModule = null;
 async function loadPty() {
@@ -53730,6 +55998,7 @@ var Recorder = class {
 
 // src/recording/manager.ts
 import * as crypto2 from "crypto";
+init_platform();
 var RecordingManager = class {
   recordings = /* @__PURE__ */ new Map();
   defaultOptions;
@@ -53858,6 +56127,7 @@ var RecordingManager = class {
 };
 
 // src/terminal/manager.ts
+init_platform();
 var DEFAULT_MAX_SESSIONS = 5;
 var DEFAULT_SESSION_IDLE_TIMEOUT = 600;
 var TerminalManager = class {
@@ -54324,1859 +56594,9 @@ function createRequestContext(meta) {
   return { ...organizationId || subjectId || conversationId ? { provider: "openai" } : {}, ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {}, ...responseDeadline ? { responseDeadline } : {} };
 }
 
-// src/tools/type.ts
-init_zod();
-
-// src/utils/keys.ts
-var KEY_SEQUENCES = {
-  // Control keys
-  "Enter": "\r",
-  "Tab": "	",
-  "Escape": "\x1B",
-  "Backspace": "\x7F",
-  "Delete": "\x1B[3~",
-  // Arrow keys
-  "ArrowUp": "\x1B[A",
-  "ArrowDown": "\x1B[B",
-  "ArrowRight": "\x1B[C",
-  "ArrowLeft": "\x1B[D",
-  // Navigation keys
-  "Home": "\x1B[H",
-  "End": "\x1B[F",
-  "PageUp": "\x1B[5~",
-  "PageDown": "\x1B[6~",
-  "Insert": "\x1B[2~",
-  // Function keys
-  "F1": "\x1BOP",
-  "F2": "\x1BOQ",
-  "F3": "\x1BOR",
-  "F4": "\x1BOS",
-  "F5": "\x1B[15~",
-  "F6": "\x1B[17~",
-  "F7": "\x1B[18~",
-  "F8": "\x1B[19~",
-  "F9": "\x1B[20~",
-  "F10": "\x1B[21~",
-  "F11": "\x1B[23~",
-  "F12": "\x1B[24~",
-  // Ctrl combinations
-  "Ctrl+A": "",
-  "Ctrl+B": "",
-  "Ctrl+C": "",
-  "Ctrl+D": "",
-  "Ctrl+E": "",
-  "Ctrl+F": "",
-  "Ctrl+G": "\x07",
-  "Ctrl+H": "\b",
-  "Ctrl+I": "	",
-  "Ctrl+J": "\n",
-  "Ctrl+K": "\v",
-  "Ctrl+L": "\f",
-  "Ctrl+M": "\r",
-  "Ctrl+N": "",
-  "Ctrl+O": "",
-  "Ctrl+P": "",
-  "Ctrl+Q": "",
-  "Ctrl+R": "",
-  "Ctrl+S": "",
-  "Ctrl+T": "",
-  "Ctrl+U": "",
-  "Ctrl+V": "",
-  "Ctrl+W": "",
-  "Ctrl+X": "",
-  "Ctrl+Y": "",
-  "Ctrl+Z": "",
-  "Ctrl+[": "\x1B",
-  "Ctrl+\\": "",
-  "Ctrl+]": "",
-  "Ctrl+^": "",
-  "Ctrl+_": "",
-  // Common shortcuts
-  "Ctrl+Space": "\0"
-};
-function getKeySequence(key) {
-  const normalized = key.trim();
-  if (KEY_SEQUENCES[normalized]) {
-    return KEY_SEQUENCES[normalized];
-  }
-  const lowerKey = normalized.toLowerCase();
-  for (const [name, seq] of Object.entries(KEY_SEQUENCES)) {
-    if (name.toLowerCase() === lowerKey) {
-      return seq;
-    }
-  }
-  return null;
-}
-function getAvailableKeys() {
-  return Object.keys(KEY_SEQUENCES);
-}
-
-// src/tools/descriptions.ts
-var SESSION_ID_DESCRIPTION = `Target session ID. For the Primary Session (formerly default session), omit sessionId entirely. Never pass "primary", "default", or an empty string. For additional sessions, pass the actual ID returned by createSession().`;
-var TOOL_DESCRIPTIONS = {
-  type: {
-    main: `Send input to a persistent interactive PTY shell, unlike shell() which runs a fresh non-interactive subprocess. Choose this for long-running builds/tests, interactive prompts, TUIs, live progress, or persistent shell state. Use autoSubmit=true to submit a command and read immediate viewport output; use getContent() to inspect later output. For manual input, type without autoSubmit and then sendKey('Enter'). IMPORTANT: In zsh, avoid '!' inside double quotes - use single quotes instead (e.g., echo 'Hello!' not echo "Hello!").`,
-    text: "The text to type into the terminal",
-    autoSubmit: "If true, automatically send Enter and return terminal content. Recommended for most commands."
-  },
-  sendKey: {
-    main: "Send a special key to an existing PTY session (e.g., Enter, Tab, Ctrl+C, navigation). Use for interactive programs, manual submission after type(autoSubmit=false), or interrupting a command in a session you own. For ordinary commands, prefer type(autoSubmit=true); never interrupt an occupied Primary Session.",
-    key: "The key to send (e.g., enter, tab, escape, up, down, left, right, ctrl+c, ctrl+d)",
-    repeat: "Number of times to repeat the key (default: 1). Useful for pressing arrow keys or similar multiple times in one call."
-  },
-  sleep: {
-    main: "Pause execution for an extended duration. This is a BLOCKING operation - use ONLY when absolutely necessary for long-running processes (builds, installations, downloads) or waiting for slow background tasks. AVOID frequent calls. Not needed after autoSubmit or for fast commands.",
-    milliseconds: "Number of milliseconds to sleep (default: 5000 = 5 seconds). Use for operations that genuinely require waiting, not as a workaround."
-  },
-  getContent: {
-    main: "Get the current content of the terminal buffer. WARNING: Default visibleOnly=true only returns the viewport (~25 lines) and will truncate command output. Use visibleOnly=false or specify maxLines after running any command that produces output to avoid missing content.",
-    visibleOnly: "Controls data source: true = visible viewport only, false = full scrollback buffer. If omitted, defaults to true unless maxLines is specified (which implies false). Both visibleOnly and maxLines can be combined: e.g. visibleOnly=true with maxLines=10 returns the last 10 viewport lines.",
-    maxLines: "Maximum number of lines to return (default: 100 when reading scrollback). Applies to both viewport and scrollback content. Specifying maxLines alone automatically reads from scrollback. Set to 0 to return all lines.",
-    delay: "Optional delay in milliseconds before getting content (default: 0). Use this as a shortcut to avoid separate sleep() call when you need to wait briefly before reading output."
-  },
-  getBufferInfo: {
-    main: "Get metadata about the current terminal buffer, including total length, scrollback lines, and viewport rows"
-  },
-  takeScreenshot: {
-    main: "Take a screenshot of the terminal showing current screen and cursor position"
-  },
-  startRecording: {
-    main: "Start recording terminal output to an asciicast v2 file. Returns the recording ID and path where the file will be saved. Only one recording can be active at a time.",
-    format: "Recording format (default: v2, asciicast v2 format)",
-    mode: "Recording mode: always saves the recording, on-failure only saves if session exits with non-zero code (default: always)",
-    outputDir: "Directory to save the recording (default: ~/.local/state/terminal-toolkit/recordings, or TERMINAL_TOOLKIT_RECORD_DIR env var)",
-    idleTimeLimit: "Max seconds between events in the recording (default: 2). Caps idle time to prevent long pauses during playback.",
-    maxDuration: "Max recording duration in seconds (default: 3600 = 60 minutes). Recording will auto-stop when this limit is reached.",
-    inactivityTimeout: "Stop recording after N seconds of no terminal output (default: 600 = 10 minutes). Resets on each output event."
-  },
-  stopRecording: {
-    main: "Stop a recording and finalize the asciicast file. Returns metadata about the saved recording including the file path and duration.",
-    recordingId: "The recording ID returned by startRecording"
-  },
-  getClipboard: {
-    main: "Get the current text content of the system clipboard (OS-wide, not terminal-specific). Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available."
-  },
-  setClipboard: {
-    main: "Set the system clipboard to the given text, overwriting whatever is currently there. This affects the user's OS-wide clipboard, not just the terminal. Requires a clipboard utility to be available on the host (e.g. xclip/xsel/wl-clipboard on Linux); fails in headless environments without one. On Termux, uses Termux:API when available.",
-    text: "The text to write to the clipboard"
-  },
-  notify: {
-    main: "Send a desktop notification (OS-level popup/toast, not terminal output) to alert the human. Use this when a long-running task finishes, or when you need the user's input/decision and they may not be watching this conversation. Unlike terminal output, this is visible even if the user is focused on a different window or away from the screen. On Termux, automatically sends both an Android notification and a toast using Termux:API. Delivery failures are reported as tool errors.",
-    message: "The notification body text (e.g. 'Build finished' or 'Need your input: which option do you want?')",
-    title: "The notification title (default: 'Terminal Toolkit')",
-    sound: "Whether to play the OS notification sound (default: true). Set to false for quieter, less intrusive notifications."
-  }
-};
-
-// src/tools/type.ts
-var typeSchema = external_exports.object({
-  text: external_exports.string().describe(TOOL_DESCRIPTIONS.type.text),
-  autoSubmit: external_exports.boolean().optional().default(false).describe(TOOL_DESCRIPTIONS.type.autoSubmit),
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var typeTool = {
-  name: "type",
-  description: TOOL_DESCRIPTIONS.type.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      text: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.type.text
-      },
-      autoSubmit: {
-        type: "boolean",
-        description: TOOL_DESCRIPTIONS.type.autoSubmit,
-        default: false
-      },
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: ["text"]
-  }
-};
-async function handleType(manager, args2) {
-  const parsed = typeSchema.parse(args2);
-  manager.write(parsed.text, parsed.sessionId);
-  if (parsed.autoSubmit) {
-    const enterSequence = getKeySequence("Enter");
-    if (enterSequence) {
-      manager.write(enterSequence, parsed.sessionId);
-    }
-    await new Promise((resolve6) => setTimeout(resolve6, 250));
-    const content = manager.getVisibleContent(parsed.sessionId);
-    return {
-      content: [
-        {
-          type: "text",
-          text: content || "(empty terminal)"
-        }
-      ]
-    };
-  }
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Typed ${parsed.text.length} character(s) to terminal`
-      }
-    ]
-  };
-}
-
-// src/tools/sendKey.ts
-init_zod();
-var sendKeySchema = external_exports.object({
-  key: external_exports.string().describe(TOOL_DESCRIPTIONS.sendKey.key),
-  repeat: external_exports.number().int().min(1).default(1).describe(TOOL_DESCRIPTIONS.sendKey.repeat),
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var availableKeys = getAvailableKeys();
-var sendKeyTool = {
-  name: "sendKey",
-  description: TOOL_DESCRIPTIONS.sendKey.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      key: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.sendKey.key
-      },
-      repeat: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.sendKey.repeat,
-        default: 1
-      },
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: ["key"]
-  }
-};
-function handleSendKey(manager, args2) {
-  const parsed = sendKeySchema.parse(args2);
-  const sequence = getKeySequence(parsed.key);
-  if (sequence === null) {
-    const available = getAvailableKeys();
-    throw new Error(
-      `Unknown key: "${parsed.key}". Available keys include: ${available.slice(0, 15).join(", ")}...`
-    );
-  }
-  const repeated = sequence.repeat(parsed.repeat);
-  manager.write(repeated, parsed.sessionId);
-  const repeatSuffix = parsed.repeat > 1 ? ` (repeated ${parsed.repeat} times)` : "";
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Sent key: ${parsed.key}${repeatSuffix}`
-      }
-    ]
-  };
-}
-
-// src/tools/sleep.ts
-init_zod();
-var sleepSchema = external_exports.object({
-  milliseconds: external_exports.coerce.number().finite().nonnegative().optional().default(5e3).describe(TOOL_DESCRIPTIONS.sleep.milliseconds)
-});
-var sleepTool = {
-  name: "sleep",
-  description: TOOL_DESCRIPTIONS.sleep.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      milliseconds: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.sleep.milliseconds,
-        default: 5e3,
-        minimum: 0
-      }
-    },
-    required: []
-  }
-};
-function formatMilliseconds(milliseconds) {
-  if (milliseconds >= 1e3) {
-    const seconds = milliseconds / 1e3;
-    const label = seconds === 1 ? "second" : "seconds";
-    return `${seconds} ${label}`;
-  } else {
-    const label = milliseconds === 1 ? "millisecond" : "milliseconds";
-    return `${milliseconds} ${label}`;
-  }
-}
-async function handleSleep(_manager, args2, signal) {
-  const parsed = sleepSchema.parse(args2 ?? {});
-  await new Promise((resolve6, reject) => {
-    if (signal?.aborted) return reject(new Error("Sleep aborted"));
-    const timer = setTimeout(() => {
-      cleanup();
-      resolve6();
-    }, parsed.milliseconds);
-    const abort = () => {
-      clearTimeout(timer);
-      cleanup();
-      reject(new Error("Sleep aborted"));
-    };
-    const cleanup = () => signal?.removeEventListener("abort", abort);
-    signal?.addEventListener("abort", abort, { once: true });
-  });
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Slept for ${formatMilliseconds(parsed.milliseconds)}`
-      }
-    ]
-  };
-}
-
-// src/tools/getContent.ts
-init_zod();
-var getContentSchema = external_exports.object({
-  visibleOnly: external_exports.boolean().optional().describe(TOOL_DESCRIPTIONS.getContent.visibleOnly),
-  maxLines: external_exports.number().int().nonnegative().optional().describe(TOOL_DESCRIPTIONS.getContent.maxLines),
-  delay: external_exports.number().finite().nonnegative().optional().default(0).describe(TOOL_DESCRIPTIONS.getContent.delay),
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var getContentTool = {
-  name: "getContent",
-  description: TOOL_DESCRIPTIONS.getContent.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      visibleOnly: {
-        type: "boolean",
-        description: TOOL_DESCRIPTIONS.getContent.visibleOnly
-      },
-      maxLines: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.getContent.maxLines,
-        minimum: 0
-      },
-      delay: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.getContent.delay,
-        default: 0,
-        minimum: 0
-      },
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: []
-  }
-};
-async function handleGetContent(manager, args2) {
-  const parsed = getContentSchema.parse(args2 ?? {});
-  if (parsed.delay > 0) {
-    await new Promise((resolve6) => {
-      setTimeout(resolve6, parsed.delay);
-    });
-  }
-  const useVisible = parsed.visibleOnly === true || parsed.visibleOnly === void 0 && parsed.maxLines === void 0;
-  const effectiveMaxLines = !useVisible && parsed.maxLines === void 0 ? 100 : parsed.maxLines;
-  let content;
-  if (useVisible) {
-    content = manager.getVisibleContent(parsed.sessionId);
-  } else {
-    content = manager.getContent(parsed.sessionId);
-  }
-  if (effectiveMaxLines !== void 0 && effectiveMaxLines > 0) {
-    const lines = content.split("\n");
-    if (lines.length > effectiveMaxLines) {
-      content = lines.slice(-effectiveMaxLines).join("\n");
-    }
-  }
-  return {
-    content: [
-      {
-        type: "text",
-        text: content || "(empty terminal)"
-      }
-    ]
-  };
-}
-
-// src/tools/getBufferInfo.ts
-init_zod();
-var getBufferInfoSchema = external_exports.object({
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var getBufferInfoTool = {
-  name: "getBufferInfo",
-  description: TOOL_DESCRIPTIONS.getBufferInfo.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: []
-  }
-};
-function handleGetBufferInfo(manager, args2) {
-  const parsed = getBufferInfoSchema.parse(args2 ?? {});
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(manager.getBufferInfo(parsed.sessionId), null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/screenshot.ts
-init_zod();
-
-// src/utils/render.ts
-import { createRequire as createRequire2 } from "module";
-import * as os8 from "os";
-import * as path12 from "path";
-import * as fs8 from "fs";
-var require3 = createRequire2(import.meta.url);
-function defaultFontDirs() {
-  const dirs = [];
-  const home = os8.homedir();
-  const candidates = [
-    path12.join(home, ".local/share/fonts"),
-    "/usr/share/fonts",
-    "/usr/local/share/fonts",
-    "/System/Library/Fonts",
-    path12.join(home, "Library/Fonts")
-  ];
-  for (const d of candidates) {
-    try {
-      if (fs8.statSync(d).isDirectory()) dirs.push(d);
-    } catch {
-    }
-  }
-  return dirs;
-}
-var CM_DEFAULT = 0;
-var CM_P16 = 16777216;
-var CM_P256 = 33554432;
-var CM_RGB = 50331648;
-var palette16 = [
-  "#282c34",
-  "#e06c75",
-  "#98c379",
-  "#e5c07b",
-  "#61afef",
-  "#c678dd",
-  "#56b6c2",
-  "#abb2bf",
-  "#5c6370",
-  "#e06c75",
-  "#98c379",
-  "#e5c07b",
-  "#61afef",
-  "#c678dd",
-  "#56b6c2",
-  "#ffffff"
-];
-var BG_COLOR = "#282c34";
-var FG_COLOR = "#abb2bf";
-function color256(n2) {
-  if (n2 < 16) return palette16[n2];
-  if (n2 < 232) {
-    n2 -= 16;
-    const r = Math.floor(n2 / 36) * 51;
-    const g = Math.floor(n2 % 36 / 6) * 51;
-    const b = n2 % 6 * 51;
-    return `rgb(${r},${g},${b})`;
-  }
-  const gray2 = (n2 - 232) * 10 + 8;
-  return `rgb(${gray2},${gray2},${gray2})`;
-}
-function resolveColor(color, mode, isBackground) {
-  if (mode === CM_DEFAULT || color < 0) {
-    return isBackground ? BG_COLOR : FG_COLOR;
-  }
-  if (mode === CM_P16) {
-    return palette16[color] || (isBackground ? BG_COLOR : FG_COLOR);
-  }
-  if (mode === CM_P256) {
-    if (color < 16) return palette16[color];
-    return color256(color);
-  }
-  if (mode === CM_RGB) {
-    const r = color >> 16 & 255;
-    const g = color >> 8 & 255;
-    const b = color & 255;
-    return `rgb(${r},${g},${b})`;
-  }
-  return isBackground ? BG_COLOR : FG_COLOR;
-}
-function escapeXml(s) {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
-function renderTerminalToPng(terminal, options2 = {}) {
-  const {
-    fontFamily = "JetBrains Mono",
-    fontDirs: userFontDirs = [],
-    windowChrome = true,
-    scale = 2
-  } = options2;
-  const fontDirs = userFontDirs.length > 0 ? userFontDirs : defaultFontDirs();
-  const cols = terminal.cols;
-  const rows = terminal.rows;
-  const buffer = terminal.buffer.active;
-  const charW = 8.4;
-  const charH = 17;
-  const padX = 16;
-  const padY = windowChrome ? 44 : 16;
-  const padBottom = 12;
-  const width = cols * charW + padX * 2;
-  const height = rows * charH + padY + padBottom;
-  const cornerR = 10;
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-<defs>
-  <style>
-    text { font-family: '${fontFamily}'; font-size: 13px; }
-  </style>
-</defs>
-<rect width="${width}" height="${height}" rx="${cornerR}" ry="${cornerR}" fill="${BG_COLOR}"/>`;
-  if (windowChrome) {
-    svg += `
-<circle cx="20" cy="18" r="6" fill="#ff5f57"/>
-<circle cx="40" cy="18" r="6" fill="#febc2e"/>
-<circle cx="60" cy="18" r="6" fill="#28c840"/>`;
-  }
-  svg += "\n";
-  for (let y = 0; y < rows; y++) {
-    const line = buffer.getLine(y);
-    if (!line) continue;
-    for (let x = 0; x < cols; x++) {
-      const cell = line.getCell(x);
-      if (!cell) continue;
-      const char = cell.getChars();
-      if (!char || char === " ") continue;
-      const bgColor = resolveColor(cell.getBgColor(), cell.getBgColorMode(), true);
-      const fgColor = resolveColor(cell.getFgColor(), cell.getFgColorMode(), false);
-      const bold2 = cell.isBold() === 1;
-      const cx = padX + x * charW;
-      const cy = padY + y * charH;
-      if (bgColor !== BG_COLOR) {
-        svg += `<rect x="${cx}" y="${cy}" width="${charW}" height="${charH}" fill="${bgColor}"/>`;
-      }
-      const weight = bold2 ? ' font-weight="bold"' : "";
-      svg += `<text x="${cx}" y="${cy + charH - 4}" fill="${fgColor}"${weight}>${escapeXml(char)}</text>
-`;
-    }
-  }
-  svg += "</svg>";
-  let Resvg;
-  try {
-    Resvg = require3("@resvg/resvg-js").Resvg;
-  } catch {
-    throw new Error(
-      "PNG screenshot requires @resvg/resvg-js. Install it with: npm install @resvg/resvg-js"
-    );
-  }
-  const resvg = new Resvg(svg, {
-    fitTo: { mode: "width", value: Math.round(width * scale) },
-    font: {
-      loadSystemFonts: fontDirs.length === 0,
-      fontDirs,
-      defaultFontFamily: fontFamily
-    }
-  });
-  const pngData = resvg.render();
-  return Buffer.from(pngData.asPng());
-}
-
-// src/tools/screenshot.ts
-var screenshotSchema = external_exports.object({
-  format: external_exports.enum(["text", "ansi", "png"]).optional().describe(
-    "Output format: 'text' (default) returns plain JSON, 'ansi' returns text with ANSI color codes, 'png' returns a color screenshot image"
-  ),
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var screenshotTool = {
-  name: "takeScreenshot",
-  description: TOOL_DESCRIPTIONS.takeScreenshot.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      format: {
-        type: "string",
-        enum: ["text", "ansi", "png"],
-        description: "Output format: 'text' (default) plain JSON, 'ansi' for colored text with ANSI codes, 'png' for color screenshot image"
-      },
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: []
-  }
-};
-function handleScreenshot(manager, args2) {
-  const parsed = screenshotSchema.parse(args2);
-  const format3 = parsed.format || "text";
-  if (format3 === "ansi") {
-    const content = manager.getAnsiContent(true, parsed.sessionId);
-    const buffer = manager.getTerminal(parsed.sessionId).buffer.active;
-    const result3 = {
-      content,
-      cursor: { x: buffer.cursorX, y: buffer.cursorY },
-      dimensions: {
-        cols: manager.getDimensions(parsed.sessionId).cols,
-        rows: manager.getDimensions(parsed.sessionId).rows
-      }
-    };
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(result3, null, 2)
-        }
-      ]
-    };
-  }
-  if (format3 === "png") {
-    const terminal = manager.getTerminal(parsed.sessionId);
-    const pngBuffer = renderTerminalToPng(terminal);
-    return {
-      content: [
-        {
-          type: "image",
-          data: pngBuffer.toString("base64"),
-          mimeType: "image/png"
-        }
-      ]
-    };
-  }
-  const screenshot = manager.takeScreenshot(parsed.sessionId);
-  const result2 = {
-    content: screenshot.content,
-    cursor: screenshot.cursor,
-    dimensions: screenshot.dimensions
-  };
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(result2, null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/startRecording.ts
-init_zod();
-var startRecordingSchema = external_exports.object({
-  format: external_exports.enum(["v2"]).optional().default("v2"),
-  mode: external_exports.enum(["always", "on-failure"]).optional().default("always"),
-  outputDir: external_exports.string().optional(),
-  idleTimeLimit: external_exports.number().optional().default(2),
-  maxDuration: external_exports.number().optional().default(3600),
-  inactivityTimeout: external_exports.number().optional().default(600)
-});
-var startRecordingTool = {
-  name: "startRecording",
-  description: TOOL_DESCRIPTIONS.startRecording.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      format: {
-        type: "string",
-        enum: ["v2"],
-        description: TOOL_DESCRIPTIONS.startRecording.format
-      },
-      mode: {
-        type: "string",
-        enum: ["always", "on-failure"],
-        description: TOOL_DESCRIPTIONS.startRecording.mode
-      },
-      outputDir: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.startRecording.outputDir
-      },
-      idleTimeLimit: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.startRecording.idleTimeLimit
-      },
-      maxDuration: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.startRecording.maxDuration
-      },
-      inactivityTimeout: {
-        type: "number",
-        description: TOOL_DESCRIPTIONS.startRecording.inactivityTimeout
-      }
-    },
-    required: []
-  }
-};
-function handleStartRecording(manager, args2) {
-  const parsed = startRecordingSchema.parse(args2 ?? {});
-  const recordingManager = manager.getRecordingManager();
-  const activeRecordings = recordingManager.getActiveRecordings();
-  if (activeRecordings.length > 0) {
-    const existing = activeRecordings[0];
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            error: "A recording is already in progress",
-            activeRecordingId: existing.id,
-            activePath: existing.getFinalPath()
-          }, null, 2)
-        }
-      ],
-      isError: true
-    };
-  }
-  const recorder = recordingManager.createRecording({
-    format: parsed.format,
-    mode: parsed.mode,
-    outputDir: parsed.outputDir ?? recordingManager.getDefaultOutputDir(),
-    idleTimeLimit: parsed.idleTimeLimit,
-    maxDuration: parsed.maxDuration,
-    inactivityTimeout: parsed.inactivityTimeout
-  });
-  const dimensions = manager.getDimensions();
-  recorder.start(dimensions.cols, dimensions.rows, {
-    TERM: "xterm-256color"
-  });
-  const timeoutParts = [];
-  if (parsed.maxDuration > 0) {
-    const mins = Math.floor(parsed.maxDuration / 60);
-    timeoutParts.push(`${mins} minute${mins !== 1 ? "s" : ""}`);
-  }
-  if (parsed.inactivityTimeout > 0) {
-    const mins = Math.floor(parsed.inactivityTimeout / 60);
-    timeoutParts.push(`${mins} minute${mins !== 1 ? "s" : ""} of inactivity`);
-  }
-  const timeoutMessage = timeoutParts.length > 0 ? `Recording will auto-stop after ${timeoutParts.join(" or ")}` : void 0;
-  const result2 = {
-    recordingId: recorder.id,
-    path: recorder.getFinalPath(),
-    format: parsed.format,
-    mode: parsed.mode,
-    maxDuration: parsed.maxDuration,
-    inactivityTimeout: parsed.inactivityTimeout,
-    message: timeoutMessage
-  };
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(result2, null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/stopRecording.ts
-init_zod();
-var stopRecordingSchema = external_exports.object({
-  recordingId: external_exports.string()
-});
-var stopRecordingTool = {
-  name: "stopRecording",
-  description: TOOL_DESCRIPTIONS.stopRecording.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      recordingId: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.stopRecording.recordingId
-      }
-    },
-    required: ["recordingId"]
-  }
-};
-async function handleStopRecording(manager, args2) {
-  const parsed = stopRecordingSchema.parse(args2);
-  const recordingManager = manager.getRecordingManager();
-  const recorder = recordingManager.getRecording(parsed.recordingId);
-  if (!recorder) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error: Recording not found: ${parsed.recordingId}`
-        }
-      ],
-      isError: true
-    };
-  }
-  if (!recorder.isActive()) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error: Recording already finalized: ${parsed.recordingId}`
-        }
-      ],
-      isError: true
-    };
-  }
-  const metadata = await recordingManager.finalizeRecording(parsed.recordingId, 0, "explicit");
-  if (!metadata) {
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Error: Failed to finalize recording: ${parsed.recordingId}`
-        }
-      ],
-      isError: true
-    };
-  }
-  const result2 = {
-    recordingId: metadata.id,
-    path: metadata.path,
-    durationMs: metadata.durationMs,
-    bytesWritten: metadata.bytesWritten,
-    saved: metadata.saved,
-    mode: metadata.mode,
-    stopReason: metadata.stopReason
-  };
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(result2, null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/createSession.ts
-init_zod();
-var createSessionSchema = external_exports.object({
-  shell: external_exports.string().optional().describe("Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"),
-  cols: external_exports.number().int().positive().optional().describe("Terminal width in columns (default: 80)"),
-  rows: external_exports.number().int().positive().optional().describe("Terminal height in rows (default: 25)")
-});
-var createSessionTool = {
-  name: "createSession",
-  description: "Create an isolated headless PTY session for parallel work, a busy Primary Session, or a different shell/size. The session is never directly visible to the user and cannot provide a user-visible password prompt. The Primary Session already exists and persists across tool calls; it does not need to be created. Its shell state (such as working directory and environment changes) is retained until the session restarts. Returns a sessionId for subsequent terminal calls.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      shell: {
-        type: "string",
-        description: "Shell to use for this session (default: $TERMINAL_TOOLKIT_SHELL, $SHELL, or /bin/bash)"
-      },
-      cols: {
-        type: "number",
-        description: "Terminal width in columns (default: 80)"
-      },
-      rows: {
-        type: "number",
-        description: "Terminal height in rows (default: 25)"
-      }
-    },
-    required: []
-  }
-};
-async function handleCreateSession(manager, args2) {
-  const parsed = createSessionSchema.parse(args2 ?? {});
-  const metadata = await manager.createSession(parsed);
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(metadata, null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/listSessions.ts
-init_zod();
-var listSessionsSchema = external_exports.object({});
-var listSessionsTool = {
-  name: "listSessions",
-  description: "List all active terminal sessions, including the Primary Session. Returns session metadata and the configured limits.",
-  inputSchema: {
-    type: "object",
-    properties: {},
-    required: []
-  }
-};
-function handleListSessions(manager, _args) {
-  const result2 = manager.listSessions();
-  return {
-    content: [
-      {
-        type: "text",
-        text: JSON.stringify(result2, null, 2)
-      }
-    ]
-  };
-}
-
-// src/tools/destroySession.ts
-init_zod();
-var destroySessionSchema = external_exports.object({
-  sessionId: external_exports.string().describe("ID of the session to destroy")
-});
-var destroySessionTool = {
-  name: "destroySession",
-  description: "Destroy a terminal session by ID. The Primary Session cannot be destroyed.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      sessionId: {
-        type: "string",
-        description: "ID of the session to destroy"
-      }
-    },
-    required: ["sessionId"]
-  }
-};
-function handleDestroySession(manager, args2) {
-  const parsed = destroySessionSchema.parse(args2);
-  const result2 = manager.destroySession(parsed.sessionId);
-  return {
-    content: [
-      {
-        type: "text",
-        text: result2.message
-      }
-    ],
-    isError: !result2.success
-  };
-}
-
-// src/tools/resize.ts
-init_zod();
-var resizeSchema = external_exports.object({
-  cols: external_exports.number().int().positive().describe("New terminal width in columns"),
-  rows: external_exports.number().int().positive().describe("New terminal height in rows"),
-  sessionId: external_exports.string().optional().describe(SESSION_ID_DESCRIPTION)
-});
-var resizeTool = {
-  name: "resize",
-  description: "Resize the terminal to the specified dimensions. Affects both the virtual terminal and the underlying PTY process.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      cols: {
-        type: "number",
-        description: "New terminal width in columns"
-      },
-      rows: {
-        type: "number",
-        description: "New terminal height in rows"
-      },
-      sessionId: {
-        type: "string",
-        description: SESSION_ID_DESCRIPTION
-      }
-    },
-    required: ["cols", "rows"]
-  }
-};
-function handleResize(manager, args2) {
-  const parsed = resizeSchema.parse(args2);
-  manager.resize(parsed.cols, parsed.rows, parsed.sessionId);
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Terminal resized to ${parsed.cols}x${parsed.rows}`
-      }
-    ]
-  };
-}
-
-// src/tools/getClipboard.ts
-var getClipboardTool = {
-  name: "getClipboard",
-  description: TOOL_DESCRIPTIONS.getClipboard.main,
-  inputSchema: {
-    type: "object",
-    properties: {},
-    required: []
-  }
-};
-async function handleGetClipboard(_manager, _args) {
-  const { default: clipboardy } = await Promise.resolve().then(() => (init_clipboardy(), clipboardy_exports));
-  const text = await clipboardy.read();
-  return {
-    content: [
-      {
-        type: "text",
-        text
-      }
-    ]
-  };
-}
-
-// src/tools/setClipboard.ts
-init_zod();
-var setClipboardSchema = external_exports.object({
-  text: external_exports.string().describe(TOOL_DESCRIPTIONS.setClipboard.text)
-});
-var setClipboardTool = {
-  name: "setClipboard",
-  description: TOOL_DESCRIPTIONS.setClipboard.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      text: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.setClipboard.text
-      }
-    },
-    required: ["text"]
-  }
-};
-async function handleSetClipboard(_manager, args2) {
-  const parsed = setClipboardSchema.parse(args2);
-  const { default: clipboardy } = await Promise.resolve().then(() => (init_clipboardy(), clipboardy_exports));
-  await clipboardy.write(parsed.text);
-  const preview = parsed.text.length > 80 ? `${parsed.text.slice(0, 80)}\u2026` : parsed.text;
-  return {
-    content: [
-      {
-        type: "text",
-        text: `Clipboard set (${parsed.text.length} chars): ${preview}`
-      }
-    ]
-  };
-}
-
-// src/tools/notify.ts
-init_zod();
-var import_node_notifier = __toESM(require_node_notifier(), 1);
-import { execFile as execFile2 } from "node:child_process";
-import { promisify as promisify7 } from "node:util";
-var notifySchema = external_exports.object({
-  message: external_exports.string().min(1).describe(TOOL_DESCRIPTIONS.notify.message),
-  title: external_exports.string().optional().default("Terminal Toolkit").describe(TOOL_DESCRIPTIONS.notify.title),
-  sound: external_exports.boolean().optional().default(true).describe(TOOL_DESCRIPTIONS.notify.sound)
-});
-var notifyTool = {
-  name: "notify",
-  description: TOOL_DESCRIPTIONS.notify.main,
-  inputSchema: {
-    type: "object",
-    properties: {
-      message: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.notify.message
-      },
-      title: {
-        type: "string",
-        description: TOOL_DESCRIPTIONS.notify.title,
-        default: "Terminal Toolkit"
-      },
-      sound: {
-        type: "boolean",
-        description: TOOL_DESCRIPTIONS.notify.sound,
-        default: true
-      }
-    },
-    required: ["message"]
-  }
-};
-var execFileAsync = promisify7(execFile2);
-function isTermuxEnvironment(platform2 = process.platform, env5 = process.env) {
-  return platform2 === "android" && (Boolean(env5.TERMUX_VERSION) || Boolean(env5.PREFIX?.includes("com.termux")));
-}
-function termuxNotificationCommands(args2) {
-  const parsed = notifySchema.parse(args2);
-  return [
-    {
-      command: "termux-notification",
-      args: ["--title", parsed.title, "--content", parsed.message, ...parsed.sound ? ["--sound"] : []]
-    },
-    { command: "termux-toast", args: [parsed.message] }
-  ];
-}
-async function handleNotify(_manager, args2) {
-  const parsed = notifySchema.parse(args2);
-  if (isTermuxEnvironment()) {
-    const failures = [];
-    for (const { command, args: args3 } of termuxNotificationCommands(parsed)) {
-      try {
-        await execFileAsync(command, args3, { timeout: 15e3 });
-      } catch (error2) {
-        failures.push(`${command}: ${error2 instanceof Error ? error2.message : String(error2)}`);
-      }
-    }
-    if (failures.length) {
-      return {
-        content: [{ type: "text", text: `Termux notification delivery failed: ${failures.join("; ")}` }],
-        isError: true
-      };
-    }
-    return { content: [{ type: "text", text: `Notification and toast sent: "${parsed.message}"` }] };
-  }
-  try {
-    await new Promise((resolve6, reject) => {
-      import_node_notifier.default.notify(
-        {
-          title: parsed.title,
-          message: parsed.message,
-          sound: parsed.sound,
-          wait: false
-        },
-        (error2) => {
-          if (error2) reject(error2);
-          else resolve6();
-        }
-      );
-    });
-    return {
-      content: [{ type: "text", text: `Notification sent: "${parsed.message}"` }]
-    };
-  } catch (error2) {
-    const reason = error2 instanceof Error ? error2.message : String(error2);
-    return {
-      content: [{
-        type: "text",
-        text: `Could not deliver desktop notification: ${reason}. The message was: "${parsed.message}"`
-      }],
-      isError: true
-    };
-  }
-}
-
-// src/tools/systemInfo.ts
-import os11 from "node:os";
-import { readFileSync as readFileSync3 } from "node:fs";
-import { basename } from "node:path";
-var systemInfoTool = {
-  name: "systemInfo",
-  description: "Get a concise read-only summary of the Terminal Toolkit host OS, distribution, compatibility environment (WSL/MSYS2/Termux), runtime, shell, paths and Primary Session state. Useful when first connecting to an unfamiliar host; does not create a session or probe with shell commands.",
-  inputSchema: { type: "object", properties: {}, required: [] }
-};
-function readOptional(path28) {
-  try {
-    return readFileSync3(path28, "utf8");
-  } catch {
-    return null;
-  }
-}
-function linuxDistribution() {
-  const content = readOptional("/etc/os-release");
-  if (!content) return null;
-  const entries = Object.fromEntries(content.split("\n").flatMap((line) => {
-    const match = line.match(/^([A-Z_]+)=(.*)$/);
-    return match ? [[match[1], match[2].replace(/^['"]|['"]$/g, "")]] : [];
-  }));
-  return { name: entries.PRETTY_NAME ?? entries.NAME ?? "Linux", version: entries.VERSION_ID ?? null };
-}
-function getSystemInfo(manager) {
-  const platform2 = process.platform;
-  const env5 = process.env;
-  const kernel = os11.release();
-  const linux = platform2 === "linux" ? linuxDistribution() : null;
-  const isTermux = platform2 === "android" || Boolean(env5.TERMUX_VERSION || env5.PREFIX?.includes("com.termux"));
-  const isWsl2 = platform2 === "linux" && !isTermux && (Boolean(env5.WSL_DISTRO_NAME || env5.WSL_INTEROP) || /microsoft|wsl/i.test(kernel) || /microsoft|wsl/i.test(readOptional("/proc/version") ?? ""));
-  const isWsl22 = isWsl2 && (/wsl2|microsoft-standard/i.test(kernel) || Boolean(env5.WSL_INTEROP));
-  const isMsys = Boolean(env5.MSYSTEM);
-  const environment = isTermux ? "termux" : isWsl2 ? isWsl22 ? "wsl2" : "wsl" : isMsys ? "msys2" : "native";
-  const shellPath = manager.getConfiguredShell();
-  const sessions = manager.listSessions().sessions;
-  const primary = sessions.find((session) => session.isDefault) ?? null;
-  return {
-    system: {
-      platform: platform2,
-      distribution: linux?.name ?? (platform2 === "darwin" ? "macOS" : platform2 === "win32" ? "Windows" : os11.type()),
-      version: linux?.version ?? (platform2 === "darwin" ? null : os11.release()),
-      kernel,
-      arch: os11.arch(),
-      environment,
-      hostOS: isWsl2 ? "windows" : isTermux ? "android" : platform2,
-      pathStyle: platform2 === "win32" && !isMsys ? "windows" : "posix"
-    },
-    runtime: {
-      node: process.version,
-      bun: typeof process.versions.bun === "string" ? process.versions.bun : null,
-      shell: { name: basename(shellPath), path: shellPath },
-      user: os11.userInfo().username,
-      home: os11.homedir(),
-      cwd: process.cwd(),
-      terminal: env5.TERM ?? null
-    },
-    primarySession: primary ? {
-      connected: primary.mode !== "uninitialized" && (primary.role !== "client" || primary.clientCount > 0),
-      sessionId: primary.mode === "uninitialized" ? null : primary.sessionId,
-      mode: primary.mode,
-      role: primary.role,
-      shell: primary.shell,
-      clientCount: primary.clientCount,
-      createdAt: primary.createdAt || null,
-      lastInputAt: primary.lastInputAt,
-      lastOutputAt: primary.lastOutputAt
-    } : null
-  };
-}
-function handleSystemInfo(manager, _args) {
-  return { content: [{ type: "text", text: JSON.stringify(getSystemInfo(manager), null, 2) }] };
-}
-
-// src/tools/stats.ts
-var startedAt = (/* @__PURE__ */ new Date()).toISOString();
-var counters = /* @__PURE__ */ new Map();
-var searches = /* @__PURE__ */ new Map();
-var descriptions = /* @__PURE__ */ new Map();
-var otherQueries = 0;
-var MAX_QUERIES = 1e3;
-var MAX_QUERY_LENGTH = 256;
-function increment2(map, key) {
-  map.set(key, (map.get(key) ?? 0) + 1);
-}
-function recordSearch(query, results) {
-  const key = query.slice(0, MAX_QUERY_LENGTH);
-  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
-    otherQueries++;
-    return;
-  }
-  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
-  stat2.calls++;
-  stat2.totalResults += results;
-  if (!results) stat2.zeroResults++;
-  searches.set(key, stat2);
-}
-function recordDescribe(name) {
-  increment2(descriptions, name);
-}
-async function trackCall(name, fn2, signal, isFailure) {
-  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
-  counters.set(name, stat2);
-  stat2.calls++;
-  const start = performance.now();
-  try {
-    const result2 = await fn2();
-    if (isFailure?.(result2)) {
-      if (signal?.aborted) stat2.cancelled++;
-      else stat2.errors++;
-    } else stat2.success++;
-    return result2;
-  } catch (error2) {
-    if (signal?.aborted) stat2.cancelled++;
-    else stat2.errors++;
-    throw error2;
-  } finally {
-    const elapsed = performance.now() - start;
-    stat2.totalDurationMs += elapsed;
-    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
-  }
-}
-function getToolStat(options2 = {}, namespaces = {}) {
-  if (options2.category !== void 0 && !["discovery", "tool"].includes(options2.category)) throw new Error("Invalid category");
-  if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
-  if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
-  if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
-  const entries = [...counters.entries()].filter(([name]) => {
-    const discovery = ["search", "describe"].includes(name);
-    return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
-  }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
-  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
-  return {
-    since: startedAt,
-    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
-    tools: entries.slice(0, options2.limit),
-    ...!options2.category || options2.category === "discovery" ? {
-      discovery: {
-        search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
-        describe: Object.fromEntries(descriptions)
-      }
-    } : {}
-  };
-}
-
-// src/tools/getToolStat.ts
-var getToolStatTool = {
-  name: "getToolStat",
-  description: "Get process-wide tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Counters reset on server restart.",
-  inputSchema: {
-    type: "object",
-    properties: {
-      category: { type: "string", enum: ["discovery", "tool"] },
-      namespace: { type: "string" },
-      sortBy: { type: "string", enum: ["calls", "name", "totalDurationMs"] },
-      limit: { type: "integer", minimum: 1 }
-    }
-  }
-};
-function handleGetToolStat(args2) {
-  if (args2 === null || typeof args2 !== "object" || Array.isArray(args2)) throw new Error("getToolStat options must be an object");
-  const namespaces = Object.fromEntries(getToolDefinitions(true).map((tool) => [tool.name, getToolNamespace(tool.name)]));
-  return getToolStat(args2, namespaces);
-}
-
-// src/tools/operators.ts
-init_zod();
-import { spawn as spawn3 } from "node:child_process";
-import { mkdir, readFile as readFile2, writeFile } from "node:fs/promises";
-import { dirname as dirname2, join as join6, resolve } from "node:path";
-
-// src/skills.ts
-init_zod();
-var import_yaml = __toESM(require_dist4(), 1);
-import { createHash as createHash2 } from "node:crypto";
-import { readFile, readdir, realpath, stat } from "node:fs/promises";
-import path21 from "node:path";
-import os12 from "node:os";
-import { fileURLToPath as fileURLToPath8 } from "node:url";
-var SKILLS_ROOT = path21.resolve(path21.dirname(fileURLToPath8(import.meta.url)), "../skills");
-var listRequest = external_exports.object({ method: external_exports.literal("skills/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
-var getRequest = external_exports.object({ method: external_exports.literal("skills/get"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
-var readRequest = external_exports.object({ method: external_exports.literal("resources/read"), params: external_exports.object({ uri: external_exports.string() }).passthrough() });
-var listResourcesRequest = external_exports.object({ method: external_exports.literal("resources/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
-function invalid(message) {
-  throw new McpError(ErrorCode.InvalidParams, message);
-}
-async function decodeSkillUri(uri) {
-  if (!uri.startsWith("skill://") || /[?#]/.test(uri)) invalid("Invalid skill URI");
-  const raw = uri.slice("skill://".length);
-  if (!raw || raw.includes("\\") || raw.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) invalid("Invalid skill path");
-  let segments;
-  try {
-    segments = raw.split("/").map(decodeURIComponent);
-  } catch {
-    invalid("Invalid URI encoding");
-  }
-  if (segments.some((s) => !s || s === "." || s === ".." || s.includes("/") || s.includes("\\") || s.includes("\0"))) invalid("Invalid skill path");
-  const locations = await skillLocations();
-  const matches = locations.filter((location) => {
-    const prefix = [...location.namespace.slice("skills/".length).split("/"), location.name];
-    return segments.length > prefix.length && prefix.every((part, i2) => segments[i2] === part);
-  }).sort((a2, b) => b.namespace.length - a2.namespace.length);
-  if (matches.length) {
-    const match = matches[0];
-    return { namespace: match.namespace, name: match.name, relative: segments.slice(match.namespace.split("/").length).join("/") };
-  }
-  const [first, ...rest] = segments;
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(first)) invalid("Invalid skill name");
-  return { name: first, relative: rest.join("/") };
-}
-var skillWarnings = /* @__PURE__ */ new Set();
-async function skillLocations(overrideRoots) {
-  const roots = overrideRoots ?? [SKILLS_ROOT];
-  if (!overrideRoots) try {
-    const config3 = JSON.parse(await readFile(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
-    if (Array.isArray(config3.skills)) for (const value of config3.skills) {
-      if (typeof value !== "string" || !value.trim()) continue;
-      const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
-      roots.push(path21.resolve(expanded));
-    }
-  } catch (error2) {
-    if (!(error2 instanceof Error && "code" in error2 && error2.code === "ENOENT"))
-      skillWarnings.add("Cannot read settings.json: " + (error2 instanceof Error ? error2.message : String(error2)));
-  }
-  const locations = [];
-  const namespaces = /* @__PURE__ */ new Map();
-  for (const rootPath of roots) {
-    try {
-      const root2 = await realpath(rootPath);
-      const builtin = rootPath === SKILLS_ROOT;
-      const parts = root2.split(path21.sep).filter(Boolean);
-      const anchor = parts.lastIndexOf("skills");
-      const namespaceParts = anchor > 0 ? [parts[anchor - 1], ...parts.slice(anchor + 1)] : [path21.basename(root2)];
-      const namespace = builtin ? "skills/builtin" : "skills/" + namespaceParts.join("/");
-      const previous = namespaces.get(namespace);
-      if (previous && previous !== root2) {
-        const warning = `Skill namespace conflict ${namespace}: keeping ${previous}; skipping ${root2}`;
-        if (!skillWarnings.has(warning)) console.error("[Terminal Toolkit] " + warning);
-        skillWarnings.add(warning);
-        continue;
-      }
-      namespaces.set(namespace, root2);
-      for (const item of await readdir(root2, { withFileTypes: true })) {
-        if (!item.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
-        const dir = await realpath(path21.join(root2, item.name));
-        if (path21.dirname(dir) === root2) locations.push({ namespace, name: item.name, directory: dir, source: builtin ? "builtin" : "file" });
-      }
-    } catch (error2) {
-      if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
-    }
-  }
-  return locations;
-}
-async function skillCatalog(overrideRoots) {
-  const result2 = [];
-  for (const location of await skillLocations(overrideRoots)) {
-    try {
-      const { frontmatter, size } = await readSkillMetadata(location);
-      result2.push({ namespace: location.namespace, name: location.name, description: frontmatter.description, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path21.sep, entrypoint: "SKILL.md", size });
-    } catch {
-    }
-  }
-  return result2;
-}
-async function readSkillMetadata(location) {
-  const file = await secureSkillFile(location.directory, "SKILL.md");
-  const source = await readFile(file, "utf8");
-  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
-  if (!match) invalid("Skill frontmatter missing");
-  let frontmatter;
-  try {
-    frontmatter = import_yaml.default.parse(match[1]);
-  } catch {
-    invalid("Invalid YAML frontmatter");
-  }
-  if (!frontmatter || typeof frontmatter !== "object" || Array.isArray(frontmatter) || frontmatter.name !== location.name || typeof frontmatter.description !== "string" || !frontmatter.description.trim()) invalid("Invalid skill frontmatter");
-  return { frontmatter, size: (await stat(file)).size };
-}
-async function secureSkillFile(directory, relative2) {
-  const candidate = await realpath(path21.join(directory, relative2));
-  if (!candidate.startsWith(directory + path21.sep) || !(await stat(candidate)).isFile()) throw new Error("Invalid skill resource path");
-  return candidate;
-}
-async function resolveBuiltinSkillPath(uri) {
-  if (!uri.startsWith("builtin://skills/")) throw new Error("Invalid builtin path");
-  const relative2 = uri.slice("builtin://skills/".length);
-  if (!relative2 || /[?#\\\\]/.test(relative2) || relative2.split("/").some((s) => !s || s === "." || s === ".." || /%2f|%5c/i.test(s))) throw new Error("Invalid builtin path");
-  const segments = relative2.split("/");
-  if (segments.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(segments[0])) throw new Error("Invalid builtin skill name");
-  const location = (await skillLocations()).find((s) => s.source === "builtin" && s.name === segments[0]);
-  if (!location) throw new Error("Builtin skill not found");
-  return secureSkillFile(location.directory, segments.slice(1).join("/"));
-}
-async function locateSkill(name, namespace) {
-  const matches = (await skillLocations()).filter((s) => s.name === name && (!namespace || s.namespace === namespace));
-  if (matches.length !== 1) invalid(matches.length ? "Ambiguous skill name; use a namespaced URI" : "Skill not found");
-  return matches[0];
-}
-async function secureFile(name, relative2, namespace) {
-  if (!relative2) invalid("Expected a file URI");
-  const skill = await locateSkill(name, namespace);
-  return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
-}
-async function enumerateFiles(dir, base = "") {
-  const entries = await readdir(path21.join(dir, base), { withFileTypes: true });
-  const files = [];
-  for (const item of entries) {
-    const rel = path21.posix.join(base, item.name);
-    if (item.isSymbolicLink()) continue;
-    if (item.isDirectory()) files.push(...await enumerateFiles(dir, rel));
-    else if (item.isFile()) files.push(rel);
-  }
-  return files;
-}
-async function skillEntry(location, locations) {
-  const { name, namespace } = location;
-  const duplicateName = (locations ?? await skillLocations()).some((s) => s.name === name && s.namespace !== namespace);
-  const prefix = !duplicateName && namespace === "skills/builtin" ? `skill://${name}` : `skill://${namespace.slice("skills/".length)}/${name}`;
-  const { frontmatter } = await readSkillMetadata(location);
-  const dir = location.directory;
-  const resources = [];
-  for (const rel of (await enumerateFiles(dir)).sort()) {
-    const bytes = await readFile(await secureSkillFile(location.directory, rel));
-    resources.push({
-      uri: `${prefix}/${rel.split("/").map(encodeURIComponent).join("/")}`,
-      digest: `sha256:${createHash2("sha256").update(bytes).digest("hex")}`,
-      size: bytes.length
-    });
-  }
-  return { uri: `${prefix}/SKILL.md`, frontmatter, resources };
-}
-var loggedSkillSummary = false;
-async function skills() {
-  const locations = await skillLocations();
-  const result2 = [];
-  const skipped = [];
-  let builtIn = 0;
-  for (const location of locations.sort((a2, b) => (a2.namespace + "/" + a2.name).localeCompare(b.namespace + "/" + b.name))) {
-    try {
-      result2.push(await skillEntry(location, locations));
-      if (location.source === "builtin") builtIn++;
-    } catch (error2) {
-      skipped.push(location.namespace + "/" + location.name + ": " + (error2 instanceof Error ? error2.message : String(error2)));
-    }
-  }
-  if (!loggedSkillSummary) {
-    loggedSkillSummary = true;
-    console.error("[Terminal Toolkit] Skills: " + result2.length + " available (" + builtIn + " built-in, " + (result2.length - builtIn) + " external)" + (skipped.length ? ", " + skipped.length + " skipped" : "") + ".");
-    for (const detail of skipped) console.error("[Terminal Toolkit] Skill skipped: " + detail);
-    for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
-  }
-  return result2;
-}
-async function logSkillsOnStartup() {
-  await skills();
-}
-function registerSkills(server) {
-  server.setRequestHandler(listRequest, async (request) => {
-    if (request.params?.cursor) invalid("Unknown skills cursor");
-    return { resultType: "complete", skills: await skills(), ttlMs: 0, cacheScope: "public" };
-  });
-  server.setRequestHandler(getRequest, async ({ params }) => {
-    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
-    if (relative2 !== "SKILL.md") invalid("skills/get expects a SKILL.md URI");
-    return { resultType: "complete", skill: await skillEntry(await locateSkill(name, namespace)), ttlMs: 0, cacheScope: "public" };
-  });
-  server.setRequestHandler(readRequest, async ({ params }) => {
-    const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
-    const bytes = await readFile(await secureFile(name, relative2, namespace));
-    const isText = /\.(md|txt|json|yaml|yml|ts|js|mjs|cjs|sh|py|html|css|xml|svg)$/i.test(relative2);
-    return { resultType: "complete", ttlMs: 0, cacheScope: "public", contents: [isText ? { uri: params.uri, mimeType: relative2.endsWith(".md") ? "text/markdown" : "text/plain", text: bytes.toString("utf8") } : { uri: params.uri, mimeType: "application/octet-stream", blob: bytes.toString("base64") }] };
-  });
-  server.setRequestHandler(listResourcesRequest, async ({ params }) => {
-    if (params?.cursor) invalid("Unknown resources cursor");
-    return { resultType: "complete", ttlMs: 0, cacheScope: "public", resources: (await skills()).map((skill) => ({
-      uri: skill.uri,
-      name: skill.frontmatter.name,
-      description: skill.frontmatter.description,
-      mimeType: "text/markdown"
-    })) };
-  });
-}
-
-// src/tools/operators.ts
-var operatorCwd = process.cwd();
-function killProcessTree(pid) {
-  if (process.platform === "win32") {
-    const killer = spawn3(
-      join6(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe"),
-      ["/F", "/T", "/PID", String(pid)],
-      { stdio: "ignore", detached: true, windowsHide: true }
-    );
-    killer.once("error", () => {
-    });
-    killer.unref();
-  } else {
-    try {
-      process.kill(-pid, "SIGKILL");
-    } catch {
-      try {
-        process.kill(pid, "SIGKILL");
-      } catch {
-      }
-    }
-  }
-}
-var readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().positive().optional(), limit: external_exports.number().int().positive().optional() });
-var writeSchema = external_exports.object({ path: external_exports.string(), content: external_exports.string() });
-var editSchema = external_exports.object({ path: external_exports.string(), edits: external_exports.array(external_exports.object({ oldText: external_exports.string(), newText: external_exports.string() })).min(1) });
-var shellSchema = external_exports.object({ command: external_exports.string(), timeout: external_exports.number().positive().optional() });
-var result = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
-var operatorToolDefinitions = [
-  { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
-  { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
-  { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
-  { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } }
-];
-var localPath = (path28) => resolve(operatorCwd, path28);
-async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal) {
-  if (signal?.aborted) throw new Error("Tool call aborted");
-  switch (name) {
-    case "read": {
-      const parsed = readSchema.parse(args2);
-      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
-      const lines = (await readFile2(target, "utf8")).split("\n");
-      const start = (parsed.offset ?? 1) - 1;
-      if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
-      return result(lines.slice(start, parsed.limit === void 0 ? void 0 : start + parsed.limit).join("\n"));
-    }
-    case "write": {
-      const parsed = writeSchema.parse(args2);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
-      const target = localPath(parsed.path);
-      await mkdir(dirname2(target), { recursive: true });
-      if (signal?.aborted) throw new Error("Tool call aborted");
-      await writeFile(target, parsed.content, "utf8");
-      return result(`Wrote ${parsed.path}`);
-    }
-    case "edit": {
-      const parsed = editSchema.parse(args2);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
-      const target = localPath(parsed.path);
-      const original = await readFile2(target, "utf8");
-      const ranges = [];
-      for (const edit of parsed.edits) {
-        if (!edit.oldText) throw new Error("Each oldText must be non-empty");
-        const first = original.indexOf(edit.oldText);
-        if (first < 0) throw new Error(`oldText was not found in ${parsed.path}`);
-        if (first !== original.lastIndexOf(edit.oldText)) throw new Error(`oldText must match exactly once in ${parsed.path}`);
-        ranges.push({ start: first, end: first + edit.oldText.length, newText: edit.newText });
-      }
-      ranges.sort((a2, b) => a2.start - b.start);
-      for (let i2 = 1; i2 < ranges.length; i2++) if (ranges[i2 - 1].end > ranges[i2].start) throw new Error("Edits must not overlap");
-      let updated = original;
-      for (const edit of [...ranges].reverse()) updated = updated.slice(0, edit.start) + edit.newText + updated.slice(edit.end);
-      if (signal?.aborted) throw new Error("Tool call aborted");
-      await writeFile(target, updated, "utf8");
-      return result(`Edited ${parsed.path}`);
-    }
-    case "shell": {
-      const parsed = shellSchema.parse(args2);
-      if (signal?.aborted) throw new Error("Command aborted");
-      let timedOut = false;
-      const child = spawn3(parsed.command, {
-        cwd: operatorCwd,
-        shell,
-        detached: process.platform !== "win32",
-        windowsHide: true,
-        stdio: ["ignore", "pipe", "pipe"]
-      });
-      const stop2 = () => {
-        if (child.pid) killProcessTree(child.pid);
-      };
-      const onAbort = () => stop2();
-      signal?.addEventListener("abort", onAbort, { once: true });
-      if (signal?.aborted) stop2();
-      const timer = parsed.timeout === void 0 ? void 0 : setTimeout(() => {
-        timedOut = true;
-        stop2();
-      }, parsed.timeout * 1e3);
-      let stdout = "";
-      let stderr = "";
-      let exceeded = false;
-      const maxBuffer = 10 * 1024 * 1024;
-      const capture = (stream, chunk) => {
-        if (stream === "stdout") stdout += chunk.toString();
-        else stderr += chunk.toString();
-        if (Buffer.byteLength(stdout) + Buffer.byteLength(stderr) > maxBuffer) {
-          exceeded = true;
-          stop2();
-        }
-      };
-      child.stdout.on("data", (chunk) => capture("stdout", chunk));
-      child.stderr.on("data", (chunk) => capture("stderr", chunk));
-      try {
-        const code = await new Promise((resolve6, reject) => {
-          child.once("error", reject);
-          child.once("close", resolve6);
-        });
-        if (signal?.aborted) throw new Error("Command aborted");
-        const output2 = `${stdout}${stderr}`;
-        if (timedOut) return result(`${output2}${output2 ? "\n" : ""}Command timed out after ${parsed.timeout} second(s).`, true);
-        if (exceeded) return result("Command output exceeded 10 MiB buffer.", true);
-        if (code !== 0) return result(`${output2}${output2 ? "\n" : ""}Command exited with code ${code ?? "unknown"}.`, true);
-        return result(output2);
-      } finally {
-        if (timer) clearTimeout(timer);
-        signal?.removeEventListener("abort", onAbort);
-      }
-    }
-    default:
-      throw new Error(`Unknown operator tool: ${name}`);
-  }
-}
-
-// src/tools/extra-operators.ts
-init_zod();
-import { spawn as spawn4, spawnSync as spawnSync2 } from "node:child_process";
-import { readdir as readdir2, lstat } from "node:fs/promises";
-import { resolve as resolve2, relative } from "node:path";
-var cwd = process.cwd();
-var output = (value) => ({ content: [{ type: "text", text: value }] });
-var executable = (names) => names.find((name) => !spawnSync2(name, ["--version"], { stdio: "ignore" }).error);
-var hint = (name) => new Error((name === "fd" ? "fd/fdfind" : name) + " not found on PATH. Install manually: macOS: brew install " + (name === "rg" ? "ripgrep" : "fd") + "; Ubuntu/Debian: sudo apt install " + (name === "rg" ? "ripgrep" : "fd-find") + "; Termux: pkg install " + (name === "rg" ? "ripgrep" : "fd"));
-var capped = (value) => Buffer.byteLength(value) > 51200 ? Buffer.from(value).subarray(0, 51200).toString("utf8") + "\n[50KB limit reached]" : value;
-async function run(binary, args2, empty, allowNoMatch = false, rawOutput = false) {
-  return new Promise((done, fail) => {
-    const child = spawn4(binary, args2, { cwd, stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "";
-    let stderr = "";
-    let outputBytes = 0;
-    child.stdout.on("data", (data) => {
-      outputBytes += data.length;
-      if (outputBytes > 8 * 1024 * 1024) {
-        child.kill();
-        return;
-      }
-      stdout += data.toString();
-    });
-    child.stderr.on("data", (data) => {
-      if (stderr.length < 8192) stderr += data.toString();
-    });
-    child.on("error", fail);
-    child.on("close", (code) => outputBytes > 8 * 1024 * 1024 ? fail(new Error("Search output exceeded 8MB processing limit; narrow the search")) : code === 0 || allowNoMatch && code === 1 ? done(rawOutput ? stdout.trimEnd() || empty : capped(stdout.trimEnd() || empty)) : fail(new Error(stderr.trim() || binary + " exited with code " + code)));
-  });
-}
-var lsSchema = external_exports.object({ path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
-var findSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
-var grepSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
-var extraOperatorToolDefinitions = [
-  { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
-  { name: "grep", description: "Search text with rg, respecting .gitignore; requires system ripgrep, never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
-  { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
-];
-async function handleExtraOperatorTool(name, args2) {
-  if (name === "list") {
-    const params = lsSchema.parse(args2);
-    const dir = resolve2(cwd, params.path || ".");
-    const entries = (await readdir2(dir)).sort();
-    const limit = params.limit ?? 500;
-    const lines = await Promise.all(entries.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
-    return output(capped(lines.join("\n") + (entries.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
-  }
-  if (name === "find") {
-    const params = findSchema.parse(args2);
-    const binary = executable(["fd", "fdfind"]);
-    if (!binary) throw hint("fd");
-    const target = resolve2(cwd, params.path || ".");
-    const commandArgs = ["--glob", "--color=never", "--hidden", "--max-results", String(params.limit ?? 1e3)];
-    let pattern = params.pattern;
-    if (pattern.includes("/")) {
-      commandArgs.push("--full-path");
-      if (!pattern.startsWith("/") && !pattern.startsWith("**/")) pattern = "**/" + pattern;
-    }
-    commandArgs.push("--", pattern, target);
-    const raw = await run(binary, commandArgs, "No files found matching pattern", false, true);
-    if (raw === "No files found matching pattern") return output(raw);
-    return output(capped(raw.split("\n").map((line) => line.startsWith(target) ? relative(target, line) : line).join("\n")));
-  }
-  if (name === "grep") {
-    const params = grepSchema.parse(args2);
-    const binary = executable(["rg"]);
-    if (!binary) throw hint("rg");
-    const commandArgs = ["--json", "--color=never", "--hidden"];
-    if (params.ignoreCase) commandArgs.push("--ignore-case");
-    if (params.literal) commandArgs.push("--fixed-strings");
-    if (params.context !== void 0) commandArgs.push("--context", String(params.context));
-    if (params.glob) commandArgs.push("--glob", params.glob);
-    commandArgs.push("--", params.pattern, resolve2(cwd, params.path || "."));
-    const raw = await run(binary, commandArgs, "No matches found", true, true);
-    if (raw === "No matches found") return output(raw);
-    const limit = params.limit ?? 100;
-    const lines = [];
-    let matches = 0;
-    for (const line of raw.split("\n")) {
-      if (!line) continue;
-      const event = JSON.parse(line);
-      if (event.type !== "match" && event.type !== "context") continue;
-      if (event.type === "match") {
-        if (matches >= limit) break;
-        matches++;
-      }
-      const file = event.data?.path?.text ?? "";
-      const relativePath = relative(resolve2(cwd, params.path || "."), file) || file;
-      const lineNumber = event.data?.line_number ?? 0;
-      const content = (event.data?.lines?.text ?? "").replace(/\r?\n$/, "");
-      lines.push(relativePath + (event.type === "match" ? ":" : "-") + lineNumber + ":" + content);
-    }
-    if (matches === 0) return output("No matches found");
-    return output(capped(lines.join("\n") + (matches >= limit ? "\n[" + limit + " matches limit reached]" : "")));
-  }
-  throw new Error("Unknown extra operator tool: " + name);
-}
-
-// src/tools/definitions.ts
-var namespaceRegistry = {
-  "tools/core": {
-    defaultEnabled: true,
-    toolNames: ["read", "write", "edit", "shell", "list", "grep", "find"]
-  },
-  "tools/pty": {
-    defaultEnabled: true,
-    toolNames: [
-      "type",
-      "sendKey",
-      "getContent",
-      "getBufferInfo",
-      "takeScreenshot",
-      "startRecording",
-      "stopRecording",
-      "createSession",
-      "listSessions",
-      "destroySession",
-      "resize"
-    ]
-  },
-  "tools/misc": {
-    defaultEnabled: true,
-    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo", "getToolStat"]
-  }
-};
-var namespaceByTool = new Map(
-  Object.entries(namespaceRegistry).flatMap(([namespace, config3]) => config3.toolNames.map((name) => [name, namespace]))
-);
-function getToolNamespace(name) {
-  return namespaceByTool.get(name) ?? "tools/pty";
-}
-var toolDefinitions = [
-  typeTool,
-  sendKeyTool,
-  sleepTool,
-  getContentTool,
-  getBufferInfoTool,
-  screenshotTool,
-  startRecordingTool,
-  stopRecordingTool,
-  createSessionTool,
-  listSessionsTool,
-  destroySessionTool,
-  resizeTool,
-  getClipboardTool,
-  setClipboardTool,
-  notifyTool,
-  systemInfoTool,
-  getToolStatTool
-];
-var TOOL_SUMMARIES = {
-  type: "Send text input to an interactive terminal session.",
-  sendKey: "Send a key or keyboard shortcut to a terminal session.",
-  sleep: "Pause execution for a specified duration.",
-  getContent: "Read content from a terminal session buffer.",
-  getBufferInfo: "Get terminal buffer and scrollback metadata.",
-  takeScreenshot: "Capture a screenshot of a terminal session.",
-  startRecording: "Start recording a terminal session.",
-  stopRecording: "Stop and finalize a terminal recording.",
-  createSession: "Create an isolated headless PTY session, not directly visible to the user.",
-  listSessions: "List active terminal sessions.",
-  destroySession: "Destroy an additional terminal session.",
-  resize: "Resize a terminal session.",
-  getClipboard: "Read the system clipboard.",
-  setClipboard: "Write text to the system clipboard.",
-  notify: "Send an operating-system notification.",
-  systemInfo: "Summarize host environment and Primary Session state.",
-  getToolStat: "Inspect process-wide tool usage statistics.",
-  read: "Read a text file.",
-  write: "Write a text file.",
-  edit: "Edit a file by exact string replacement.",
-  shell: "Run a quick one-shot non-interactive command with the configured shell; prefer PTY for long builds and tests.",
-  list: "List directory entries.",
-  grep: "Search file contents using ripgrep.",
-  find: "Find files using fd or fdfind."
-};
-function getCodemodeToolDefinitions(piExtraOperators = false) {
-  return getToolDefinitions(piExtraOperators).map((tool) => ({
-    ...tool,
-    namespace: getToolNamespace(tool.name),
-    description: TOOL_SUMMARIES[tool.name] ?? tool.description,
-    instruction: tool.description
-  }));
-}
-function getMcpToolDefinitions(piExtraOperators = false) {
-  return getToolDefinitions(piExtraOperators).map((tool) => ({
-    ...tool,
-    description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
-  }));
-}
-var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
-var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
-var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
-var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
-function getToolDefinitions(piExtraOperators = false) {
-  return [...toolDefinitions, ...operatorToolDefinitions, ...piExtraOperators ? extraOperatorToolDefinitions : []].map((tool) => ({
-    ...tool,
-    annotations: {
-      readOnlyHint: READ_ONLY_TOOLS.has(tool.name),
-      destructiveHint: DESTRUCTIVE_TOOLS.has(tool.name),
-      idempotentHint: IDEMPOTENT_TOOLS.has(tool.name),
-      openWorldHint: OPEN_WORLD_TOOLS.has(tool.name)
-    }
-  }));
-}
-function getToolNames() {
-  return toolDefinitions.map((t) => t.name);
-}
+// src/tools/index.ts
+init_types();
+init_definitions();
 
 // node_modules/@earendil-works/pi-codemode/dist/identifier.js
 function toCodemodeIdentifier(name) {
@@ -57288,6 +57708,7 @@ SOURCE: /[\s\S]+/
 `;
 
 // src/tools/codemode.ts
+init_definitions();
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 
 // src/tools/namespaceGuidance.ts
@@ -57328,6 +57749,9 @@ another). The Primary Session cannot be destroyed.` },
   "tools/misc": { description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
 };
 
+// src/tools/codemode.ts
+init_stats();
+
 // src/tools/outputLimit.ts
 var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
 function limitTextBlock(text, context = "Tool output") {
@@ -57340,6 +57764,7 @@ function limitToolResponse(result2) {
 }
 
 // src/tools/codemode.ts
+init_skills();
 var codemodeDefinition = {
   name: "codemode",
   annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: true },
@@ -57456,8 +57881,31 @@ function runCodemode(manager, args2, piExtraOperators, signal, skillsEnabled = f
   );
 }
 
+// src/tools/index.ts
+init_operators();
+init_extra_operators();
+init_type();
+init_sendKey();
+init_sleep();
+init_getContent();
+init_getBufferInfo();
+init_screenshot();
+init_startRecording();
+init_stopRecording();
+init_createSession();
+init_listSessions();
+init_destroySession();
+init_resize();
+init_getClipboard();
+init_setClipboard();
+init_notify();
+init_systemInfo();
+init_getToolStat();
+init_stats();
+
 // src/tools/skillDiscovery.ts
 init_zod();
+init_skills();
 var skillDiscoveryDefinitions = [
   { name: "searchSkills", description: "At the beginning of each conversation, call searchSkills() once to discover available Skills before choosing tools for the task. Search by keywords or globbed full name as needed; use describeSkill({name}) to inspect relevant metadata and read the returned SKILL.md path using read(). Search results are capped at 100 per call (default 100); narrow the query if needed. Do not repeat initial discovery on every tool call.", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { query: { type: "string" }, name: { type: "string", description: "Glob pattern matching the full unique Skill name" }, limit: { type: "integer", minimum: 1 } }, required: [] } },
   { name: "describeSkill", description: "Describe one Skill by its full unique name. Returns metadata and SKILL.md path, not its contents. Read the path using read({path,offset?,limit?}).", annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }, inputSchema: { type: "object", properties: { name: { type: "string", description: "Full unique Skill name, e.g. mattpocock/engineering/code-review" } }, required: ["name"] } }
@@ -57563,13 +58011,14 @@ async function dispatchToolUntracked(manager, name, args2, piExtraOperators = fa
     case "systemInfo":
       return handleSystemInfo(manager, args2);
     case "getToolStat":
-      return { content: [{ type: "text", text: JSON.stringify(handleGetToolStat(args2 ?? {})) }] };
+      return { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(args2 ?? {})) }] };
     default:
       throw new Error(`Unknown tool: ${name}`);
   }
 }
 
 // src/prompts/index.ts
+init_types();
 var TOOL_USAGE_PROMPT = `# Terminal Toolkit Tool Usage Guide
 
 ## Overview
@@ -57727,6 +58176,9 @@ function registerPrompts(server) {
     throw new Error(`Unknown prompt: ${name}`);
   });
 }
+
+// src/server.ts
+init_skills();
 
 // src/utils/shutdown.ts
 var CLEANUP_TIMEOUT_MS = 2e3;
@@ -58018,6 +58470,25 @@ function handleBrokerRequest(method, params, connectionId, connection, connectio
 }
 
 // src/transport/socket.ts
+init_type();
+init_sendKey();
+init_sleep();
+init_getContent();
+init_getBufferInfo();
+init_screenshot();
+init_startRecording();
+init_stopRecording();
+init_createSession();
+init_listSessions();
+init_destroySession();
+init_resize();
+init_getClipboard();
+init_setClipboard();
+init_notify();
+init_systemInfo();
+init_getToolStat();
+init_operators();
+init_extra_operators();
 var clientConnectedSchema = external_exports.object({
   title: external_exports.string().optional(),
   piOperators: external_exports.boolean().optional(),
@@ -58316,6 +58787,9 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
         stats.recordToolCall("systemInfo");
         result2 = handleSystemInfo(manager, params);
         break;
+      case "getToolStat":
+        result2 = { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
+        break;
       case "clientConnected": {
         const parsed = clientConnectedSchema.parse(params ?? {});
         setClientPiExtraOperators?.(parsed.piExtraOperators === true);
@@ -58341,6 +58815,9 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
 
 // src/client.ts
 init_mcpEventsExperiment();
+init_skills();
+init_types();
+init_definitions();
 async function notifyClientConnected(sendRequest, options2) {
   const params = options2.title === void 0 && options2.piExtraOperators === void 0 ? void 0 : {
     ...options2.title === void 0 ? {} : { title: options2.title },
@@ -58617,6 +59094,9 @@ function connectToSocket(socketPath) {
   });
 }
 
+// src/index.ts
+init_skills();
+
 // node_modules/string-width/index.js
 var segmenter2 = new Intl.Segmenter();
 var zeroWidthClusterRegex = new RegExp("^(?:\\p{Default_Ignorable_Code_Point}|\\p{Control}|\\p{Format}|\\p{Nonspacing_Mark}|\\p{Enclosing_Mark}|\\p{Surrogate})+$", "v");
@@ -58744,6 +59224,7 @@ function stringWidth2(input, options2 = {}) {
 }
 
 // src/ui/index.ts
+init_definitions();
 var BRAND_COLOR = "\x1B[36m";
 var PINK_COLOR = "\x1B[35m";
 var YELLOW_COLOR = "\x1B[33m";
@@ -58861,6 +59342,9 @@ function padRight(str, length) {
   }
   return str + " ".repeat(length - width);
 }
+
+// src/index.ts
+init_platform();
 
 // src/utils/title.ts
 function normalizeTitle(title) {

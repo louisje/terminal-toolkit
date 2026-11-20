@@ -1,5 +1,4 @@
 import { getToolStat } from "./stats.js";
-import { getToolNamespace, getToolDefinitions } from "./definitions.js";
 
 export const getToolStatTool = {
   name: "getToolStat",
@@ -15,8 +14,9 @@ export const getToolStatTool = {
   },
 };
 
-export function handleGetToolStat(args: unknown) {
+export async function handleGetToolStat(args: unknown) {
   if (args === null || typeof args !== "object" || Array.isArray(args)) throw new Error("getToolStat options must be an object");
+  const { getToolDefinitions, getToolNamespace } = await import("./definitions.js");
   const namespaces = Object.fromEntries(getToolDefinitions(true).map(tool => [tool.name, getToolNamespace(tool.name)]));
   return getToolStat(args as Parameters<typeof getToolStat>[0], namespaces);
 }

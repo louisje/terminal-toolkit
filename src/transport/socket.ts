@@ -26,6 +26,7 @@ import { handleGetClipboard } from "../tools/getClipboard.js";
 import { handleSetClipboard } from "../tools/setClipboard.js";
 import { handleNotify } from "../tools/notify.js";
 import { handleSystemInfo } from "../tools/systemInfo.js";
+import { handleGetToolStat } from "../tools/getToolStat.js";
 import { handleOperatorTool } from "../tools/operators.js";
 import { handleExtraOperatorTool } from "../tools/extra-operators.js";
 
@@ -469,6 +470,10 @@ async function handleToolRequest(
       case "systemInfo":
         stats.recordToolCall("systemInfo");
         result = handleSystemInfo(manager, params);
+        break;
+
+      case "getToolStat":
+        result = { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
         break;
 
       case "clientConnected": {

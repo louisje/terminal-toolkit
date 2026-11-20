@@ -45,3 +45,5 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - [ ] 研究 Deadline 到期時的工具取消策略；區分回覆有效期限與工具執行期限，不得直接將前者視為強制停止指令。
 - [ ] 對 read/find/grep 等唯讀工具評估協作式取消；對 write/edit 考慮原子性與部分完成；對 shell/type/codemode 特別保護 Primary Session，避免逾時直接送 Ctrl+C 或殺死持續工作的程序。
 - [ ] 研究 MCP 取消通知、Socket AbortSignal 傳遞、逾時後狀態查詢及重試冪等性；先實測再啟用自動取消。
+- [ ] 驗證 Tunnel Client 的 `response_timeout` 逾時能否被 Terminal Toolkit 察覺：獨立 MCP 連線可能因關閉而觸發中斷；共用 stdio 會保留連線、退休逾時 JSON-RPC ID 並丟棄遲到的 response，不保證通知下游；若工具已完成但 response POST 逾時，Terminal Toolkit 通常無從得知。以端對端測試釐清是否送出 MCP `notifications/cancelled`、SDK 是否轉成 `AbortSignal`，以及 Socket 路徑是否傳遞取消。
+- [ ] 評估 `getToolStat()` 的語意：目前成功代表 Terminal Toolkit 工具執行成功，不代表 Tunnel Client 已成功轉送 response；研究如何另行觀測逾時放棄、下游取消與完成後回覆被丟棄，避免將未確認的交付狀態誤記為工具失敗。

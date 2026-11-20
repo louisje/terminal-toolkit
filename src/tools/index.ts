@@ -131,7 +131,7 @@ async function dispatchToolUntracked(manager: TerminalManager, name: string, arg
       return handleSystemInfo(manager, args);
 
     case "getToolStat":
-      return { content: [{ type: "text" as const, text: JSON.stringify(handleGetToolStat(args ?? {})) }] };
+      return { content: [{ type: "text" as const, text: JSON.stringify(await handleGetToolStat(args ?? {})) }] };
 
         default:
       throw new Error(`Unknown tool: ${name}`);
