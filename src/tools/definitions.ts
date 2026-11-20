@@ -19,6 +19,7 @@ import { getClipboardTool } from "./getClipboard.js";
 import { setClipboardTool } from "./setClipboard.js";
 import { notifyTool } from "./notify.js";
 import { systemInfoTool } from "./systemInfo.js";
+import { getToolStatTool } from "./getToolStat.js";
 import { operatorToolDefinitions } from "./operators.js";
 import { extraOperatorToolDefinitions } from "./extra-operators.js";
 
@@ -41,7 +42,7 @@ export const namespaceRegistry = {
   },
   "tools/misc": {
     defaultEnabled: true,
-    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo"],
+    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo", "getToolStat"],
   },
 } as const;
 
@@ -94,6 +95,7 @@ export const toolDefinitions: ToolDefinition[] = [
   setClipboardTool,
   notifyTool,
   systemInfoTool,
+  getToolStatTool,
 ];
 
 /** Explicit discovery summaries. Existing MCP descriptions remain the single source
@@ -115,6 +117,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
   setClipboard: "Write text to the system clipboard.",
   notify: "Send an operating-system notification.",
   systemInfo: "Summarize host environment and Primary Session state.",
+  getToolStat: "Inspect process-wide tool usage statistics.",
   read: "Read a text file.",
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",
@@ -144,7 +147,7 @@ export function getMcpToolDefinitions(piExtraOperators = false): ToolDefinition[
 }
 
 // MCP safety hints for each tool.
-const READ_ONLY_TOOLS = new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo"]);
+const READ_ONLY_TOOLS = new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
 const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
 const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 const OPEN_WORLD_TOOLS = new Set(["shell", "type", "sendKey"]);

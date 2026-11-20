@@ -1,4 +1,4 @@
-/** Process-wide, bounded Codemode usage counters. No arguments or tool output are stored. */
+/** Process-wide tool usage counters for MCP and Codemode. No arguments or tool output are stored. */
 type Counter = { calls: number; success: number; errors: number; cancelled: number; totalDurationMs: number; maxDurationMs: number };
 type SearchCounter = { calls: number; zeroResults: number; totalResults: number };
 const startedAt = new Date().toISOString();
@@ -22,14 +22,17 @@ export function recordSearch(query: string, results: number) {
   searches.set(key, stat);
 }
 export function recordDescribe(name: string) { increment(descriptions, name); }
-export async function trackCall<T>(name: string, fn: () => T | Promise<T>, signal?: AbortSignal): Promise<T> {
+export async function trackCall<T>(name: string, fn: () => T | Promise<T>, signal?: AbortSignal, isFailure?: (result: T) => boolean): Promise<T> {
   const stat = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
   counters.set(name, stat);
   stat.calls++;
   const start = performance.now();
   try {
     const result = await fn();
-    stat.success++;
+    if (isFailure?.(result)) {
+      if (signal?.aborted) stat.cancelled++;
+      else stat.errors++;
+    } else stat.success++;
     return result;
   } catch (error) {
     if (signal?.aborted) stat.cancelled++;
@@ -47,7 +50,7 @@ export function getToolStat(options: { category?: "discovery" | "tool"; namespac
   if (options.sortBy !== undefined && !["calls", "name", "totalDurationMs"].includes(options.sortBy)) throw new Error("Invalid sortBy");
   if (options.limit !== undefined && (!Number.isInteger(options.limit) || options.limit <= 0)) throw new Error("limit must be a positive integer");
   const entries = [...counters.entries()].filter(([name]) => {
-    const discovery = ["search", "describe", "getToolStat"].includes(name);
+    const discovery = ["search", "describe"].includes(name);
     return (!options.category || (options.category === "discovery") === discovery) && (!options.namespace || namespaces[name] === options.namespace);
   }).map(([name, stat]) => ({ name, ...(namespaces[name] ? { namespace: namespaces[name] } : {}), ...stat, avgDurationMs: stat.calls ? stat.totalDurationMs / stat.calls : 0 }));
   entries.sort((a, b) => options.sortBy === "name" ? a.name.localeCompare(b.name) : options.sortBy === "totalDurationMs" ? b.totalDurationMs - a.totalDurationMs : b.calls - a.calls);

@@ -14,17 +14,19 @@ test('getToolStat aggregates discovery and tool usage across codemode calls', { 
   try {
     await evaluate('text({a:await search({query:"shell",namespace:"tools/*"}),b:await describe({namespace:"tools/core",name:"shell"}),c:await describe({namespace:"tools/core"})})');
     await evaluate('text(JSON.stringify(await tools.shell({command:"printf ok"})))');
-    const stats = await evaluate('text(await getToolStat())');
+    const stats = await evaluate('text(JSON.parse(await tools.getToolStat({})))');
     assert.equal(stats.discovery.search.queries.find(q => q.query === 'shell').calls, 1);
     assert.equal(stats.discovery.describe["tools/core/shell"], 1);
     assert.equal(stats.discovery.describe["tools/core"], 1);
     assert.equal(stats.tools.find(t => t.name === 'shell').calls, 1);
     assert.equal(stats.tools.find(t => t.name === 'search').calls, 1);
-    const filtered = await evaluate('text(await getToolStat({category:"tool",namespace:"tools/core"}))');
+    const filtered = await evaluate('text(JSON.parse(await tools.getToolStat({category:"tool",namespace:"tools/core"})))');
     assert.ok(filtered.tools.some(t => t.name === 'shell'));
     assert.ok(filtered.tools.every(t => t.namespace === 'tools/core'));
     assert.equal(filtered.discovery, undefined);
-    const later = await evaluate('text(await getToolStat({category:"discovery"}))');
+    const later = await evaluate('text(JSON.parse(await tools.getToolStat({category:"tool",namespace:"tools/misc"})))');
     assert.ok(later.tools.find(t => t.name === 'getToolStat').calls >= 2);
+    assert.ok(later.tools.every(t => t.namespace === 'tools/misc'));
+    assert.ok(stats.tools.some(t => t.name === 'codemode'));
   } finally { await client.close(); }
 });

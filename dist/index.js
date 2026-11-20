@@ -55526,6 +55526,97 @@ function handleSystemInfo(manager, _args) {
   return { content: [{ type: "text", text: JSON.stringify(getSystemInfo(manager), null, 2) }] };
 }
 
+// src/tools/stats.ts
+var startedAt = (/* @__PURE__ */ new Date()).toISOString();
+var counters = /* @__PURE__ */ new Map();
+var searches = /* @__PURE__ */ new Map();
+var descriptions = /* @__PURE__ */ new Map();
+var otherQueries = 0;
+var MAX_QUERIES = 1e3;
+var MAX_QUERY_LENGTH = 256;
+function increment2(map, key) {
+  map.set(key, (map.get(key) ?? 0) + 1);
+}
+function recordSearch(query, results) {
+  const key = query.slice(0, MAX_QUERY_LENGTH);
+  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
+    otherQueries++;
+    return;
+  }
+  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
+  stat2.calls++;
+  stat2.totalResults += results;
+  if (!results) stat2.zeroResults++;
+  searches.set(key, stat2);
+}
+function recordDescribe(name) {
+  increment2(descriptions, name);
+}
+async function trackCall(name, fn2, signal, isFailure) {
+  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
+  counters.set(name, stat2);
+  stat2.calls++;
+  const start = performance.now();
+  try {
+    const result2 = await fn2();
+    if (isFailure?.(result2)) {
+      if (signal?.aborted) stat2.cancelled++;
+      else stat2.errors++;
+    } else stat2.success++;
+    return result2;
+  } catch (error2) {
+    if (signal?.aborted) stat2.cancelled++;
+    else stat2.errors++;
+    throw error2;
+  } finally {
+    const elapsed = performance.now() - start;
+    stat2.totalDurationMs += elapsed;
+    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
+  }
+}
+function getToolStat(options2 = {}, namespaces = {}) {
+  if (options2.category !== void 0 && !["discovery", "tool"].includes(options2.category)) throw new Error("Invalid category");
+  if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
+  if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
+  if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
+  const entries = [...counters.entries()].filter(([name]) => {
+    const discovery = ["search", "describe"].includes(name);
+    return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
+  }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
+  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
+  return {
+    since: startedAt,
+    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
+    tools: entries.slice(0, options2.limit),
+    ...!options2.category || options2.category === "discovery" ? {
+      discovery: {
+        search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
+        describe: Object.fromEntries(descriptions)
+      }
+    } : {}
+  };
+}
+
+// src/tools/getToolStat.ts
+var getToolStatTool = {
+  name: "getToolStat",
+  description: "Get process-wide tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Counters reset on server restart.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      category: { type: "string", enum: ["discovery", "tool"] },
+      namespace: { type: "string" },
+      sortBy: { type: "string", enum: ["calls", "name", "totalDurationMs"] },
+      limit: { type: "integer", minimum: 1 }
+    }
+  }
+};
+function handleGetToolStat(args2) {
+  if (args2 === null || typeof args2 !== "object" || Array.isArray(args2)) throw new Error("getToolStat options must be an object");
+  const namespaces = Object.fromEntries(getToolDefinitions(true).map((tool) => [tool.name, getToolNamespace(tool.name)]));
+  return getToolStat(args2, namespaces);
+}
+
 // src/tools/operators.ts
 init_zod();
 import { spawn as spawn3 } from "node:child_process";
@@ -56000,7 +56091,7 @@ var namespaceRegistry = {
   },
   "tools/misc": {
     defaultEnabled: true,
-    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo"]
+    toolNames: ["getClipboard", "setClipboard", "notify", "sleep", "systemInfo", "getToolStat"]
   }
 };
 var namespaceByTool = new Map(
@@ -56025,7 +56116,8 @@ var toolDefinitions = [
   getClipboardTool,
   setClipboardTool,
   notifyTool,
-  systemInfoTool
+  systemInfoTool,
+  getToolStatTool
 ];
 var TOOL_SUMMARIES = {
   type: "Send text input to an interactive terminal session.",
@@ -56044,6 +56136,7 @@ var TOOL_SUMMARIES = {
   setClipboard: "Write text to the system clipboard.",
   notify: "Send an operating-system notification.",
   systemInfo: "Summarize host environment and Primary Session state.",
+  getToolStat: "Inspect process-wide tool usage statistics.",
   read: "Read a text file.",
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",
@@ -56066,7 +56159,7 @@ function getMcpToolDefinitions(piExtraOperators = false) {
     description: [tool.description, ...tool.name === "type" ? ["Before using the Primary Session, inspect getContent() and do not interrupt occupied terminals; additional sessions are headless."] : []].join("\n\n")
   }));
 }
-var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo"]);
+var READ_ONLY_TOOLS = /* @__PURE__ */ new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
 var DESTRUCTIVE_TOOLS = /* @__PURE__ */ new Set(["write", "edit", "shell", "type", "sendKey", "destroySession"]);
 var IDEMPOTENT_TOOLS = /* @__PURE__ */ new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 var OPEN_WORLD_TOOLS = /* @__PURE__ */ new Set(["shell", "type", "sendKey"]);
@@ -57235,74 +57328,6 @@ another). The Primary Session cannot be destroyed.` },
   "tools/misc": { description: "Clipboard, notifications, and timing utilities.", instruction: "Use clipboard tools for clipboard access, notify for notifications, and sleep for delays." }
 };
 
-// src/tools/stats.ts
-var startedAt = (/* @__PURE__ */ new Date()).toISOString();
-var counters = /* @__PURE__ */ new Map();
-var searches = /* @__PURE__ */ new Map();
-var descriptions = /* @__PURE__ */ new Map();
-var otherQueries = 0;
-var MAX_QUERIES = 1e3;
-var MAX_QUERY_LENGTH = 256;
-function increment2(map, key) {
-  map.set(key, (map.get(key) ?? 0) + 1);
-}
-function recordSearch(query, results) {
-  const key = query.slice(0, MAX_QUERY_LENGTH);
-  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
-    otherQueries++;
-    return;
-  }
-  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
-  stat2.calls++;
-  stat2.totalResults += results;
-  if (!results) stat2.zeroResults++;
-  searches.set(key, stat2);
-}
-function recordDescribe(name) {
-  increment2(descriptions, name);
-}
-async function trackCall(name, fn2, signal) {
-  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
-  counters.set(name, stat2);
-  stat2.calls++;
-  const start = performance.now();
-  try {
-    const result2 = await fn2();
-    stat2.success++;
-    return result2;
-  } catch (error2) {
-    if (signal?.aborted) stat2.cancelled++;
-    else stat2.errors++;
-    throw error2;
-  } finally {
-    const elapsed = performance.now() - start;
-    stat2.totalDurationMs += elapsed;
-    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
-  }
-}
-function getToolStat(options2 = {}, namespaces = {}) {
-  if (options2.category !== void 0 && !["discovery", "tool"].includes(options2.category)) throw new Error("Invalid category");
-  if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
-  if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
-  if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
-  const entries = [...counters.entries()].filter(([name]) => {
-    const discovery = ["search", "describe", "getToolStat"].includes(name);
-    return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
-  }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
-  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
-  return {
-    since: startedAt,
-    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
-    tools: entries.slice(0, options2.limit),
-    ...!options2.category || options2.category === "discovery" ? {
-      discovery: {
-        search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
-        describe: Object.fromEntries(descriptions)
-      }
-    } : {}
-  };
-}
-
 // src/tools/outputLimit.ts
 var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
 function limitTextBlock(text, context = "Tool output") {
@@ -57327,7 +57352,7 @@ var codemodeDefinition = {
 - Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
-- Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
+- Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
@@ -57353,18 +57378,14 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
     description: summaries.find((d) => d.name === definition.name).description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result2 = await trackCall(definition.name, async () => {
-        const valueResult = await dispatch(definition.name, value ?? {}, context.signal);
-        if (valueResult.isError) throw new Error(valueResult.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
-        return valueResult;
-      }, context.signal);
+      const result2 = await dispatch(definition.name, value ?? {}, context.signal);
+      if (result2.isError) throw new Error(result2.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
       if (result2.structuredContent !== void 0) return result2.structuredContent;
       const content = result2.content ?? [];
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     }
   }));
-  const namespaces = Object.fromEntries(definitions.filter((d) => d.namespace).map((d) => [d.name, d.namespace]));
   const matchGlob = (value, pattern) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map((part) => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
   const globals = [
     {
@@ -57405,15 +57426,6 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
         }
         const guidance = namespaceRegistryGuidance[options2.namespace];
         return members.length ? { namespace: options2.namespace, ...guidance, tools: members.map(({ name, description }) => ({ name, description })) } : null;
-      })
-    },
-    {
-      name: "getToolStat",
-      spread: true,
-      execute: (args3) => trackCall("getToolStat", () => {
-        const [options2] = args3;
-        if (options2 !== void 0 && (options2 === null || typeof options2 !== "object" || Array.isArray(options2))) throw new Error("getToolStat() options must be an object");
-        return getToolStat(options2 ?? {}, namespaces);
       })
     }
   ];
@@ -57483,9 +57495,9 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
       try {
         if (codemode) {
           if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-          return await runCodemode(manager, args2, piExtraOperators, extra.signal, skills2);
+          return await trackCall("codemode", () => runCodemode(manager, args2, piExtraOperators, extra.signal, skills2), extra.signal, (result2) => result2.isError === true);
         }
-        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitToolResponse(await handleSkillDiscovery(name, args2));
+        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitToolResponse(await trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal));
         return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
@@ -57503,6 +57515,9 @@ function registerTools(server, manager, piExtraOperators = false, codemode = fal
   });
 }
 async function dispatchTool(manager, name, args2, piExtraOperators = false, signal) {
+  return trackCall(name, () => dispatchToolUntracked(manager, name, args2, piExtraOperators, signal), signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
+}
+async function dispatchToolUntracked(manager, name, args2, piExtraOperators = false, signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "list":
@@ -57547,6 +57562,8 @@ async function dispatchTool(manager, name, args2, piExtraOperators = false, sign
       return await handleNotify(manager, args2);
     case "systemInfo":
       return handleSystemInfo(manager, args2);
+    case "getToolStat":
+      return { content: [{ type: "text", text: JSON.stringify(handleGetToolStat(args2 ?? {})) }] };
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

@@ -5,7 +5,7 @@ import type { TerminalManager } from "../terminal/index.js";
 import { getCodemodeToolDefinitions, type ToolDefinition } from "./definitions.js";
 import { dispatchTool } from "./index.js";
 import { namespaceRegistryGuidance } from "./namespaceGuidance.js";
-import { trackCall, recordSearch, recordDescribe, getToolStat } from "./stats.js";
+import { trackCall, recordSearch, recordDescribe } from "./stats.js";
 
 import { limitTextBlock } from "./outputLimit.js";
 import { skillCatalog } from "../skills.js";
@@ -22,7 +22,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
-- Inspect process-wide tool usage with await getToolStat() (all statistics), or await getToolStat({category: "discovery" | "tool", namespace?, sortBy?: "calls" | "name" | "totalDurationMs", limit?}); counters reset on server restart.
+- Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 60000, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] },
@@ -57,18 +57,14 @@ export async function runCodemodeWithDispatch(
     description: summaries.find(d => d.name === definition.name)!.description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result = await trackCall(definition.name, async () => {
-        const valueResult = await dispatch(definition.name, (value ?? {}) as Record<string, unknown>, context.signal) as ToolResult;
-        if (valueResult.isError) throw new Error(valueResult.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
-        return valueResult;
-      }, context.signal);
+      const result = await dispatch(definition.name, (value ?? {}) as Record<string, unknown>, context.signal) as ToolResult;
+      if (result.isError) throw new Error(result.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
       if (result.structuredContent !== undefined) return result.structuredContent;
       const content = result.content ?? [];
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     },
   }));
-  const namespaces = Object.fromEntries(definitions.filter(d => d.namespace).map(d => [d.name, d.namespace!]));
   const matchGlob = (value: string, pattern?: string) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map(part => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
   const globals: CodemodeTool[] = [
     {
@@ -107,14 +103,6 @@ export async function runCodemodeWithDispatch(
         }
         const guidance = namespaceRegistryGuidance[options.namespace as keyof typeof namespaceRegistryGuidance];
         return members.length ? {namespace:options.namespace,...guidance,tools:members.map(({name,description}) => ({name,description}))} : null;
-      }),
-    },
-    {
-      name: "getToolStat", spread: true,
-      execute: (args) => trackCall("getToolStat", () => {
-        const [options] = args as [unknown];
-        if (options !== undefined && (options === null || typeof options !== "object" || Array.isArray(options))) throw new Error("getToolStat() options must be an object");
-        return getToolStat((options ?? {}) as Parameters<typeof getToolStat>[0], namespaces);
       }),
     },
   ];

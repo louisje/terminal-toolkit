@@ -26,6 +26,8 @@ import { handleGetClipboard } from "./getClipboard.js";
 import { handleSetClipboard } from "./setClipboard.js";
 import { handleNotify } from "./notify.js";
 import { handleSystemInfo } from "./systemInfo.js";
+import { handleGetToolStat } from "./getToolStat.js";
+import { trackCall } from "./stats.js";
 
 import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscovery.js';
 import { limitToolResponse } from "./outputLimit.js";
@@ -43,9 +45,9 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
     try {
       if (codemode) {
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
-        return await runCodemode(manager, args, piExtraOperators, extra.signal, skills);
+        return await trackCall("codemode", () => runCodemode(manager, args, piExtraOperators, extra.signal, skills), extra.signal, result => result.isError === true);
       }
-      if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitToolResponse(await handleSkillDiscovery(name, args));
+      if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitToolResponse(await trackCall(name, () => handleSkillDiscovery(name, args), extra.signal));
       return limitToolResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -64,6 +66,10 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
 }
 
 export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
+  return trackCall(name, () => dispatchToolUntracked(manager, name, args, piExtraOperators, signal), signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
+}
+
+async function dispatchToolUntracked(manager: TerminalManager, name: string, args: unknown, piExtraOperators = false, signal?: AbortSignal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "list":
@@ -123,6 +129,9 @@ export async function dispatchTool(manager: TerminalManager, name: string, args:
 
     case "systemInfo":
       return handleSystemInfo(manager, args);
+
+    case "getToolStat":
+      return { content: [{ type: "text" as const, text: JSON.stringify(handleGetToolStat(args ?? {})) }] };
 
         default:
       throw new Error(`Unknown tool: ${name}`);
