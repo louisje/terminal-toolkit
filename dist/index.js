@@ -47456,7 +47456,7 @@ async function skillCatalog(overrideRoots) {
   for (const location of await skillLocations(overrideRoots)) {
     try {
       const { frontmatter, size } = await readSkillMetadata(location);
-      result2.push({ namespace: location.namespace, name: location.name, description: frontmatter.description, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path21.sep, entrypoint: "SKILL.md", size });
+      result2.push({ namespace: location.namespace, name: location.name, description: frontmatter.description, frontmatter, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path21.sep, entrypoint: "SKILL.md", size });
     } catch {
     }
   }
@@ -57921,6 +57921,7 @@ var searchSchema = external_exports.object({ query: external_exports.string().op
 var describeSchema = external_exports.object({ name: external_exports.string().min(1) });
 var glob = (value, pattern) => !pattern || new RegExp("^" + pattern.split(/([*?])/).map((part) => part === "*" ? ".*" : part === "?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("") + "$", "i").test(value);
 var fullName = (s) => s.namespace.slice("skills/".length) + "/" + s.name;
+var skillFields = (s) => ({ ...s.frontmatter, name: s.name, description: s.description });
 async function handleSkillDiscovery(name, args2) {
   const catalog = await skillCatalog();
   const entries = catalog.map((s) => ({ ...s, name: fullName(s) }));
@@ -57928,13 +57929,13 @@ async function handleSkillDiscovery(name, args2) {
     const options2 = searchSchema.parse(args2 ?? {});
     const words = (options2.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
     const found = entries.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
-    return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, Math.min(options2.limit ?? 100, 100)).map(({ name: name2, description }) => ({ name: name2, description })), total: found.length }) }] };
+    return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, Math.min(options2.limit ?? 100, 100)).map(skillFields), total: found.length }) }] };
   }
   if (name === "describeSkill") {
     const { name: target } = describeSchema.parse(args2);
     const found = entries.find((s) => s.name === target);
     if (!found) throw new Error("Skill not found: " + target);
-    return { content: [{ type: "text", text: JSON.stringify(found) }] };
+    return { content: [{ type: "text", text: JSON.stringify({ ...found, ...skillFields(found) }) }] };
   }
   throw new Error("Unknown tool: " + name);
 }

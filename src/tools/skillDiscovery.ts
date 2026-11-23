@@ -12,6 +12,7 @@ const searchSchema = z.object({query:z.string().optional(),name:z.string().optio
 const describeSchema = z.object({name:z.string().min(1)});
 const glob = (value:string, pattern?:string) => !pattern || new RegExp("^"+pattern.split(/([*?])/).map(part=>part==="*" ? ".*" : part==="?" ? "." : part.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")).join("")+"$","i").test(value);
 const fullName = (s:{namespace:string;name:string}) => s.namespace.slice("skills/".length)+"/"+s.name;
+const skillFields = (s:{name:string;description:string;frontmatter:Record<string,unknown>}) => ({...s.frontmatter,name:s.name,description:s.description});
 
 export async function handleSkillDiscovery(name:string,args:unknown) {
   const catalog = await skillCatalog();
@@ -20,13 +21,13 @@ export async function handleSkillDiscovery(name:string,args:unknown) {
     const options = searchSchema.parse(args ?? {});
     const words = (options.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
     const found = entries.filter(s=>glob(s.name,options.name) && words.every(w=>(s.name+" "+s.description).toLowerCase().includes(w)));
-    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,Math.min(options.limit ?? 100,100)).map(({name,description})=>({name,description})),total:found.length})}]};
+    return {content:[{type:"text" as const,text:JSON.stringify({skills:found.slice(0,Math.min(options.limit ?? 100,100)).map(skillFields),total:found.length})}]};
   }
   if(name==="describeSkill") {
     const {name:target} = describeSchema.parse(args);
     const found = entries.find(s=>s.name===target);
     if(!found) throw new Error("Skill not found: "+target);
-    return {content:[{type:"text" as const,text:JSON.stringify(found)}]};
+    return {content:[{type:"text" as const,text:JSON.stringify({...found,...skillFields(found)})}]};
   }
   throw new Error("Unknown tool: "+name);
 }

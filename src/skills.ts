@@ -93,7 +93,7 @@ export async function skillCatalog(overrideRoots?: string[]) {
   for (const location of await skillLocations(overrideRoots)) {
     try {
       const { frontmatter, size } = await readSkillMetadata(location);
-      result.push({ namespace: location.namespace, name: location.name, description: frontmatter.description as string, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path.sep, entrypoint: "SKILL.md", size });
+      result.push({ namespace: location.namespace, name: location.name, description: frontmatter.description as string, frontmatter, source: location.source, path: location.source === "builtin" ? `builtin://skills/${location.name}/` : location.directory + path.sep, entrypoint: "SKILL.md", size });
     } catch { /* Invalid skills are omitted from discovery. */ }
   }
   return result;
