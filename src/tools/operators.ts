@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { ToolDefinition } from "./definitions.js";
 import { getDefaultShell } from "../utils/platform.js";
 import { resolveBuiltinSkillPath } from "../skills.js";
+import { isResultPath, readResult } from "./resultStore.js";
 
 const operatorCwd = process.cwd();
 
@@ -32,7 +33,7 @@ const pythonSchema = z.object({ code: z.string(), timeout: z.number().positive()
 const result = (value: string, isError = false): TextResult => ({ content: [{ type: "text", text: value }], ...(isError ? { isError: true } : {}) });
 
 export const operatorToolDefinitions: ToolDefinition[] = [
-  { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+  { name: "read", description: "Read a text file or in-memory result:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
   { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
   { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
   { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Supports timeout and cancellation; returns output and errors. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["code"] } },
@@ -46,15 +47,15 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args);
-      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
-      const lines = (await readFile(target, "utf8")).split("\n");
+      const target = isResultPath(parsed.path) ? "" : parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
+      const lines = (isResultPath(parsed.path) ? readResult(parsed.path) : await readFile(target, "utf8")).split("\n");
       const start = (parsed.offset ?? 1) - 1;
       if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
       return result(lines.slice(start, parsed.limit === undefined ? undefined : start + parsed.limit).join("\n"));
     }
     case "write": {
       const parsed = writeSchema.parse(args);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       await mkdir(dirname(target), { recursive: true });
       if (signal?.aborted) throw new Error("Tool call aborted");
@@ -63,7 +64,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
     }
     case "edit": {
       const parsed = editSchema.parse(args);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       const original = await readFile(target, "utf8");
       const ranges: Array<{ start: number; end: number; newText: string }> = [];

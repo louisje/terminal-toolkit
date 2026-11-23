@@ -23,20 +23,20 @@ test('codemode exposes only one tool and invokes opted-in operators', { timeout:
   } finally { await client.close(); }
 });
 
-test('codemode suppresses output exceeding 16 KiB', { timeout: 20000 }, async () => {
+test('codemode virtualizes text output exceeding 16 KiB', { timeout: 20000 }, async () => {
   const client = await connect(['--codemode']);
   try {
     const small = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(16384))' } });
     assert.equal(small.content[0].text.length, 16384);
     const large = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(16385))' } });
-    assert.match(large.content[0].text, /exceeded the 16 KiB text block limit/);
+    assert.match(large.content[0].text, /result:\/\//);
     const cumulative = await client.callTool({ name: 'codemode', arguments: { code: 'text("x".repeat(5000)); text("y".repeat(5000))' } });
     assert.equal(cumulative.content.length, 2);
     assert.equal(cumulative.content[0].text.length, 5000);
     assert.equal(cumulative.content[1].text.length, 5000);
     const mixed = await client.callTool({ name: "codemode", arguments: { code: `text("ok"); text("x".repeat(16385)); text("still ok")` } });
     assert.equal(mixed.content[0].text, "ok");
-    assert.match(mixed.content[1].text, /exceeded the 16 KiB/);
+    assert.match(mixed.content[1].text, /result:\/\//);
     assert.equal(mixed.content[2].text, "still ok");
     const returned = await client.callTool({ name: 'codemode', arguments: { code: 'return "x".repeat(16385)' } });
     assert.equal(returned.content[0].text.length, 16387);
@@ -69,6 +69,13 @@ test('codemode works through a real socket-connected MCP client', { timeout: 250
     const value = await client.callTool({ name: 'codemode', arguments: { code: 'text(await tools.shell({command:"printf socket-ok"}))' } });
     assert.equal(value.isError, false, JSON.stringify(value));
     assert.equal(value.content[0].text, 'socket-ok');
+    const saved = await client.callTool({ name: 'codemode', arguments: { code: 'text(Array.from({length:3000},(_,i)=>i===1234?"socket-needle":"line-"+i).join("\\n"))' } });
+    const virtualPath = saved.content[0].text.match(/result:\/\/[0-9a-f-]{36}/)?.[0];
+    assert.ok(virtualPath);
+    const fetched = await client.callTool({ name: 'codemode', arguments: { code: `text(await tools.read({path:${JSON.stringify(virtualPath)},offset:1235,limit:1}))` } });
+    assert.equal(fetched.content[0].text, 'socket-needle');
+    const searched = await client.callTool({ name: 'codemode', arguments: { code: `text(await tools.grep({path:${JSON.stringify(virtualPath)},pattern:"socket-needle"}))` } });
+    assert.match(searched.content[0].text, /result:\/\//);
   } finally {
     await client.close().catch(() => {});
     await new Promise(resolve => server.close(resolve));

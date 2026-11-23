@@ -30,7 +30,7 @@ import { handleGetToolStat } from "./getToolStat.js";
 import { trackCall } from "./stats.js";
 
 import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscovery.js';
-import { limitToolResponse } from "./outputLimit.js";
+import { limitToolResponse, limitReadResponse } from "./outputLimit.js";
 
 export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = true, codemode = false, skills = false): void {
   // Register list tools handler
@@ -48,7 +48,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
         return await trackCall("codemode", () => runCodemode(manager, args, piExtraOperators, extra.signal, skills), extra.signal, result => result.isError === true);
       }
       if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitToolResponse(await trackCall(name, () => handleSkillDiscovery(name, args), extra.signal));
-      return limitToolResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
+      return name === "read" ? limitReadResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal)) : limitToolResponse(await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return {

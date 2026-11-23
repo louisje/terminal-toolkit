@@ -5705,7 +5705,7 @@ var require_ini3 = __commonJS({
           p[key] = value;
         }
       }
-      const remove = [];
+      const remove2 = [];
       for (const k of Object.keys(out)) {
         if (!hasOwnProperty11.call(out, k) || typeof out[k] !== "object" || Array.isArray(out[k])) {
           continue;
@@ -5727,9 +5727,9 @@ var require_ini3 = __commonJS({
           continue;
         }
         p[nl] = out[k];
-        remove.push(k);
+        remove2.push(k);
       }
-      for (const del of remove) {
+      for (const del of remove2) {
         delete out[del];
       }
       return out;
@@ -6183,9 +6183,9 @@ function assertNever(_x) {
 }
 function assert(_) {
 }
-function getEnumValues(entries) {
-  const numericValues = Object.values(entries).filter((v) => typeof v === "number");
-  const values = Object.entries(entries).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
+function getEnumValues(entries2) {
+  const numericValues = Object.values(entries2).filter((v) => typeof v === "number");
+  const values = Object.entries(entries2).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
   return values;
 }
 function joinValues(array2, separator = "|") {
@@ -9397,10 +9397,10 @@ function record(keyType, valueType, params) {
   });
 }
 function _enum(values, params) {
-  const entries = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
+  const entries2 = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
   return new ZodEnum({
     type: "enum",
-    entries,
+    entries: entries2,
     ...util_exports.normalizeParams(params)
   });
 }
@@ -28488,14 +28488,14 @@ var require_signal_exit = __commonJS({
         if (opts && opts.alwaysLast) {
           ev = "afterexit";
         }
-        var remove = function() {
+        var remove2 = function() {
           emitter.removeListener(ev, cb);
           if (emitter.listeners("exit").length === 0 && emitter.listeners("afterexit").length === 0) {
             unload2();
           }
         };
         emitter.on(ev, cb);
-        return remove;
+        return remove2;
       };
       unload2 = function unload3() {
         if (!loaded || !processOk2(global.process)) {
@@ -28817,7 +28817,7 @@ var require_merge_stream = __commonJS({
       output2.setMaxListeners(0);
       output2.add = add;
       output2.isEmpty = isEmpty;
-      output2.on("unpipe", remove);
+      output2.on("unpipe", remove2);
       Array.prototype.slice.call(arguments).forEach(add);
       return output2;
       function add(source) {
@@ -28826,7 +28826,7 @@ var require_merge_stream = __commonJS({
           return this;
         }
         sources.push(source);
-        source.once("end", remove.bind(null, source));
+        source.once("end", remove2.bind(null, source));
         source.once("error", output2.emit.bind(output2, "error"));
         source.pipe(output2, { end: false });
         return this;
@@ -28834,7 +28834,7 @@ var require_merge_stream = __commonJS({
       function isEmpty() {
         return sources.length == 0;
       }
-      function remove(source) {
+      function remove2(source) {
         sources = sources.filter(function(it) {
           return it !== source;
         });
@@ -39874,11 +39874,11 @@ function readOptional(path28) {
 function linuxDistribution() {
   const content = readOptional("/etc/os-release");
   if (!content) return null;
-  const entries = Object.fromEntries(content.split("\n").flatMap((line) => {
+  const entries2 = Object.fromEntries(content.split("\n").flatMap((line) => {
     const match = line.match(/^([A-Z_]+)=(.*)$/);
     return match ? [[match[1], match[2].replace(/^['"]|['"]$/g, "")]] : [];
   }));
-  return { name: entries.PRETTY_NAME ?? entries.NAME ?? "Linux", version: entries.VERSION_ID ?? null };
+  return { name: entries2.PRETTY_NAME ?? entries2.NAME ?? "Linux", version: entries2.VERSION_ID ?? null };
 }
 function getSystemInfo(manager) {
   const platform2 = process.platform;
@@ -39987,15 +39987,15 @@ function getToolStat(options2 = {}, namespaces = {}) {
   if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
   if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
   if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
-  const entries = [...counters.entries()].filter(([name]) => {
+  const entries2 = [...counters.entries()].filter(([name]) => {
     const discovery = ["search", "describe"].includes(name);
     return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
   }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
-  entries.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
+  entries2.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
   return {
     since: startedAt,
-    totalCalls: entries.reduce((sum, e) => sum + e.calls, 0),
-    tools: entries.slice(0, options2.limit),
+    totalCalls: entries2.reduce((sum, e) => sum + e.calls, 0),
+    tools: entries2.slice(0, options2.limit),
     ...!options2.category || options2.category === "discovery" ? {
       discovery: {
         search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
@@ -47502,9 +47502,9 @@ async function secureFile(name, relative2, namespace) {
   return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
 }
 async function enumerateFiles(dir, base = "") {
-  const entries = await readdir(path21.join(dir, base), { withFileTypes: true });
+  const entries2 = await readdir(path21.join(dir, base), { withFileTypes: true });
   const files = [];
-  for (const item of entries) {
+  for (const item of entries2) {
     const rel = path21.posix.join(base, item.name);
     if (item.isSymbolicLink()) continue;
     if (item.isDirectory()) files.push(...await enumerateFiles(dir, rel));
@@ -47596,6 +47596,57 @@ var init_skills = __esm({
   }
 });
 
+// src/tools/resultStore.ts
+import { randomUUID as randomUUID2 } from "node:crypto";
+function remove(id) {
+  const entry = entries.get(id);
+  if (entry) {
+    totalBytes -= entry.bytes;
+    entries.delete(id);
+  }
+}
+function prune() {
+  const now = Date.now();
+  for (const [id, entry] of entries) if (entry.expiresAt <= now) remove(id);
+}
+function storeResult(text) {
+  const bytes = Buffer.byteLength(text, "utf8");
+  if (bytes > MAX_BYTES) return void 0;
+  prune();
+  while (totalBytes + bytes > MAX_BYTES && entries.size) {
+    const oldest = entries.keys().next().value;
+    if (oldest === void 0) break;
+    remove(oldest);
+  }
+  const id = randomUUID2();
+  entries.set(id, { text, bytes, expiresAt: Date.now() + TTL_MS });
+  totalBytes += bytes;
+  return `result://${id}`;
+}
+function isResultPath(path28) {
+  return path28.startsWith("result://");
+}
+function readResult(path28) {
+  if (!/^result:\/\/[0-9a-f-]{36}$/.test(path28)) throw new Error("Invalid virtual result path");
+  prune();
+  const id = path28.slice("result://".length);
+  const entry = entries.get(id);
+  if (!entry) throw new Error("Virtual result not found or expired");
+  entries.delete(id);
+  entries.set(id, entry);
+  return entry.text;
+}
+var MAX_BYTES, TTL_MS, entries, totalBytes;
+var init_resultStore = __esm({
+  "src/tools/resultStore.ts"() {
+    "use strict";
+    MAX_BYTES = 64 * 1024 * 1024;
+    TTL_MS = 60 * 60 * 1e3;
+    entries = /* @__PURE__ */ new Map();
+    totalBytes = 0;
+  }
+});
+
 // src/tools/operators.ts
 import { spawn as spawn3 } from "node:child_process";
 import { mkdir, readFile as readFile2, writeFile } from "node:fs/promises";
@@ -47626,15 +47677,15 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args2);
-      const target = parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
-      const lines = (await readFile2(target, "utf8")).split("\n");
+      const target = isResultPath(parsed.path) ? "" : parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
+      const lines = (isResultPath(parsed.path) ? readResult(parsed.path) : await readFile2(target, "utf8")).split("\n");
       const start = (parsed.offset ?? 1) - 1;
       if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
       return result(lines.slice(start, parsed.limit === void 0 ? void 0 : start + parsed.limit).join("\n"));
     }
     case "write": {
       const parsed = writeSchema.parse(args2);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       await mkdir(dirname2(target), { recursive: true });
       if (signal?.aborted) throw new Error("Tool call aborted");
@@ -47643,7 +47694,7 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
     }
     case "edit": {
       const parsed = editSchema.parse(args2);
-      if (parsed.path.startsWith("builtin://")) throw new Error("Builtin skill paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       const original = await readFile2(target, "utf8");
       const ranges = [];
@@ -47725,6 +47776,7 @@ var init_operators = __esm({
     init_zod();
     init_platform();
     init_skills();
+    init_resultStore();
     operatorCwd = process.cwd();
     readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().positive().optional(), limit: external_exports.number().int().positive().optional() });
     writeSchema = external_exports.object({ path: external_exports.string(), content: external_exports.string() });
@@ -47733,7 +47785,7 @@ var init_operators = __esm({
     pythonSchema = external_exports.object({ code: external_exports.string(), timeout: external_exports.number().positive().optional() });
     result = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
     operatorToolDefinitions = [
-      { name: "read", description: "Read a text file directly; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+      { name: "read", description: "Read a text file or in-memory result:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
       { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
       { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
       { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Supports timeout and cancellation; returns output and errors. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["code"] } },
@@ -47772,10 +47824,10 @@ async function handleExtraOperatorTool(name, args2) {
   if (name === "list") {
     const params = lsSchema.parse(args2);
     const dir = resolve2(cwd, params.path || ".");
-    const entries = (await readdir2(dir)).sort();
+    const entries2 = (await readdir2(dir)).sort();
     const limit = params.limit ?? 500;
-    const lines = await Promise.all(entries.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
-    return output(capped(lines.join("\n") + (entries.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
+    const lines = await Promise.all(entries2.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
+    return output(capped(lines.join("\n") + (entries2.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
   }
   if (name === "find") {
     const params = findSchema.parse(args2);
@@ -47795,6 +47847,22 @@ async function handleExtraOperatorTool(name, args2) {
   }
   if (name === "grep") {
     const params = grepSchema.parse(args2);
+    if (params.path && isResultPath(params.path)) {
+      const source = readResult(params.path).split("\n");
+      const flags = params.ignoreCase ? "i" : "";
+      const regex2 = new RegExp(params.literal ? params.pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : params.pattern, flags);
+      const maxMatches = params.limit ?? 100;
+      const context = params.context ?? 0;
+      const matches2 = [];
+      for (let i2 = 0; i2 < source.length; i2++) if (regex2.test(source[i2])) {
+        matches2.push(i2);
+        if (matches2.length >= maxMatches) break;
+      }
+      if (!matches2.length) return output("No matches found");
+      const selected = /* @__PURE__ */ new Set();
+      for (const index of matches2) for (let i2 = Math.max(0, index - context); i2 <= Math.min(source.length - 1, index + context); i2++) selected.add(i2);
+      return output([...selected].sort((a2, b) => a2 - b).map((i2) => `${params.path}${matches2.includes(i2) ? ":" : "-"}${i2 + 1}:${source[i2]}`).join("\n"));
+    }
     const binary = executable(["rg"]);
     if (!binary) throw hint("rg");
     const commandArgs = ["--json", "--color=never", "--hidden"];
@@ -47832,6 +47900,7 @@ var init_extra_operators = __esm({
   "src/tools/extra-operators.ts"() {
     "use strict";
     init_zod();
+    init_resultStore();
     cwd = process.cwd();
     output = (value) => ({ content: [{ type: "text", text: value }] });
     executable = (names) => names.find((name) => !spawnSync2(name, ["--version"], { stdio: "ignore" }).error);
@@ -47842,7 +47911,7 @@ var init_extra_operators = __esm({
     grepSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
     extraOperatorToolDefinitions = [
       { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries).", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
-      { name: "grep", description: "Search text with rg, respecting .gitignore; requires system ripgrep, never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+      { name: "grep", description: "Search text with rg, respecting .gitignore; also supports in-memory result:// virtual files. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
       { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
     ];
   }
@@ -51382,7 +51451,7 @@ var getBodySize = (body) => {
   }
   return 0;
 };
-var withProgress = (stream, totalBytes, onProgress) => {
+var withProgress = (stream, totalBytes2, onProgress) => {
   let previousChunk;
   let transferredBytes = 0;
   return stream.pipeThrough(new TransformStream({
@@ -51390,18 +51459,18 @@ var withProgress = (stream, totalBytes, onProgress) => {
       controller.enqueue(currentChunk);
       if (previousChunk) {
         transferredBytes += previousChunk.byteLength;
-        let percent = totalBytes === 0 ? 0 : transferredBytes / totalBytes;
+        let percent = totalBytes2 === 0 ? 0 : transferredBytes / totalBytes2;
         if (percent >= 1) {
           percent = 1 - Number.EPSILON;
         }
-        onProgress?.({ percent, totalBytes: Math.max(totalBytes, transferredBytes), transferredBytes }, previousChunk);
+        onProgress?.({ percent, totalBytes: Math.max(totalBytes2, transferredBytes), transferredBytes }, previousChunk);
       }
       previousChunk = currentChunk;
     },
     flush() {
       if (previousChunk) {
         transferredBytes += previousChunk.byteLength;
-        onProgress?.({ percent: 1, totalBytes: Math.max(totalBytes, transferredBytes), transferredBytes }, previousChunk);
+        onProgress?.({ percent: 1, totalBytes: Math.max(totalBytes2, transferredBytes), transferredBytes }, previousChunk);
       }
     }
   }));
@@ -51417,8 +51486,8 @@ var streamResponse = (response, onDownloadProgress) => {
       headers: response.headers
     });
   }
-  const totalBytes = Math.max(0, Number(response.headers.get("content-length")) || 0);
-  return new Response(withProgress(response.body, totalBytes, onDownloadProgress), {
+  const totalBytes2 = Math.max(0, Number(response.headers.get("content-length")) || 0);
+  return new Response(withProgress(response.body, totalBytes2, onDownloadProgress), {
     status: response.status,
     statusText: response.statusText,
     headers: response.headers
@@ -51428,11 +51497,11 @@ var streamRequest = (request, onUploadProgress, originalBody) => {
   if (!request.body) {
     return request;
   }
-  const totalBytes = getBodySize(originalBody ?? request.body);
+  const totalBytes2 = getBodySize(originalBody ?? request.body);
   return new Request(request, {
     // @ts-expect-error - Types are outdated.
     duplex: "half",
-    body: withProgress(request.body, totalBytes, onUploadProgress)
+    body: withProgress(request.body, totalBytes2, onUploadProgress)
   });
 };
 
@@ -56657,11 +56726,11 @@ function parseBridgeJson(json, what) {
   }
 }
 function parseStoreWrites(json) {
-  const entries = parseBridgeJson(json, "store writes");
-  if (!Array.isArray(entries))
+  const entries2 = parseBridgeJson(json, "store writes");
+  if (!Array.isArray(entries2))
     throw new BridgeError("store writes are not an array");
   const writes = { set: {}, delete: [] };
-  for (const entry of entries) {
+  for (const entry of entries2) {
     if (!Array.isArray(entry) || typeof entry[0] !== "string" || (entry.length === 2 ? typeof entry[1] !== "string" : entry.length !== 1)) {
       throw new BridgeError("store writes contain a malformed entry");
     }
@@ -57759,10 +57828,16 @@ another). The Primary Session cannot be destroyed.` },
 init_stats();
 
 // src/tools/outputLimit.ts
+init_resultStore();
 var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
 function limitTextBlock(text, context = "Tool output") {
   if (Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
-  return `${context} exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.`;
+  const path28 = storeResult(text);
+  return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.`;
+}
+function limitReadResponse(result2) {
+  if (!result2.content) return result2;
+  return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" && Buffer.byteLength(item.text, "utf8") > MAX_TEXT_BLOCK_BYTES ? { ...item, text: "Tool output exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects." } : item) };
 }
 function limitToolResponse(result2) {
   if (!result2.content) return result2;
@@ -57785,7 +57860,7 @@ var codemodeDefinition = {
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
-- Each text() block is limited to 16 KiB (UTF-8); oversized blocks become warnings. Top-level return is unrestricted.
+- Each text() block is limited to 16 KiB (UTF-8); oversized blocks are stored in memory and replaced by result:// references readable with tools.read or tools.grep. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
@@ -57830,9 +57905,9 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
         if ([query, namespace, name].some((v) => v !== void 0 && typeof v !== "string")) throw new Error("search() filters must be strings");
         if (limit !== void 0 && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
         const skills2 = skillsEnabled ? await skillCatalog() : [];
-        const entries = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
+        const entries2 = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        const found = entries.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
+        const found = entries2.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
         recordSearch(query ?? "", found.length);
         return found.slice(0, Math.min(limit ?? 100, 100));
       })
@@ -57924,16 +57999,16 @@ var fullName = (s) => s.namespace.slice("skills/".length) + "/" + s.name;
 var skillFields = (s) => ({ ...s.frontmatter, name: s.name, description: s.description });
 async function handleSkillDiscovery(name, args2) {
   const catalog = await skillCatalog();
-  const entries = catalog.map((s) => ({ ...s, name: fullName(s) }));
+  const entries2 = catalog.map((s) => ({ ...s, name: fullName(s) }));
   if (name === "searchSkills") {
     const options2 = searchSchema.parse(args2 ?? {});
     const words = (options2.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-    const found = entries.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
+    const found = entries2.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
     return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, Math.min(options2.limit ?? 100, 100)).map(skillFields), total: found.length }) }] };
   }
   if (name === "describeSkill") {
     const { name: target } = describeSchema.parse(args2);
-    const found = entries.find((s) => s.name === target);
+    const found = entries2.find((s) => s.name === target);
     if (!found) throw new Error("Skill not found: " + target);
     return { content: [{ type: "text", text: JSON.stringify({ ...found, ...skillFields(found) }) }] };
   }
@@ -57954,7 +58029,7 @@ function registerTools(server, manager, piExtraOperators = true, codemode = fals
           return await trackCall("codemode", () => runCodemode(manager, args2, piExtraOperators, extra.signal, skills2), extra.signal, (result2) => result2.isError === true);
         }
         if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitToolResponse(await trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal));
-        return limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
+        return name === "read" ? limitReadResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal)) : limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
         return {
@@ -58834,6 +58909,9 @@ init_mcpEventsExperiment();
 init_skills();
 init_types();
 init_definitions();
+init_resultStore();
+init_operators();
+init_extra_operators();
 init_getToolStat();
 init_stats();
 async function notifyClientConnected(sendRequest, options2) {
@@ -59053,7 +59131,9 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       if (method === "getToolStat") {
         return { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
       }
-      const result2 = await sendRequest(method, params, signal);
+      const virtualPath = typeof params?.path === "string" && isResultPath(params.path);
+      if (virtualPath && (method === "write" || method === "edit")) throw new Error("Virtual paths are read-only");
+      const result2 = virtualPath && method === "read" ? await handleOperatorTool(method, params, void 0, signal) : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params) : await sendRequest(method, params, signal);
       if (method !== "listSessions" || !isRemoteClient()) return result2;
       const response = result2;
       return { ...response, content: response.content?.map((item) => {
@@ -59087,7 +59167,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           options2.skills
         ), extra.signal, (result3) => result3.isError === true) : (() => {
           throw new Error(`Unknown tool: ${name}`);
-        })() : limitToolResponse(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
+        })() : (name === "read" ? limitReadResponse : limitToolResponse)(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
         return result2;
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
@@ -60299,11 +60379,11 @@ function hashSet(key, value) {
 var hashSet_default = hashSet;
 
 // node_modules/lodash-es/_Hash.js
-function Hash(entries) {
-  var index = -1, length = entries == null ? 0 : entries.length;
+function Hash(entries2) {
+  var index = -1, length = entries2 == null ? 0 : entries2.length;
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries2[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -60379,11 +60459,11 @@ function listCacheSet(key, value) {
 var listCacheSet_default = listCacheSet;
 
 // node_modules/lodash-es/_ListCache.js
-function ListCache(entries) {
-  var index = -1, length = entries == null ? 0 : entries.length;
+function ListCache(entries2) {
+  var index = -1, length = entries2 == null ? 0 : entries2.length;
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries2[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -60453,11 +60533,11 @@ function mapCacheSet(key, value) {
 var mapCacheSet_default = mapCacheSet;
 
 // node_modules/lodash-es/_MapCache.js
-function MapCache(entries) {
-  var index = -1, length = entries == null ? 0 : entries.length;
+function MapCache(entries2) {
+  var index = -1, length = entries2 == null ? 0 : entries2.length;
   this.clear();
   while (++index < length) {
-    var entry = entries[index];
+    var entry = entries2[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -60529,8 +60609,8 @@ function stackSet(key, value) {
 var stackSet_default = stackSet;
 
 // node_modules/lodash-es/_Stack.js
-function Stack(entries) {
-  var data = this.__data__ = new ListCache_default(entries);
+function Stack(entries2) {
+  var data = this.__data__ = new ListCache_default(entries2);
   this.size = data.size;
 }
 Stack.prototype.clear = stackClear_default;
