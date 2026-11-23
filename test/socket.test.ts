@@ -64,7 +64,7 @@ test("createToolProxyServer forwards clientConnected notifications to the intera
     await fs.unlink(socketPath).catch(() => undefined);
   }
 });
-test("socket extra operators require independent per-connection opt-in", async () => {
+test("socket operators are enabled by default for each connection", async () => {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), "terminal-extra-socket-"));
   const socketPath = path.join(dir, "proxy.sock");
   const server = createToolProxyServer(socketPath, {} as TerminalManager);
@@ -94,15 +94,15 @@ test("socket extra operators require independent per-connection opt-in", async (
     }
     const a = await connect();
     const b = await connect();
-    assert.match((await a(1, "list", { path: dir })).error.message, /Unknown tool/);
-    assert.deepEqual((await a(2, "clientConnected", { piExtraOperators: true })).result, { ok: true });
+    assert.ok((await a(1, "list", { path: dir })).result);
+    assert.deepEqual((await a(2, "clientConnected", {})).result, { ok: true });
     assert.ok((await a(3, "list", { path: dir })).result);
     assert.ok((await a(4, "read", { path: socketPath })).error);
-    assert.match((await b(5, "list", { path: dir })).error.message, /Unknown tool/);
-    await b(6, "clientConnected", {});
-    assert.match((await b(7, "list", { path: dir })).error.message, /Unknown tool/);
+    assert.ok((await b(5, "list", { path: dir })).result);
+    assert.deepEqual((await b(6, "clientConnected", {})).result, { ok: true });
+    assert.ok((await b(7, "list", { path: dir })).result);
     assert.ok((await b(8, "read", { path: path.join(dir, "missing") })).error);
-    await b(9, "clientConnected", { piExtraOperators: true });
+    assert.ok((await b(9, "grep", { path: dir, pattern: "no-such-pattern" })).result);
     assert.ok((await b(10, "list", { path: dir })).result);
   } finally {
     clients.forEach((socket) => socket.destroy());

@@ -6,10 +6,13 @@ import { join } from "node:path";
 import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, namespaceRegistry } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
 
-test("tool definitions expose 22 core operators by default", () => {
-  assert.equal(getToolDefinitions().length, 25);
-  assert.equal(getToolDefinitions(true).length, 25);
-  assert.deepEqual(getToolDefinitions().slice(-5).map((tool) => tool.name), ["read", "write", "edit", "python", "shell"]);
+test("tool definitions expose all operators by default", () => {
+  const definitions = getToolDefinitions();
+  assert.equal(definitions.length, 25);
+  assert.deepEqual(definitions, getToolDefinitions(true));
+  for (const name of ["read", "write", "edit", "python", "shell", "list", "grep", "find"]) {
+    assert.ok(definitions.some(tool => tool.name === name), `${name} should be enabled by default`);
+  }
 });
 
 test("namespace registry covers every tool and preserves enabled defaults", () => {
