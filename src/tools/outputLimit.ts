@@ -14,6 +14,12 @@ export function limitReadResponse<T extends { content?: Array<{ type: string; te
     ? { ...item, text: "Tool output exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects." } : item) } as T;
 }
 
+/** Response policy: Skills discovery and read() retain suppression; other tools use the result store. */
+export function limitResponseForTool<T extends { content?: Array<{ type: string; text?: string }> }>(name: string, result: T): T {
+  return (name === "read" || name === "searchSkills" || name === "describeSkill")
+    ? limitReadResponse(result) : limitToolResponse(result);
+}
+
 export function limitToolResponse<T extends { content?: Array<{ type: string; text?: string }> }>(result: T): T {
   if (!result.content) return result;
   return { ...result, content: result.content.map(item => item.type === "text" && typeof item.text === "string"

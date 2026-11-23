@@ -57839,6 +57839,9 @@ function limitReadResponse(result2) {
   if (!result2.content) return result2;
   return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" && Buffer.byteLength(item.text, "utf8") > MAX_TEXT_BLOCK_BYTES ? { ...item, text: "Tool output exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects." } : item) };
 }
+function limitResponseForTool(name, result2) {
+  return name === "read" || name === "searchSkills" || name === "describeSkill" ? limitReadResponse(result2) : limitToolResponse(result2);
+}
 function limitToolResponse(result2) {
   if (!result2.content) return result2;
   return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" ? { ...item, text: limitTextBlock(item.text) } : item) };
@@ -58028,8 +58031,8 @@ function registerTools(server, manager, piExtraOperators = true, codemode = fals
           if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
           return await trackCall("codemode", () => runCodemode(manager, args2, piExtraOperators, extra.signal, skills2), extra.signal, (result2) => result2.isError === true);
         }
-        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitToolResponse(await trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal));
-        return name === "read" ? limitReadResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal)) : limitToolResponse(await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
+        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitResponseForTool(name, await trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal));
+        return limitResponseForTool(name, await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
         return {
@@ -59167,7 +59170,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           options2.skills
         ), extra.signal, (result3) => result3.isError === true) : (() => {
           throw new Error(`Unknown tool: ${name}`);
-        })() : (name === "read" ? limitReadResponse : limitToolResponse)(await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
+        })() : limitResponseForTool(name, await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
         return result2;
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);

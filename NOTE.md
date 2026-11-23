@@ -11,6 +11,13 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - [ ] **端對端仍未成功**：2026-11-16 在 ChatGPT Work 建立新工作與新訂閱，單筆 Webhook 回 HTTP 200，但 Work 對話未顯示事件；HTTP 200 只表示端點接受請求，尚無證據確定問題位於 OpenAI 端。後續待 ChatGPT MCP Events 功能更新再重測。
 - 維持實驗開關，不預設啟用；暫不擴充事件種類、重試機制或修改 Payload。
 
+## In-Memory Result Store 套用範圍
+
+- **套用 `result://`**：一般 MCP 工具（例如 `shell()`、`python()`、`grep()`、`list()`、`find()`、PTY／misc 工具等）每個超過 16 KiB 的文字回覆，以及 Codemode 的 `text()` 輸出。統一由 `limitResponseForTool()`／`limitToolResponse()` 控制；未列入排除名單的新工具預設套用。
+- **暫不套用 `result://`**：`searchSkills()`、`describeSkill()`、`read()`。超過 16 KiB 仍維持原本的抑制訊息，不建立記憶體結果；Skills 探索日後另採分頁或容量控制方案。
+- **不經 Result Store**：Codemode 的 `return` 值不受 `text()` 的 16 KiB 限制；非文字 content 與 `structuredContent` 不轉換。
+- 上述規則同時適用於直接 MCP Server 與 Socket MCP Client；新增或更改工具時，需同步檢查這份套用／排除清單與測試。
+
 ## MCP Skills 相容層
 
 - [ ] **`searchSkills()` 分頁與輸出容量控制**：目前應急版只回傳 `name`、完整 `description` 與 `total`，`describeSkill()` 保留完整 metadata。實測 50 筆為 15,845 bytes，接近 16 KiB text block 限制；新增 Skills 後可能再次超限。後續設計 `offset`／`cursor` 等分頁參數及 `nextCursor`／`hasMore`，保留現有 `query`、`name`、`limit` 語意；按實際 UTF-8 JSON bytes 預留封裝空間並限制每頁結果，避免超限時整個 text block 被抑制。需保證排序穩定、可逐頁取完、過濾與分頁一致，並測試多位元組 description、單筆過大、空結果、邊界值與新增 Skills 的情況。

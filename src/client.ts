@@ -17,7 +17,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { getMcpToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
 import { runCodemodeWithDispatch, codemodeDefinition } from "./tools/codemode.js";
-import { limitToolResponse, limitReadResponse } from "./tools/outputLimit.js";
+import { limitResponseForTool } from "./tools/outputLimit.js";
 import { isResultPath } from "./tools/resultStore.js";
 import { handleOperatorTool } from "./tools/operators.js";
 import { handleExtraOperatorTool } from "./tools/extra-operators.js";
@@ -314,7 +314,7 @@ export async function startMcpClientMode(
           ? await trackCall("codemode", () => runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
               (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal, options.skills), extra.signal, result => result.isError === true)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : (name === "read" ? limitReadResponse : limitToolResponse)(await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? trackCall(name, () => handleSkillDiscovery(name, args), extra.signal) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
+        : limitResponseForTool(name, await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? trackCall(name, () => handleSkillDiscovery(name, args), extra.signal) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;
