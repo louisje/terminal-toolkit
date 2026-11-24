@@ -28,4 +28,27 @@ Implemented limits: 16 concurrent executions, 100 MiB per execution combined out
 
 Validation: macOS full npm test: 189 tests, 187 passed, 2 skipped, 0 failed. Remote client reconnect across Codemode and direct MCP, headless and self-hosted socket shutdown, pagination and 50 KiB grep limits are covered. Linux, Windows/MSYS2 and Termux remain unverified. Output retention is server-local and periodic, not a durable job service.
 
+## macOS acceptance closeout (2026-11-24)
+
+Validated commit `fa2ed74` through the deployed direct MCP/Socket environment and isolated ExecutionManager instances. All 14 planned acceptance categories passed; no functional changes were required.
+
+| Area | Evidence |
+| --- | --- |
+| Background execution and timeout | timeout=0 and positive timeout detach; minimal execution ID response |
+| Live output and wait | Running output readable; wait timeout does not cancel |
+| Cross-conversation access | Existing execution ID and stdout accessible in a new conversation |
+| Cancellation and process tree | Python parent and sleep child both absent after cancellation |
+| Virtual file pagination | read offsets, list/find/grep and info.json verified |
+| Virtual path protection | write/edit, traversal and unknown paths rejected |
+| Failed execution | Exit code 7, separate stderr and failed status filter |
+| Concurrency | 16 active jobs accepted, 17th rejected; cancellation releases slots |
+| Per-execution quota | 101 MiB generated, 100 MiB retained, truncation flagged, exit 0 |
+| Aggregate quota | 11 active jobs generating 100 MiB each; approximately 1023.86 MiB test output retained, truncation flagged, active jobs preserved |
+| Capacity eviction | Oldest completed record reclaimed after cancellation under capacity pressure |
+| Record count | Isolated manager: 102 jobs created, sweep reduces 101 retained records to 100; oldest removed |
+| TTL | Isolated manager: simulated finishedAt older than 24h removed; no real-time 24h wait |
+| Service lifecycle and crash cleanup | Tunnel Client restart preserves ID, output and PIDs; normal Socket Server restart terminates parent/child, invalidates old ID and removes instance directory. Isolated manager SIGKILL leaves a marked directory reclaimed on next manager's first execution; live, invalid and missing owner markers retained |
+
+The 100-record limit is enforced by sweep, not a strict instantaneous ceiling. Aggregate capacity is reserved across streams; completed records may be reclaimed proactively to make room for another execution. Crash cleanup does not recover jobs or terminate orphan processes. Cross-platform live validation remains follow-up work. All test jobs and isolated test directories were cleaned up; no active test executions remained.
+
 Update NOTE.md at each milestone; commit independently reviewable changes. Do not expose incomplete public features without their required management and cleanup paths. Revisit limits only with explicit design rationale. Existing watchdog, output policy and PTY behavior remain independent.
