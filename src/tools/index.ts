@@ -28,6 +28,7 @@ import { handleNotify } from "./notify.js";
 import { handleSystemInfo } from "./systemInfo.js";
 import { handleGetToolStat } from "./getToolStat.js";
 import { trackCall } from "./stats.js";
+import { withToolWatchdog } from "./watchdog.js";
 
 import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscovery.js';
 import { limitResponseForTool } from "./outputLimit.js";
@@ -47,7 +48,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
         return await trackCall("codemode", () => runCodemode(manager, args, piExtraOperators, extra.signal, skills), extra.signal, result => result.isError === true);
       }
-      if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitResponseForTool(name, await trackCall(name, () => handleSkillDiscovery(name, args), extra.signal));
+      if (skills && (name === 'searchSkills' || name === 'describeSkill')) return limitResponseForTool(name, await trackCall(name, () => withToolWatchdog(name, () => handleSkillDiscovery(name, args), extra.signal), extra.signal));
       return limitResponseForTool(name, await dispatchTool(manager, name, args, piExtraOperators, extra.signal));
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -66,7 +67,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
 }
 
 export async function dispatchTool(manager: TerminalManager, name: string, args: unknown, piExtraOperators = true, signal?: AbortSignal) {
-  return trackCall(name, () => dispatchToolUntracked(manager, name, args, piExtraOperators, signal), signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
+  return trackCall(name, () => withToolWatchdog(name, callSignal => dispatchToolUntracked(manager, name, args, piExtraOperators, callSignal), signal), signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
 }
 
 async function dispatchToolUntracked(manager: TerminalManager, name: string, args: unknown, piExtraOperators = true, signal?: AbortSignal) {

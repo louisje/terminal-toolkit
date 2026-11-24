@@ -313,7 +313,10 @@ export function createToolProxyServer(
             // In particular, cancel must work even in the same data chunk.
             void (async () => {
               try {
-                const response = await requestContextStorage.run(request.requestContext ?? {}, () => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, controller.signal));
+                const response = await requestContextStorage.run(request.requestContext ?? {}, () => {
+                  const execute = (signal: AbortSignal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, signal);
+                  return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
+                });
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -363,6 +366,8 @@ export function createToolProxyServer(
 /**
  * Handle a tool request from the MCP client
  */
+import { withToolWatchdog } from "../tools/watchdog.js";
+
 async function handleToolRequest(
   manager: TerminalManager,
   request: SocketRequest,
@@ -397,6 +402,7 @@ async function handleToolRequest(
       case "write":
       case "edit":
       case "shell":
+      case "python":
                 result = await handleOperatorTool(method, params, manager.getConfiguredShell(), signal);
         break;
       case "type":

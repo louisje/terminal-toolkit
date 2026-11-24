@@ -17,6 +17,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { getMcpToolDefinitions, getCodemodeToolDefinitions } from "./tools/definitions.js";
 import { runCodemodeWithDispatch, codemodeDefinition } from "./tools/codemode.js";
+import { withToolWatchdog } from "./tools/watchdog.js";
 import { limitResponseForTool } from "./tools/outputLimit.js";
 import { isResultPath } from "./tools/resultStore.js";
 import { handleOperatorTool } from "./tools/operators.js";
@@ -271,15 +272,15 @@ export async function startMcpClientMode(
 
   // Adapt session metadata for this MCP endpoint, including codemode dispatch.
   async function dispatchTool(method: string, params?: Record<string, unknown>, signal?: AbortSignal): Promise<unknown> {
-    return trackCall(method, async () => {
+    return trackCall(method, () => withToolWatchdog(method, async (callSignal) => {
     if (method === "getToolStat") {
       return { content: [{ type: "text" as const, text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
     }
     const virtualPath = typeof params?.path === "string" && isResultPath(params.path);
     if (virtualPath && (method === "write" || method === "edit")) throw new Error("Virtual paths are read-only");
-    const result = virtualPath && method === "read" ? await handleOperatorTool(method, params, undefined, signal)
+    const result = virtualPath && method === "read" ? await handleOperatorTool(method, params, undefined, callSignal)
       : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params)
-      : await sendRequest(method, params, signal);
+      : await sendRequest(method, params, callSignal);
     if (method !== "listSessions" || !isRemoteClient()) return result;
     const response = result as { content?: Array<{ type: string; text?: string }> };
     return { ...response, content: response.content?.map(item => {
@@ -292,7 +293,7 @@ export async function startMcpClientMode(
         return { ...item, text: JSON.stringify(listing, null, 2) };
       } catch { return item; }
     }) };
-    }, signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
+    }, signal), signal, result => Boolean(result && typeof result === "object" && "isError" in result && result.isError));
   }
 
   registerSkills(server);
@@ -314,7 +315,7 @@ export async function startMcpClientMode(
           ? await trackCall("codemode", () => runCodemodeWithDispatch(args, getCodemodeToolDefinitions(options.piExtraOperators),
               (tool, params, signal) => dispatchTool(tool, params, signal), extra.signal, options.skills), extra.signal, result => result.isError === true)
           : (() => { throw new Error(`Unknown tool: ${name}`); })()
-        : limitResponseForTool(name, await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? trackCall(name, () => handleSkillDiscovery(name, args), extra.signal) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
+        : limitResponseForTool(name, await (options.skills && (name === 'searchSkills' || name === 'describeSkill') ? trackCall(name, () => withToolWatchdog(name, () => handleSkillDiscovery(name, args), extra.signal), extra.signal) : dispatchTool(name, args as Record<string, unknown>, extra.signal)) as { content?: Array<{ type: string; text?: string }> });
       return result as {
         content: Array<{ type: "text"; text: string }>;
         isError?: boolean;

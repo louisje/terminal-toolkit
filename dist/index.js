@@ -57997,6 +57997,29 @@ init_systemInfo();
 init_getToolStat();
 init_stats();
 
+// src/tools/watchdog.ts
+var TOOL_WATCHDOG_MS = 6e4;
+async function withToolWatchdog(name, execute, parent, timeoutMs = TOOL_WATCHDOG_MS) {
+  if (parent?.aborted) throw new Error("Tool call aborted");
+  const controller = new AbortController();
+  const onAbort = () => controller.abort(parent?.reason);
+  parent?.addEventListener("abort", onAbort, { once: true });
+  let timer;
+  try {
+    const deadline = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        const error2 = new Error(`Tool '${name}' exceeded the ${timeoutMs / 1e3}-second safety deadline. Cancellation requested.`);
+        reject(error2);
+        controller.abort(error2);
+      }, timeoutMs);
+    });
+    return await Promise.race([deadline, Promise.resolve().then(() => execute(controller.signal))]);
+  } finally {
+    if (timer !== void 0) clearTimeout(timer);
+    parent?.removeEventListener("abort", onAbort);
+  }
+}
+
 // src/tools/skillDiscovery.ts
 init_zod();
 init_skills();
@@ -58040,7 +58063,7 @@ function registerTools(server, manager, piExtraOperators = true, codemode = fals
           if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
           return await trackCall("codemode", () => runCodemode(manager, args2, piExtraOperators, extra.signal, skills2), extra.signal, (result2) => result2.isError === true);
         }
-        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitResponseForTool(name, await trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal));
+        if (skills2 && (name === "searchSkills" || name === "describeSkill")) return limitResponseForTool(name, await trackCall(name, () => withToolWatchdog(name, () => handleSkillDiscovery(name, args2), extra.signal), extra.signal));
         return limitResponseForTool(name, await dispatchTool(manager, name, args2, piExtraOperators, extra.signal));
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
@@ -58058,7 +58081,7 @@ function registerTools(server, manager, piExtraOperators = true, codemode = fals
   });
 }
 async function dispatchTool(manager, name, args2, piExtraOperators = true, signal) {
-  return trackCall(name, () => dispatchToolUntracked(manager, name, args2, piExtraOperators, signal), signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
+  return trackCall(name, () => withToolWatchdog(name, (callSignal) => dispatchToolUntracked(manager, name, args2, piExtraOperators, callSignal), signal), signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
 }
 async function dispatchToolUntracked(manager, name, args2, piExtraOperators = true, signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
@@ -58751,9 +58774,12 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
             inflight.set(request.id, controller);
             void (async () => {
               try {
-                const response = await requestContextStorage.run(request.requestContext ?? {}, () => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
-                  clientPiExtraOperators = clientPiExtraOperators || enabled;
-                }, controller.signal));
+                const response = await requestContextStorage.run(request.requestContext ?? {}, () => {
+                  const execute = (signal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
+                    clientPiExtraOperators = clientPiExtraOperators || enabled;
+                  }, signal);
+                  return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
+                });
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error2) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -58824,6 +58850,7 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
       case "write":
       case "edit":
       case "shell":
+      case "python":
         result2 = await handleOperatorTool(method, params, manager.getConfiguredShell(), signal);
         break;
       case "type":
@@ -59139,13 +59166,13 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     });
   }
   async function dispatchTool2(method, params, signal) {
-    return trackCall(method, async () => {
+    return trackCall(method, () => withToolWatchdog(method, async (callSignal) => {
       if (method === "getToolStat") {
         return { content: [{ type: "text", text: JSON.stringify(await handleGetToolStat(params ?? {})) }] };
       }
       const virtualPath = typeof params?.path === "string" && isResultPath(params.path);
       if (virtualPath && (method === "write" || method === "edit")) throw new Error("Virtual paths are read-only");
-      const result2 = virtualPath && method === "read" ? await handleOperatorTool(method, params, void 0, signal) : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params) : await sendRequest(method, params, signal);
+      const result2 = virtualPath && method === "read" ? await handleOperatorTool(method, params, void 0, callSignal) : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params) : await sendRequest(method, params, callSignal);
       if (method !== "listSessions" || !isRemoteClient()) return result2;
       const response = result2;
       return { ...response, content: response.content?.map((item) => {
@@ -59160,7 +59187,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           return item;
         }
       }) };
-    }, signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
+    }, signal), signal, (result2) => Boolean(result2 && typeof result2 === "object" && "isError" in result2 && result2.isError));
   }
   registerSkills(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -59179,7 +59206,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           options2.skills
         ), extra.signal, (result3) => result3.isError === true) : (() => {
           throw new Error(`Unknown tool: ${name}`);
-        })() : limitResponseForTool(name, await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => handleSkillDiscovery(name, args2), extra.signal) : dispatchTool2(name, args2, extra.signal)));
+        })() : limitResponseForTool(name, await (options2.skills && (name === "searchSkills" || name === "describeSkill") ? trackCall(name, () => withToolWatchdog(name, () => handleSkillDiscovery(name, args2), extra.signal), extra.signal) : dispatchTool2(name, args2, extra.signal)));
         return result2;
       } catch (error2) {
         const message = error2 instanceof Error ? error2.message : String(error2);
