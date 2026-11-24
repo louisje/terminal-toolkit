@@ -80,7 +80,7 @@ test('discovery descriptions stay short and detailed guidance appears only on de
 
 test('search({namespace:"tools/*"}) with no arguments returns every enabled tool without the default search limit', {timeout:20000}, async () => {
   const all = await evaluate('text(await search({namespace:"tools/*"}))', true);
-  assert.equal(all.length, 25);
+  assert.equal(all.length, 30);
   assert.ok(all.every(t => ['tools/core','tools/runtime','tools/pty','tools/misc'].includes(t.namespace) && t.name && t.description));
   assert.ok(all.some(t => t.name === 'shell'));
   assert.deepEqual(await evaluate('text(await search({namespace:"tools/*"}))', true), all);

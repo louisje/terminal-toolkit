@@ -28,6 +28,7 @@ import { handleNotify } from "../tools/notify.js";
 import { handleSystemInfo } from "../tools/systemInfo.js";
 import { handleGetToolStat } from "../tools/getToolStat.js";
 import { handleOperatorTool } from "../tools/operators.js";
+import { handleRuntimeManagement } from "../tools/runtime.js";
 import { handleExtraOperatorTool } from "../tools/extra-operators.js";
 
 interface SocketRequest {
@@ -397,6 +398,13 @@ async function handleToolRequest(
       case "find":
         if (!piExtraOperators) throw new Error("Unknown tool: " + method);
         result = await handleExtraOperatorTool(method, params);
+        break;
+      case "listExecutions":
+      case "getExecution":
+      case "waitExecution":
+      case "cancelExecution":
+      case "removeExecution":
+        result = await handleRuntimeManagement(method, params, signal);
         break;
       case "read":
       case "write":

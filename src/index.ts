@@ -5,6 +5,7 @@ import * as net from "net";
 import { createRequire } from "module";
 import updateNotifier from "update-notifier";
 import { startServer } from "./server.js";
+import { executionManager } from "./tools/runtime.js";
 import { startMcpClientMode } from "./client.js";
 import { logSkillsOnStartup } from "./skills.js";
 import { TerminalManager } from "./terminal/index.js";
@@ -598,7 +599,7 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
       console.log('Install:   pip install asciinema  or  brew install asciinema');
     }
 
-    cleanup();
+    await cleanupAsync();
     process.exit(code);
   });
 
@@ -662,16 +663,19 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
   function cleanup() {
     if (cleaned) return;
     cleaned = true;
+    executionManager.cancelAll();
     manager.dispose();
     socketServer.close();
     unlinkOwnedSocket();
   }
-  async function cleanupAsync() {
-    if (cleaned) return;
+  let cleanupPromise: Promise<void> | undefined;
+  function cleanupAsync(): Promise<void> {
+    if (cleanupPromise) return cleanupPromise;
+    if (cleaned) return Promise.resolve();
     cleaned = true;
-    await manager.disposeAsync();
     socketServer.close();
     unlinkOwnedSocket();
+    return cleanupPromise = Promise.all([manager.disposeAsync(), executionManager.shutdown()]).then(() => undefined);
   }
 
   // Handle signals

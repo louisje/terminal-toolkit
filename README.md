@@ -246,10 +246,10 @@ Multi-Session Options:
 
 ### Core Operators
 
-Terminal Toolkit exposes 15 terminal tools plus four always-enabled Core Operators (`read`, `write`, `edit`, `shell`) for 19 tools by default. File operators work relative to the process startup directory; `write` creates parent
+Terminal Toolkit exposes Core Operators (`read`, `write`, `edit`, `list`, `grep`, `find`) and Runtime Operators alongside PTY and miscellaneous tools (30 tools by default). File operators work relative to the process startup directory; `write` creates parent
 directories, and `edit` requires exact unique non-overlapping replacements from the original file.
 `shell` runs one independent, stateless subprocess using Terminal Toolkit's configured shell (`--shell`, then `TERMINAL_TOOLKIT_SHELL`, then the platform-native shell/default) in that same startup directory,
-returns stdout/stderr when it finishes, and accepts an optional timeout in seconds. Prefer these
+returns stdout/stderr when it finishes within the foreground wait window. Prefer these
 operators for routine file operations and short one-shot non-interactive commands; use the PTY tools
 for long-running compilation, builds, and tests (even without interaction), as well as persistent shell state, interactive/TTY behavior, or live observability. Core Operators are always available in direct MCP, headless MCP, and socket/client mode.
 
@@ -264,9 +264,23 @@ for long-running compilation, builds, and tests (even without interaction), as w
 
 Long-running builds and tests should use PTY even when no interaction is expected, because intermediate output can be inspected before completion.
 
+### Runtime Execution Manager
+
+`shell` and `python` share a server-owned execution registry. Their optional `timeout` specifies foreground wait in seconds (default 30, maximum 50). Zero starts in background immediately after successful spawn; expiry also detaches rather than killing the process. A background response contains an execution ID and guidance, not partial output.
+
+- `listExecutions`: list retained background executions.
+- `getExecution`: inspect status, metadata and output paths.
+- `waitExecution`: wait up to 50 seconds without cancelling on expiry.
+- `cancelExecution`: terminate the process tree.
+- `removeExecution`: remove a finished execution and its output.
+
+Read output via `execution://<id>/stdout` or `stderr`; use read/list/find/grep, including in Codemode. These paths are read-only. Detached executions survive remote MCP client disconnects, but not normal shutdown of the owning server. There is no restart recovery. The independent 60-second safety watchdog remains in effect.
+
+Limits: 16 concurrent executions, 100 MiB combined output per execution, 1 GiB aggregate, 100 completed records and 24-hour retention (periodic cleanup). Output exceeding quota is drained and marked truncated. See [design](docs/runtime-execution-design.md).
+
 ### Extra Core Operators
 
-`list`, `grep`, and `find` are enabled by default (25 tools total). The `--extra-core-operators` flag is a deprecated no-op. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. list uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
+`list`, `grep`, and `find` are enabled by default (30 tools total). The `--extra-core-operators` flag is a deprecated no-op. Core Operators remain enabled regardless of this flag. `--pi-operators` is a deprecated no-op retained for CLI compatibility. list uses Node.js; grep requires rg and find requires fd or fdfind on PATH. Dependencies are never installed automatically; missing tools return installation guidance.
 
 
 Environment variables:

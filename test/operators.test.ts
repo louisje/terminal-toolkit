@@ -5,10 +5,19 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getToolDefinitions, getCodemodeToolDefinitions, getToolNamespace, namespaceRegistry } from "../src/tools/definitions.ts";
 import { handleOperatorTool } from "../src/tools/operators.ts";
+import { handleRuntimeManagement } from "../src/tools/runtime.ts";
+async function finishBackground(response: Awaited<ReturnType<typeof handleOperatorTool>>) {
+  assert.equal(response.isError, undefined);
+  const executionId = response.content[0].text.match(/executionId: ([\w-]+)/)?.[1];
+  assert.ok(executionId);
+  await handleRuntimeManagement("cancelExecution", { executionId });
+  await handleRuntimeManagement("waitExecution", { executionId });
+  await handleRuntimeManagement("removeExecution", { executionId });
+}
 
 test("tool definitions expose all operators by default", () => {
   const definitions = getToolDefinitions();
-  assert.equal(definitions.length, 25);
+  assert.equal(definitions.length, 30);
   assert.deepEqual(definitions, getToolDefinitions(true));
   for (const name of ["read", "write", "edit", "python", "shell", "list", "grep", "find"]) {
     assert.ok(definitions.some(tool => tool.name === name), `${name} should be enabled by default`);
@@ -59,11 +68,10 @@ test("python runs source via stdin and reports failures", async () => {
   assert.equal(failed.isError, true);
   assert.match(failed.content[0]?.text ?? "", /ValueError: test failure/);
   const timedOut = await handleOperatorTool("python", { code: "import time; time.sleep(2)", timeout: 0.05 });
-  assert.equal(timedOut.isError, true);
-  assert.match(timedOut.content[0]?.text ?? "", /timed out/);
+  await finishBackground(timedOut);
 });
 
-test("shell returns output, exit failures, and timeout failures", async () => {
+test("shell returns output, exit failures, and background execution", async () => {
   const ok = await handleOperatorTool("shell", { command: "printf operator-ok" });
   assert.equal(ok.content[0]?.text, "operator-ok");
 
@@ -73,8 +81,7 @@ test("shell returns output, exit failures, and timeout failures", async () => {
   assert.match(failed.content[0]?.text ?? "", /code 7/);
 
   const timedOut = await handleOperatorTool("shell", { command: "sleep 1", timeout: 0.05 });
-  assert.equal(timedOut.isError, true);
-  assert.match(timedOut.content[0]?.text ?? "", /timed out/);
+  await finishBackground(timedOut);
 });
 
 

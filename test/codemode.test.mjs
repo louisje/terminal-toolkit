@@ -71,6 +71,32 @@ test('codemode works through a real socket-connected MCP client', { timeout: 250
     const value = await client.callTool({ name: 'codemode', arguments: { code: 'text(await tools.shell({command:"printf socket-ok"}))' } });
     assert.equal(value.isError, false, JSON.stringify(value));
     assert.equal(value.content[0].text, 'socket-ok');
+    const invoke = async code => {
+      const r = await client.callTool({name:'codemode',arguments:{code}});
+      assert.equal(r.isError,false,JSON.stringify(r));
+      return r.content[0].text;
+    };
+    const detached = await invoke('text(await tools.shell({command:"sleep 1; printf background-ok",timeout:0}))');
+    const executionId = detached.match(/executionId: ([\w-]+)/)[1];
+    const args = JSON.stringify({executionId});
+    await client.close();
+    const second = new Client({name:'runtime-reconnect',version:'1.0.0'});
+    try {
+      await second.connect(new StdioClientTransport({command:process.execPath,args:['dist/index.js','--socket',socketPath],stderr:'pipe'}));
+      const result = await second.callTool({name:'waitExecution',arguments:{executionId}});
+      assert.notEqual(result.isError,true,JSON.stringify(result));
+      const info = JSON.parse(result.content[0].text);
+      assert.equal(info.status,'completed');
+      const read = await second.callTool({name:'read',arguments:{path:info.paths.stdout}});
+      assert.equal(read.content[0].text,'background-ok');
+    } finally { await second.close(); }
+    await client.connect(new StdioClientTransport({command:process.execPath,args:['dist/index.js','--socket',socketPath,'--codemode'],stderr:'pipe'}));
+    const info = JSON.parse(await invoke('text(await tools.waitExecution('+args+'))'));
+    assert.equal(info.status,'completed');
+    const path = info.paths.stdout;
+    assert.equal(await invoke('text(await tools.read('+JSON.stringify({path})+'))'),'background-ok');
+    assert.match(await invoke('text(await tools.grep('+JSON.stringify({path,pattern:'background-ok'})+'))'),/background-ok/);
+    await invoke('text(await tools.removeExecution('+args+'))');
     const saved = await client.callTool({ name: 'codemode', arguments: { code: 'text(Array.from({length:3000},(_,i)=>i===1234?"socket-needle":"line-"+i).join("\\n"))' } });
     assert.match(saved.content[0].text, /suppressed/);
     assert.doesNotMatch(saved.content[0].text, /result:\/\//);

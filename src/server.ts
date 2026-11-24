@@ -11,6 +11,7 @@ import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts/index.js";
 import { registerSkills } from "./skills.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
+import { executionManager } from "./tools/runtime.js";
 
 export interface ServerOptions {
   experimentInitialize?: boolean;
@@ -107,7 +108,7 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
       // null and a shutdown stop reason, not a fabricated clean exit.
       const finalized = manager.finalizeRecordings(null, "server_shutdown");
       manager.dispose();
-      return finalized.then(() => undefined);
+      return Promise.all([finalized, executionManager.shutdown()]).then(() => undefined);
     },
   });
 

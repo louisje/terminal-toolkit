@@ -21,6 +21,7 @@ import { notifyTool } from "./notify.js";
 import { systemInfoTool } from "./systemInfo.js";
 import { getToolStatTool } from "./getToolStat.js";
 import { operatorToolDefinitions } from "./operators.js";
+import { runtimeManagementDefinitions, runtimeManagementNames } from "./runtime.js";
 import { extraOperatorToolDefinitions } from "./extra-operators.js";
 
 /** Namespace metadata is centralized here so future per-namespace enablement
@@ -32,7 +33,7 @@ export const namespaceRegistry = {
     defaultEnabled: true,
     toolNames: ["read", "write", "edit", "list", "grep", "find"],
   },
-  "tools/runtime": { defaultEnabled: true, toolNames: ["shell", "python"] },
+  "tools/runtime": { defaultEnabled: true, toolNames: ["shell", "python", ...runtimeManagementNames] },
   "tools/pty": {
     defaultEnabled: true,
     toolNames: [
@@ -149,13 +150,13 @@ export function getMcpToolDefinitions(piExtraOperators = true): ToolDefinition[]
 }
 
 // MCP safety hints for each tool.
-const READ_ONLY_TOOLS = new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat"]);
-const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "python", "type", "sendKey", "destroySession"]);
+const READ_ONLY_TOOLS = new Set(["read", "list", "grep", "find", "getContent", "getBufferInfo", "takeScreenshot", "listSessions", "getClipboard", "sleep", "systemInfo", "getToolStat", "listExecutions", "getExecution", "waitExecution"]);
+const DESTRUCTIVE_TOOLS = new Set(["write", "edit", "shell", "python", "type", "sendKey", "destroySession", "cancelExecution", "removeExecution"]);
 const IDEMPOTENT_TOOLS = new Set([...READ_ONLY_TOOLS, "resize", "setClipboard"]);
 const OPEN_WORLD_TOOLS = new Set(["shell", "python", "type", "sendKey"]);
 
 export function getToolDefinitions(piExtraOperators = true): ToolDefinition[] {
-  return [...toolDefinitions, ...operatorToolDefinitions, ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
+  return [...toolDefinitions, ...operatorToolDefinitions, ...runtimeManagementDefinitions, ...(piExtraOperators ? extraOperatorToolDefinitions : [])].map(tool => ({
     ...tool,
     annotations: {
       readOnlyHint: READ_ONLY_TOOLS.has(tool.name),

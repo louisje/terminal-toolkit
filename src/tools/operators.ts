@@ -1,6 +1,8 @@
-import { spawn } from "node:child_process";
+import { runForeground } from "../runtime/foreground.js";
+import { executionManager } from "./runtime.js";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
+import { dirname, resolve } from "node:path";
+import { isExecutionPath, readExecutionPage } from "../runtime/virtual.js";
 import { z } from "zod";
 import type { ToolDefinition } from "./definitions.js";
 import { getDefaultShell } from "../utils/platform.js";
@@ -9,35 +11,24 @@ import { isResultPath, readResult } from "./resultStore.js";
 
 const operatorCwd = process.cwd();
 
-// Match Pi Coding Agent's process-group/tree termination behavior.
-function killProcessTree(pid: number): void {
-  if (process.platform === "win32") {
-    const killer = spawn(join(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe"),
-      ["/F", "/T", "/PID", String(pid)], { stdio: "ignore", detached: true, windowsHide: true });
-    killer.once("error", () => {});
-    killer.unref();
-  } else {
-    try { process.kill(-pid, "SIGKILL"); }
-    catch { try { process.kill(pid, "SIGKILL"); } catch { /* already exited */ } }
-  }
-}
+
 
 type TextResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
 
 const readSchema = z.object({ path: z.string(), offset: z.number().int().positive().optional(), limit: z.number().int().positive().optional() });
 const writeSchema = z.object({ path: z.string(), content: z.string() });
 const editSchema = z.object({ path: z.string(), edits: z.array(z.object({ oldText: z.string(), newText: z.string() })).min(1) });
-const shellSchema = z.object({ command: z.string(), timeout: z.number().positive().optional() });
-const pythonSchema = z.object({ code: z.string(), timeout: z.number().positive().optional() });
+const shellSchema = z.object({ command: z.string(), timeout: z.number().finite().nonnegative().optional() });
+const pythonSchema = z.object({ code: z.string(), timeout: z.number().finite().nonnegative().optional() });
 
 const result = (value: string, isError = false): TextResult => ({ content: [{ type: "text", text: value }], ...(isError ? { isError: true } : {}) });
 
 export const operatorToolDefinitions: ToolDefinition[] = [
-  { name: "read", description: "Read a text file or in-memory result:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+  { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
   { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
   { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
-  { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Supports timeout and cancellation; returns output and errors. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["code"] } },
-  { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; prefer for quick one-shot commands. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", description: "Timeout in seconds" } }, required: ["command"] } },
+  { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 30, maximum 50); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 30, maximum 50; 0 starts in background)" } }, required: ["code"] } },
+  { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; timeout is foreground wait (default 30 seconds, maximum 50). Zero or expiry returns an executionId; use getExecution or waitExecution to inspect background work. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 30, maximum 50; 0 starts in background)" } }, required: ["command"] } },
 ];
 
 const localPath = (path: string): string => resolve(operatorCwd, path);
@@ -47,6 +38,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args);
+      if (isExecutionPath(parsed.path)) return result(await readExecutionPage(parsed.path, parsed.offset, parsed.limit));
       const target = isResultPath(parsed.path) ? "" : parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
       const lines = (isResultPath(parsed.path) ? readResult(parsed.path) : await readFile(target, "utf8")).split("\n");
       const start = (parsed.offset ?? 1) - 1;
@@ -55,7 +47,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
     }
     case "write": {
       const parsed = writeSchema.parse(args);
-      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path) || isExecutionPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       await mkdir(dirname(target), { recursive: true });
       if (signal?.aborted) throw new Error("Tool call aborted");
@@ -64,7 +56,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
     }
     case "edit": {
       const parsed = editSchema.parse(args);
-      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path)) throw new Error("Virtual paths are read-only");
+      if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path) || isExecutionPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       const original = await readFile(target, "utf8");
       const ranges: Array<{ start: number; end: number; newText: string }> = [];
@@ -83,53 +75,13 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
       await writeFile(target, updated, "utf8");
       return result(`Edited ${parsed.path}`);
     }
-    case "shell":
+    case "shell": {
+      const parsed = shellSchema.parse(args);
+      return runForeground(executionManager, { tool: "shell", command: parsed.command, shell, cwd: operatorCwd }, parsed.timeout, signal);
+    }
     case "python": {
-      const parsed = name === "python" ? pythonSchema.parse(args) : shellSchema.parse(args);
-      if (signal?.aborted) throw new Error("Command aborted");
-      let timedOut = false;
-      const isPython = name === "python";
-      const child = isPython
-        ? spawn("python3", ["-"], { cwd: operatorCwd, detached: process.platform !== "win32", windowsHide: true, stdio: ["pipe", "pipe", "pipe"] })
-        : spawn((parsed as z.infer<typeof shellSchema>).command, { cwd: operatorCwd, shell, detached: process.platform !== "win32", windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
-      if (isPython) child.stdin?.end((parsed as z.infer<typeof pythonSchema>).code);
-      const stop = () => { if (child.pid) killProcessTree(child.pid); };
-      const onAbort = () => {
-        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${new Date().toISOString()} ${name} abort pid=${child.pid ?? "unknown"}`);
-        stop();
-      };
-      signal?.addEventListener("abort", onAbort, { once: true });
-      if (signal?.aborted) stop();
-      const timer = parsed.timeout === undefined ? undefined : setTimeout(() => {
-        timedOut = true;
-        if (process.env.TERMINAL_TOOLKIT_CANCEL_TRACE) console.error(`[cancel-trace] ${new Date().toISOString()} ${name} timeout pid=${child.pid ?? "unknown"}`);
-        stop();
-      }, parsed.timeout * 1000);
-      let stdout = "";
-      let stderr = "";
-      let exceeded = false;
-      const maxBuffer = 10 * 1024 * 1024;
-      const capture = (stream: "stdout" | "stderr", chunk: Buffer) => {
-        if (stream === "stdout") stdout += chunk.toString(); else stderr += chunk.toString();
-        if (Buffer.byteLength(stdout) + Buffer.byteLength(stderr) > maxBuffer) { exceeded = true; stop(); }
-      };
-      child.stdout.on("data", (chunk: Buffer) => capture("stdout", chunk));
-      child.stderr.on("data", (chunk: Buffer) => capture("stderr", chunk));
-      try {
-        const code = await new Promise<number | null>((resolve, reject) => {
-          child.once("error", reject);
-          child.once("close", resolve);
-        });
-        if (signal?.aborted) throw new Error("Command aborted");
-        const output = `${stdout}${stderr}`;
-        if (timedOut) return result(`${output}${output ? "\n" : ""}Command timed out after ${parsed.timeout} second(s).`, true);
-        if (exceeded) return result("Command output exceeded 10 MiB buffer.", true);
-        if (code !== 0) return result(`${output}${output ? "\n" : ""}Command exited with code ${code ?? "unknown"}.`, true);
-        return result(output);
-      } finally {
-        if (timer) clearTimeout(timer);
-        signal?.removeEventListener("abort", onAbort);
-      }
+      const parsed = pythonSchema.parse(args);
+      return runForeground(executionManager, { tool: "python", command: "python3", args: ["-u", "-"], input: parsed.code, cwd: operatorCwd }, parsed.timeout, signal);
     }
     default: throw new Error(`Unknown operator tool: ${name}`);
   }

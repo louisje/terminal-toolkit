@@ -21,6 +21,7 @@ import { withToolWatchdog } from "./tools/watchdog.js";
 import { limitResponseForTool } from "./tools/outputLimit.js";
 import { isResultPath } from "./tools/resultStore.js";
 import { handleOperatorTool } from "./tools/operators.js";
+import { executionManager } from "./tools/runtime.js";
 import { handleExtraOperatorTool } from "./tools/extra-operators.js";
 import { handleGetToolStat } from "./tools/getToolStat.js";
 import { trackCall } from "./tools/stats.js";
@@ -112,7 +113,10 @@ export async function startMcpClientMode(
     stopped = true;
     socket?.destroy();
     failPending();
+    const ownsExecutions = !!ownedServer;
+    const runtimeShutdown = ownsExecutions ? executionManager.shutdown() : undefined;
     releaseOwned();
+    return runtimeShutdown;
   } });
 
   function attachSocket(next: net.Socket): void {

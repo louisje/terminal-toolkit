@@ -34,14 +34,29 @@ Terminal Toolkit 尚未完成、值得後續追蹤的事項。已完成的實作
 - [ ] 預留 `write()`、`edit()` 的 VFS 寫入／編輯介面及來源權限模型；目前內建 Skills 維持唯讀，未來僅對明確允許寫入的虛擬來源開放修改。
 - [ ] 補齊跨工具測試：虛擬路徑、目錄與檔案、搜尋、路徑穿越防護、唯讀限制及實體檔案操作相容性。
 
+## Runtime Execution Manager 開發進度
+
+設計與驗收依據：[docs/runtime-execution-design.md](docs/runtime-execution-design.md)。
+
+- [x] Phase 0：獨立 60 秒 Watchdog（d42859c）。
+- [x] Phase 1：`src/runtime/manager.ts` Registry、spawn/close/error、stdin、取消及手動移除；`output.ts` 串流收集、單筆合計容量上限、超限繼續排空、完成前 flush；`processTree.ts` 與既有工具共用。核心已接入公開工具，後續階段已補齊即時 metadata、全域限額及 shutdown。
+- [x] Phase 2：shell/python 已切換至 `runtime/foreground.ts`，預設 30 秒、上限 50 秒、0 直接背景、最小回覆、解除 AbortSignal 關聯、前景結果與回收；既有取消測試通過。
+- [x] Phase 3：五支管理工具、namespace/schema/annotations、直接與 Socket dispatch 接線；Socket Codemode 背景執行、wait、read、grep、remove 端對端通過。
+- [x] Phase 4：已新增 `runtime/virtual.ts`，read/list/find/grep 與 write/edit 唯讀防護、get/wait 回覆虛擬路徑；10 項 Runtime 單元測試通過。已完成 Socket/Codemode 端對端、即時 metadata、read/grep 串流讀取；grep 三種來源共用 50 KiB 上限。分頁邊界與跨 Client/Codemode 存取測試通過。
+- [x] Phase 5：已加入 16 並行、1 GiB 全域容量、即時 metadata、60 秒 sweep、24h/100 筆保留與正常 shutdown 接線；11 項 Runtime 測試通過。已完成並行 remove 合併、owner.json 殘留回收及自建 Socket Server shutdown 接線。Headless、自建 Socket shutdown 與遠端 Client 斷線測試通過。
+- [x] Phase 6（macOS）：完整 npm test 189 項，187 通過、2 略過、0 失敗；README、設計文件及工具描述整理。
+- [ ] 後續驗證：Linux、Windows/MSYS2、Termux 實機程序樹終止、檔案權限及異常退出行為。
+
+下次從第一個未完成階段接續；每次提交同步更新進度。
+
 ## Runtime / Python 後續擴充方向
 
-目前 `tools/runtime` 提供 `shell()` 與 `python()`；`python()` 使用獨立 `python3` 子程序、stdin 傳入程式碼，不保留跨呼叫狀態。以下均為研究／待辦，非已承諾的介面。
+目前 `tools/runtime` 提供 `shell()`、`python()` 與五支 Execution 管理工具；`python()` 使用獨立 `python3` 子程序、stdin 傳入程式碼，不保留跨呼叫狀態。以下均為研究／待辦，非已承諾的介面。
 
 - [ ] **V2：執行環境設定與可觀測性**：支援指定 Python executable、工作目錄及環境變數；評估專案 `.venv`、uv、Conda 與跨平台 Python 探測。回傳明確的 exit code、stdout、stderr、逾時／取消狀態，避免混合輸出造成誤判；不應自動安裝套件或擅自改變環境。
 - [ ] **V3：結構化結果與大型輸出**：研究 JSON、表格／DataFrame、圖片、檔案等輸出型別，以及類似 Jupyter 最後運算式的結果擷取；避免任意物件序列化造成安全與相容問題。超過 MCP 單次輸出限制時，將結果存入共用 VFS，以虛擬路徑／識別碼回傳，供 `read()` 等工具分段存取；規劃容量、存活期限及清理策略。
 - [ ] **V4：Persistent Python Runtime**：研究跨呼叫保留 globals、import 與記憶體物件的常駐 Interpreter／Kernel；支援 runtimeId、建立／重設／關閉、閒置逾時回收及錯誤恢復。先驗證 `RequestContext`／`openai/subject` 雜湊能否可靠區分對話；若無法可靠識別，維持獨立 Process，避免不同 Agent／對話共享狀態。評估同一 Runtime 的執行序列化與資源上限。
-- [ ] **V5：長時間任務與資源管理**：背景執行、taskId、進度與部分輸出查詢、取消、結果保存；研究與現有 PTY／程序樹終止／Sandbox 機制共用，並評估 CPU、記憶體、檔案及網路權限限制。注意 MCP response deadline 不等於工具應被強制終止。
+- **V5：長時間任務與資源管理**：Runtime Execution Manager v1 已完成 macOS 驗證，見上方階段與設計文件；CPU、記憶體及網路限制仍屬後續研究。
 - [ ] **共用 Runtime 架構**：研究 Python Persistent Runtime 與 Codemode QuickJS 持續狀態能否共用 Session 身分、生命週期、隔離與回收管理。`tools/runtime` 未來可加入 JavaScript、Ruby 等獨立工具，但目前不急於抽象成 `execute({language,code})`；優先保留語言專屬介面、共用底層程序管理。
 - 建議順序：先完善獨立 Process 的執行環境與回覆語意，再結合 VFS 解決大型輸出；對話隔離可驗證後才考慮持續狀態，最後擴充背景任務與多語言 Runtime。
 

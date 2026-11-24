@@ -8,6 +8,7 @@ import { TerminalManager } from "../terminal/index.js";
 import { getMcpToolDefinitions } from "./definitions.js";
 import { runCodemode, codemodeDefinition } from "./codemode.js";
 import { handleOperatorTool } from "./operators.js";
+import { handleRuntimeManagement } from "./runtime.js";
 import { handleExtraOperatorTool } from "./extra-operators.js";
 
 import { handleType } from "./type.js";
@@ -78,6 +79,12 @@ async function dispatchToolUntracked(manager: TerminalManager, name: string, arg
     case "find":
       if (!piExtraOperators) throw new Error("Unknown tool: " + name);
       return await handleExtraOperatorTool(name, args);
+    case "listExecutions":
+    case "getExecution":
+    case "waitExecution":
+    case "cancelExecution":
+    case "removeExecution":
+      return await handleRuntimeManagement(name, args, signal);
     case "read":
     case "write":
     case "edit":
