@@ -2,26 +2,30 @@
 import { storeResult } from "./resultStore.js";
 export const MAX_TEXT_BLOCK_BYTES = 16 * 1024;
 
-export function limitTextBlock(text: string, context = "Tool output"): string {
-  if (Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
+type OutputPolicy = "unlimited" | "suppress" | "store";
+const toolPolicies: Readonly<Record<string, OutputPolicy>> = {
+  read: "suppress", searchSkills: "unlimited", describeSkill: "unlimited",
+};
+const suppressed = "This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.";
+
+function limitTextBlock(text: string, context: string, policy: OutputPolicy): string {
+  if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
+  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}`;
   const path = storeResult(text);
   return path ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.`;
 }
 
-export function limitReadResponse<T extends { content?: Array<{ type: string; text?: string }> }>(result: T): T {
-  if (!result.content) return result;
-  return { ...result, content: result.content.map(item => item.type === "text" && typeof item.text === "string" && Buffer.byteLength(item.text, "utf8") > MAX_TEXT_BLOCK_BYTES
-    ? { ...item, text: "Tool output exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects." } : item) } as T;
+export function limitCodemodeText(text: string): string {
+  return limitTextBlock(text, "Codemode text() output", "suppress");
 }
 
-/** Response policy: Skills discovery and read() retain suppression; other tools use the result store. */
+/** Shared policy for ordinary MCP tools; Codemode text uses suppression only. */
 export function limitResponseForTool<T extends { content?: Array<{ type: string; text?: string }> }>(name: string, result: T): T {
-  return (name === "read" || name === "searchSkills" || name === "describeSkill")
-    ? limitReadResponse(result) : limitToolResponse(result);
+  return limitToolResponse(result, Object.hasOwn(toolPolicies, name) ? toolPolicies[name] : "store");
 }
 
-export function limitToolResponse<T extends { content?: Array<{ type: string; text?: string }> }>(result: T): T {
-  if (!result.content) return result;
+function limitToolResponse<T extends { content?: Array<{ type: string; text?: string }> }>(result: T, policy: OutputPolicy): T {
+  if (policy === "unlimited" || !result.content) return result;
   return { ...result, content: result.content.map(item => item.type === "text" && typeof item.text === "string"
-    ? { ...item, text: limitTextBlock(item.text) } : item) } as T;
+    ? { ...item, text: limitTextBlock(item.text, "Tool output", policy) } : item) } as T;
 }

@@ -57830,24 +57830,31 @@ init_stats();
 // src/tools/outputLimit.ts
 init_resultStore();
 var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
-function limitTextBlock(text, context = "Tool output") {
-  if (Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
+var toolPolicies = {
+  read: "suppress",
+  searchSkills: "unlimited",
+  describeSkill: "unlimited"
+};
+var suppressed = "This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.";
+function limitTextBlock(text, context, policy) {
+  if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
+  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}`;
   const path28 = storeResult(text);
   return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.`;
 }
-function limitReadResponse(result2) {
-  if (!result2.content) return result2;
-  return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" && Buffer.byteLength(item.text, "utf8") > MAX_TEXT_BLOCK_BYTES ? { ...item, text: "Tool output exceeded the 16 KiB text block limit. This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects." } : item) };
+function limitCodemodeText(text) {
+  return limitTextBlock(text, "Codemode text() output", "suppress");
 }
 function limitResponseForTool(name, result2) {
-  return name === "read" || name === "searchSkills" || name === "describeSkill" ? limitReadResponse(result2) : limitToolResponse(result2);
+  return limitToolResponse(result2, Object.hasOwn(toolPolicies, name) ? toolPolicies[name] : "store");
 }
-function limitToolResponse(result2) {
-  if (!result2.content) return result2;
-  return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" ? { ...item, text: limitTextBlock(item.text) } : item) };
+function limitToolResponse(result2, policy) {
+  if (policy === "unlimited" || !result2.content) return result2;
+  return { ...result2, content: result2.content.map((item) => item.type === "text" && typeof item.text === "string" ? { ...item, text: limitTextBlock(item.text, "Tool output", policy) } : item) };
 }
 
 // src/tools/codemode.ts
+init_resultStore();
 init_skills();
 var codemodeDefinition = {
   name: "codemode",
@@ -57863,7 +57870,7 @@ var codemodeDefinition = {
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
-- Each text() block is limited to 16 KiB (UTF-8); oversized blocks are stored in memory and replaced by result:// references readable with tools.read or tools.grep. Top-level return is unrestricted.
+- Each text() block is limited to 16 KiB (UTF-8); oversized blocks are suppressed; filter or split output before emitting. In-memory result:// paths are not supported in Codemode. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
 };
@@ -57888,7 +57895,9 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
     description: summaries.find((d) => d.name === definition.name).description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result2 = await dispatch(definition.name, value ?? {}, context.signal);
+      const params = value ?? {};
+      if (typeof params.path === "string" && isResultPath(params.path)) throw new Error("result:// paths are not supported in Codemode");
+      const result2 = await dispatch(definition.name, params, context.signal);
       if (result2.isError) throw new Error(result2.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
       if (result2.structuredContent !== void 0) return result2.structuredContent;
       const content = result2.content ?? [];
@@ -57948,7 +57957,7 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
   });
   try {
     const result2 = await sandbox.execute(code, { signal });
-    const content = result2.output.map((item) => item.type === "text" ? { type: "text", text: limitTextBlock(item.text, "Codemode text() output") } : { type: "image", data: item.data, mimeType: item.mimeType });
+    const content = result2.output.map((item) => item.type === "text" ? { type: "text", text: limitCodemodeText(item.text) } : { type: "image", data: item.data, mimeType: item.mimeType });
     if (result2.ok && result2.value !== void 0) content.push({ type: "text", text: JSON.stringify(result2.value) });
     if (!result2.ok) content.push({ type: "text", text: result2.error.stack ?? result2.error.message });
     return { content, isError: !result2.ok };

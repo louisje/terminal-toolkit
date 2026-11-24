@@ -7,7 +7,8 @@ import { dispatchTool } from "./index.js";
 import { namespaceRegistryGuidance } from "./namespaceGuidance.js";
 import { trackCall, recordSearch, recordDescribe } from "./stats.js";
 
-import { limitTextBlock } from "./outputLimit.js";
+import { limitCodemodeText } from "./outputLimit.js";
+import { isResultPath } from "./resultStore.js";
 import { skillCatalog } from "../skills.js";
 
 export const codemodeDefinition: ToolDefinition = {
@@ -24,7 +25,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
 - Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
-- Each text() block is limited to 16 KiB (UTF-8); oversized blocks are stored in memory and replaced by result:// references readable with tools.read or tools.grep. Top-level return is unrestricted.
+- Each text() block is limited to 16 KiB (UTF-8); oversized blocks are suppressed; filter or split output before emitting. In-memory result:// paths are not supported in Codemode. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 60000, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] },
 };
@@ -58,7 +59,9 @@ export async function runCodemodeWithDispatch(
     description: summaries.find(d => d.name === definition.name)!.description,
     inputSchema: definition.inputSchema,
     execute: async (value, context) => {
-      const result = await dispatch(definition.name, (value ?? {}) as Record<string, unknown>, context.signal) as ToolResult;
+      const params = (value ?? {}) as Record<string, unknown>;
+      if (typeof params.path === "string" && isResultPath(params.path)) throw new Error("result:// paths are not supported in Codemode");
+      const result = await dispatch(definition.name, params, context.signal) as ToolResult;
       if (result.isError) throw new Error(result.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
       if (result.structuredContent !== undefined) return result.structuredContent;
       const content = result.content ?? [];
@@ -117,7 +120,7 @@ export async function runCodemodeWithDispatch(
   try {
     const result = await sandbox.execute(code, { signal });
     const content = result.output.map(item => item.type === "text"
-      ? { type: "text" as const, text: limitTextBlock(item.text, "Codemode text() output") }
+      ? { type: "text" as const, text: limitCodemodeText(item.text) }
       : { type: "image" as const, data: item.data, mimeType: item.mimeType });
     if (result.ok && result.value !== undefined) content.push({ type: "text", text: JSON.stringify(result.value) });
     if (!result.ok) content.push({ type: "text", text: result.error.stack ?? result.error.message });
