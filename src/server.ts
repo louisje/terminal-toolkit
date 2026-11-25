@@ -1,3 +1,4 @@
+import { enableTunnelPingExperiment } from "./tunnelPingExperiment.js";
 import { exec } from "child_process";
 import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { enableToolsListChangedExperiment } from "./toolsListChangedExperiment.js";
@@ -46,6 +47,7 @@ export function createServerWithManager(manager: TerminalManager, piExtraOperato
     }
   );
 
+  enableTunnelPingExperiment(server);
   registerTools(server, manager, piExtraOperators, codemode, skills);
   registerPrompts(server);
   registerSkills(server);

@@ -1,3 +1,4 @@
+import { enableTunnelPingExperiment } from "./tunnelPingExperiment.js";
 import * as net from "net";
 import { trySocketClaim } from "./utils/socketClaim.js";
 import { createRequestContext, requestContextStorage, type RequestContext } from "./requestContext.js";
@@ -250,6 +251,7 @@ export async function startMcpClientMode(
     }
   );
 
+  enableTunnelPingExperiment(server);
   if (options.experimentInitialize) enableInitializeExperiment(server);
   if (options.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options.experimentMcpEvents) enableMcpEventsExperiment(server);

@@ -54029,6 +54029,21 @@ function updateNotifier(options2) {
   return updateNotifier2;
 }
 
+// src/tunnelPingExperiment.ts
+function enableTunnelPingExperiment(server) {
+  const previous = server.fallbackNotificationHandler;
+  server.fallbackNotificationHandler = async (notification) => {
+    if (notification.method !== "notifications/tunnel/test_ping") {
+      await previous?.(notification);
+      return;
+    }
+    await server.notification({
+      method: "notifications/tunnel/test_pong",
+      params: notification.params
+    });
+  };
+}
+
 // src/server.ts
 import { exec as exec2 } from "child_process";
 
@@ -58983,6 +58998,7 @@ function createServerWithManager(manager, piExtraOperators = true, codemode = fa
       }
     }
   );
+  enableTunnelPingExperiment(server);
   registerTools(server, manager, piExtraOperators, codemode, skills2);
   registerPrompts(server);
   registerSkills(server);
@@ -59797,6 +59813,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       }
     }
   );
+  enableTunnelPingExperiment(server);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options2.experimentMcpEvents) enableMcpEventsExperiment(server);
