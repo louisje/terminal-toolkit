@@ -1,6 +1,6 @@
 # Tools Reference
 
-Terminal Toolkit exposes PTY tools and always-enabled Core Operators (`read`, `write`, `edit`, `shell`), plus optional Extra Core Operators (`list`, `grep`, `find`).
+Terminal Toolkit exposes PTY tools, Core Operators (`read`, `write`, `edit`, `shell`, `list`, `grep`, `find`), `python`, and Runtime Execution Manager tools by default.
 
 ## Overview
 
@@ -32,9 +32,9 @@ Runs one non-interactive command in a fresh subprocess using the configured Term
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `command` | string | Yes | Command to run |
-| `timeout` | number | No | Timeout in seconds |
+| `timeout` | number | No | Foreground wait in seconds (default 30, maximum 50; 0 backgrounds immediately) |
 
-Returns stdout/stderr, with a tool error for failed exit, timeout, or output overflow. Prefer for quick checks and short tests. **Use PTY for long-running compiles, builds, and test suites** even without interaction, so progress and intermediate failures remain observable. PTY is also appropriate for TUI programs, prompts, and persistent shell state.
+Foreground completion returns stdout/stderr. A foreground wait expiry **detaches rather than terminates** the process and returns an `executionId`, without partial output. For long-running non-interactive builds and tests, use `timeout: 0` and inspect `execution://<id>/stdout` or `stderr` with `read`, `grep`, `find`, or `list`. Use `getExecution` for status, `waitExecution` to wait without cancelling, `cancelExecution` to terminate the process tree, and `removeExecution` for finished jobs. `python({code, timeout})` has the same background lifecycle. Use PTY when interaction, a real TTY, persistent shell state, or direct human-visible progress is needed. Background executions survive MCP client disconnects but not normal owner-server shutdown; v1 has no restart recovery.
 
 In codemode, invoke `await tools.shell({command: "git status --short"})`. This operator is always available in both Codemode and standard MCP.
 

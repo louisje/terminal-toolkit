@@ -21,7 +21,7 @@ Terminal Toolkit can be configured via command-line arguments and selected envir
 
 ### Core Operators
 
-`read`, `write`, `edit`, and `shell` are always available; `--pi-operators` is deprecated and has no effect. `--extra-core-operators` optionally adds `ls`, `grep`, and `find`. The `shell` tool executes a short, one-shot, non-interactive command with the configured shell. Use PTY for long-running compilation, builds, tests, interactive prompts, or ongoing session state. Core and Extra Core Operators work in both standard MCP and Codemode.
+`read`, `write`, `edit`, `shell`, `list`, `grep`, and `find` are available by default; `--pi-operators` and `--extra-core-operators` are deprecated no-ops. `shell` runs a stateless non-interactive command using the configured shell, and `python` runs stateless Python code. Both support background execution (`timeout=0`) or detachment on foreground wait expiry, managed through `listExecutions`, `getExecution`, `waitExecution`, `cancelExecution`, and `removeExecution`. Use PTY for interactive prompts, TTY requirements, persistent session state, or directly visible terminal work; long duration alone does not require PTY. These operators work in both standard MCP and Codemode.
 
 See [Sandbox Mode](./sandbox.md) for detailed sandbox configuration.
 

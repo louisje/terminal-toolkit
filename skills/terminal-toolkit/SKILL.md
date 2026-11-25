@@ -64,7 +64,9 @@ because Bash cannot be used.
 
 ## Long-running compilation, builds, and tests
 
-Prefer the persistent PTY for lengthy `npm run build`, `cargo build`, `make`, integration tests, or full test suites, even without interactive input. Observe intermediate logs and failures with `getContent` while the process runs. Use `shell` for quick checks and short tests that finish promptly.
+For non-interactive long-running work, prefer `shell({command, timeout: 0})` or `python({code, timeout: 0})`. Both return an `executionId`; inspect progress with `getExecution`, `waitExecution`, and `read({path: "execution://<id>/stdout"})` (or `stderr`). `waitExecution` timing out does not cancel the job. Use `cancelExecution` to terminate its process tree and `removeExecution` to clean up finished records. The default foreground wait is 30 seconds (maximum 50); expiry detaches instead of killing the process. Detached jobs survive MCP client disconnects, but not normal owner-server shutdown; no restart recovery exists in v1.
+
+Use PTY when interaction, TTY features, persistent shell state, or direct human-visible terminal output is needed, not merely because a build or test takes a long time. Inspect the Primary Session before using it; never interrupt occupied work.
 
 ## Core Operators
 
@@ -77,7 +79,7 @@ Four core operators are enabled by default:
   to anchor insertion at the beginning or end.
 - `shell`: run one independent, non-interactive subprocess using Terminal Toolkit's configured shell from
   terminal-toolkit's startup working directory. It waits for completion and returns
-  stdout/stderr directly, with an optional timeout. It does not inherit PTY cwd,
+  stdout/stderr directly when completed within its foreground wait; timeout=0 or wait expiry returns an executionId for background management. It does not inherit PTY cwd,
   exports, aliases, or other state changed during the terminal session.
 
 Prefer these operators for routine file work and quick one-shot commands. Do not use the
@@ -111,7 +113,7 @@ Default PTY/tool list: `type`, `sendKey`, `sleep`, `getContent`, `getBufferInfo`
 `takeScreenshot`, `startRecording`, `stopRecording`, `createSession`,
 `listSessions`, `destroySession`, `resize`, `getClipboard`, `setClipboard`,
 `notify` (OS-level desktop notification — useful to alert the user when a
-long-running command finishes while they're not watching). The four Core Operators (`read`, `write`, `edit`, `shell`) are always available.
+long-running command finishes while they're not watching). The Core Operators (`read`, `write`, `edit`, `shell`, `list`, `grep`, `find`) are available by default. `python` and the five execution-management tools are also available.
 
 ## Anti-patterns
 

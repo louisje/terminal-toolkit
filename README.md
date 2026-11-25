@@ -251,18 +251,18 @@ directories, and `edit` requires exact unique non-overlapping replacements from 
 `shell` runs one independent, stateless subprocess using Terminal Toolkit's configured shell (`--shell`, then `TERMINAL_TOOLKIT_SHELL`, then the platform-native shell/default) in that same startup directory,
 returns stdout/stderr when it finishes within the foreground wait window. Prefer these
 operators for routine file operations and short one-shot non-interactive commands; use the PTY tools
-for long-running compilation, builds, and tests (even without interaction), as well as persistent shell state, interactive/TTY behavior, or live observability. Core Operators are always available in direct MCP, headless MCP, and socket/client mode.
+for interactive/TTY behavior, persistent shell state, or user-visible terminal activity. For long-running non-interactive work, use background `shell` or `python` execution and inspect its output through the execution registry. Core Operators are always available in direct MCP, headless MCP, and socket/client mode.
 
 **Which execution mode should I use?**
 
 | Task | Preferred tool |
 | --- | --- |
 | Fast checks, `git status`, short unit tests | `shell` |
-| Long compiles, builds, integration tests, full test suites | PTY (`type` / `getContent`) |
+| Long non-interactive builds, integration tests, full test suites | `shell(timeout=0)` / `python(timeout=0)` plus execution tools |
 | SSH, sudo prompts, TUI, persistent environment or live output | PTY |
 | Direct text-file reads, writes, and exact replacements | `read`, `write`, `edit` |
 
-Long-running builds and tests should use PTY even when no interaction is expected, because intermediate output can be inspected before completion.
+Long-running work alone does not require PTY: background executions provide inspectable stdout/stderr while running. Use PTY when interaction, TTY semantics, persistent session state, or direct human visibility is required.
 
 ### Runtime Execution Manager
 
