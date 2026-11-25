@@ -27,7 +27,7 @@ export const codemodeDefinition: ToolDefinition = {
 - Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks are suppressed; filter or split output before emitting. In-memory result:// paths are not supported in Codemode. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
-  inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 60000, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] },
+  inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 100000, description: "Execution deadline in milliseconds (default 100000)." } }, required: ["code"] },
 };
 
 type ToolResult = { content?: Array<{ type: string; text?: string; data?: string; mimeType?: string }>; isError?: boolean; structuredContent?: unknown };
@@ -42,10 +42,10 @@ export async function runCodemodeWithDispatch(
   const code = (args as { code?: unknown } | undefined)?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
   const requestedTimeout = (args as { timeoutMs?: unknown }).timeoutMs;
-  if (requestedTimeout !== undefined && (!Number.isInteger(requestedTimeout) || Number(requestedTimeout) < 1 || Number(requestedTimeout) > 60_000)) {
-    throw new Error("codemode timeoutMs must be an integer between 1 and 60000");
+  if (requestedTimeout !== undefined && (!Number.isInteger(requestedTimeout) || Number(requestedTimeout) < 1 || Number(requestedTimeout) > 100_000)) {
+    throw new Error("codemode timeoutMs must be an integer between 1 and 100000");
   }
-  const timeoutMs = requestedTimeout === undefined ? 60_000 : Number(requestedTimeout);
+  const timeoutMs = requestedTimeout === undefined ? 100_000 : Number(requestedTimeout);
   const summaries = definitions.map(definition => ({
     name: definition.name,
     namespace: definition.namespace,

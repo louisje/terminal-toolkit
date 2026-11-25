@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { withToolWatchdog, TOOL_WATCHDOG_MS } from "../src/tools/watchdog.ts";
 
 test("watchdog preserves normal results and errors", async () => {
-  assert.equal(TOOL_WATCHDOG_MS, 60_000);
+  assert.equal(TOOL_WATCHDOG_MS, 100_000);
   assert.equal(await withToolWatchdog("read", () => 42), 42);
   const error = new Error("original");
   await assert.rejects(withToolWatchdog("read", () => { throw error; }), e => e === error);

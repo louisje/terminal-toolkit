@@ -277,15 +277,15 @@ Long-running work alone does not require PTY: background executions provide insp
 
 ### Runtime Execution Manager
 
-`shell` and `python` share a server-owned execution registry. Their optional `timeout` specifies foreground wait in seconds (default 30, maximum 50). Zero starts in background immediately after successful spawn; expiry also detaches rather than killing the process. A background response contains an execution ID and guidance, not partial output.
+`shell` and `python` share a server-owned execution registry. Their optional `timeout` specifies foreground wait in seconds (default 90, maximum 90). Zero starts in background immediately after successful spawn; expiry also detaches rather than killing the process. A background response contains an execution ID and guidance, not partial output.
 
 - `listExecutions`: list retained background executions.
 - `getExecution`: inspect status, metadata and output paths.
-- `waitExecution`: wait up to 50 seconds without cancelling on expiry.
+- `waitExecution`: wait up to 90 seconds without cancelling on expiry.
 - `cancelExecution`: terminate the process tree.
 - `removeExecution`: remove a finished execution and its output.
 
-Read output via `execution://<id>/stdout` or `stderr`; use read/list/find/grep, including in Codemode. These paths are read-only. Detached executions survive remote MCP client disconnects, but not normal shutdown of the owning server. There is no restart recovery. The independent 60-second safety watchdog remains in effect.
+Read output via `execution://<id>/stdout` or `stderr`; use read/list/find/grep, including in Codemode. These paths are read-only. Detached executions survive remote MCP client disconnects, but not normal shutdown of the owning server. There is no restart recovery. The independent 100-second safety watchdog remains in effect.
 
 Limits: 16 concurrent executions, 100 MiB combined output per execution, 1 GiB aggregate, 100 completed records and 24-hour retention (periodic cleanup). Output exceeding quota is drained and marked truncated. See [design](docs/runtime-execution-design.md).
 

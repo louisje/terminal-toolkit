@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { reclaimStaleInstances } from "../src/runtime/retention.ts";
 import { ExecutionManager } from "../src/runtime/manager.ts";
-import { runForeground } from "../src/runtime/foreground.ts";
+import { DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS, runForeground } from "../src/runtime/foreground.ts";
 import { handleRuntimeManagement } from "../src/tools/runtime.ts";
 import { readExecutionPath, readExecutionPage, listExecutionPaths, findExecutionPaths } from "../src/runtime/virtual.ts";
 
@@ -204,4 +204,22 @@ test("timeout warning detaches without cancelling execution", async t => {
   await e.done;
   assert.equal(e.info.status, "completed");
   assert.equal(await readFile(join(e.directory, "stdout"), "utf8"), "done\n");
+});
+
+test("runtime wait policy is 90 seconds and early warning does not cancel waiting job", async t => {
+  assert.equal(DEFAULT_WAIT_SECONDS, 90);
+  assert.equal(MAX_WAIT_SECONDS, 90);
+  const manager = await fixture(t);
+  const e = await manager.start(options("setTimeout(()=>console.log('done'),5000)"));
+  await e.ready; e.detach();
+  const { timeoutWarningScope } = await import("../src/runtime/timeoutWarning.ts");
+  for (const early of [true,false]) {
+    const warning = new AbortController();
+    if (early) warning.abort();
+    const pending = timeoutWarningScope.run(warning.signal, () => handleRuntimeManagement("waitExecution", {executionId:e.info.executionId}, undefined, manager));
+    if (!early) warning.abort();
+    const result = await pending;
+    assert.equal(JSON.parse(result.content[0].text).status,"running");
+  }
+  e.cancel(); await e.done;
 });

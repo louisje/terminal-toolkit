@@ -64,7 +64,7 @@ because Bash cannot be used.
 
 ## Long-running compilation, builds, and tests
 
-For non-interactive long-running work, prefer `shell({command, timeout: 0})` or `python({code, timeout: 0})`. Both return an `executionId`; inspect progress with `getExecution`, `waitExecution`, and `read({path: "execution://<id>/stdout"})` (or `stderr`). `waitExecution` timing out does not cancel the job. Use `cancelExecution` to terminate its process tree and `removeExecution` to clean up finished records. The default foreground wait is 30 seconds (maximum 50); expiry detaches instead of killing the process. Detached jobs survive MCP client disconnects, but not normal owner-server shutdown; no restart recovery exists in v1.
+For non-interactive long-running work, prefer `shell({command, timeout: 0})` or `python({code, timeout: 0})`. Both return an `executionId`; inspect progress with `getExecution`, `waitExecution`, and `read({path: "execution://<id>/stdout"})` (or `stderr`). `waitExecution` timing out does not cancel the job. Use `cancelExecution` to terminate its process tree and `removeExecution` to clean up finished records. The default foreground wait is 90 seconds (maximum 90); expiry detaches instead of killing the process. Detached jobs survive MCP client disconnects, but not normal owner-server shutdown; no restart recovery exists in v1.
 
 Use PTY when interaction, TTY features, persistent shell state, or direct human-visible terminal output is needed, not merely because a build or test takes a long time. Inspect the Primary Session before using it; never interrupt occupied work.
 

@@ -3,7 +3,7 @@ import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 
 export const timeoutWarningScope = new AsyncLocalStorage<AbortSignal>();
 // Runtime operators opt in; other tools (including codemode) remain unchanged.
-export const supportsTimeoutWarning = (name: string) => name === "shell" || name === "python";
+export const supportsTimeoutWarning = (name: string) => name === "shell" || name === "python" || name === "waitExecution";
 
 export function installTimeoutWarning(server: Server) {
   const pending = new Map<string | number, AbortController>();

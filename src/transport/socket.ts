@@ -325,7 +325,7 @@ export function createToolProxyServer(
               try {
                 const response = await timeoutWarningScope.run(warning.signal, () => requestContextStorage.run(request.requestContext ?? {}, () => {
                   const execute = (signal: AbortSignal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, signal);
-                  return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
+                  return execute(controller.signal);
                 }));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error) {
@@ -378,7 +378,6 @@ export function createToolProxyServer(
 /**
  * Handle a tool request from the MCP client
  */
-import { withToolWatchdog } from "../tools/watchdog.js";
 
 async function handleToolRequest(
   manager: TerminalManager,

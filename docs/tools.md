@@ -32,7 +32,7 @@ Runs one non-interactive command in a fresh subprocess using the configured Term
 | Parameter | Type | Required | Description |
 | --- | --- | --- | --- |
 | `command` | string | Yes | Command to run |
-| `timeout` | number | No | Foreground wait in seconds (default 30, maximum 50; 0 backgrounds immediately) |
+| `timeout` | number | No | Foreground wait in seconds (default 90, maximum 90; 0 backgrounds immediately) |
 
 Foreground completion returns stdout/stderr. A foreground wait expiry **detaches rather than terminates** the process and returns an `executionId`, without partial output. For long-running non-interactive builds and tests, use `timeout: 0` and inspect `execution://<id>/stdout` or `stderr` with `read`, `grep`, `find`, or `list`. Use `getExecution` for status, `waitExecution` to wait without cancelling, `cancelExecution` to terminate the process tree, and `removeExecution` for finished jobs. `python({code, timeout})` has the same background lifecycle. Use PTY when interaction, a real TTY, persistent shell state, or direct human-visible progress is needed. Background executions survive MCP client disconnects but not normal owner-server shutdown; v1 has no restart recovery.
 

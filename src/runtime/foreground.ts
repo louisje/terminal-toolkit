@@ -3,8 +3,8 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ExecutionManager, ExecutionOptions } from "./manager.js";
 
-export const DEFAULT_WAIT_SECONDS = 30;
-export const MAX_WAIT_SECONDS = 50;
+export const DEFAULT_WAIT_SECONDS = 90;
+export const MAX_WAIT_SECONDS = 90;
 const LEGACY_BUFFER_LIMIT = 10 * 1024 * 1024;
 export type RuntimeResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
 const result = (text: string, isError = false): RuntimeResult => ({ content: [{ type: "text", text }], ...(isError ? { isError: true } : {}) });

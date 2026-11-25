@@ -1,5 +1,5 @@
 /** Last-resort protection for individual tool calls, not a tool timeout policy. */
-export const TOOL_WATCHDOG_MS = 60_000;
+export const TOOL_WATCHDOG_MS = 100_000;
 
 export async function withToolWatchdog<T>(
   name: string,

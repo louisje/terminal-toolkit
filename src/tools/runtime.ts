@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ExecutionManager } from "../runtime/manager.js";
-import type { RuntimeResult } from "../runtime/foreground.js";
+import { DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS, type RuntimeResult } from "../runtime/foreground.js";
+import { timeoutWarningScope } from "../runtime/timeoutWarning.js";
 import type { ToolDefinition } from "./definitions.js";
 import { executionPaths } from "../runtime/virtual.js";
 const metadata = (info: import("../runtime/manager.js").ExecutionInfo) => ({ ...info, paths: executionPaths(info.executionId) });
@@ -13,7 +14,7 @@ export const runtimeManagementDefinitions: ToolDefinition[] = [
   { name: "listExecutions", description: "List retained background executions, optionally filtered by status.", inputSchema: { type: "object", properties: { status: { type: "string", enum: statuses } } } },
   ...runtimeManagementNames.slice(1).map(name => ({
     name, description: ({ getExecution: "Inspect execution status and metadata.", waitExecution: "Wait for execution completion; timeout returns current status without cancelling.", cancelExecution: "Request termination of an execution process tree.", removeExecution: "Remove a finished execution and its output." } as Record<string,string>)[name],
-    inputSchema: { type: "object" as const, properties: { executionId: id, ...(name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: "Wait seconds, default 30, maximum 50" } } : {}) }, required: ["executionId"] },
+    inputSchema: { type: "object" as const, properties: { executionId: id, ...(name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: `Wait seconds, default ${DEFAULT_WAIT_SECONDS}, maximum ${MAX_WAIT_SECONDS}` } } : {}) }, required: ["executionId"] },
   })),
 ];
 const result = (value: unknown): RuntimeResult => ({ content: [{ type: "text", text: JSON.stringify(value) }] });
@@ -33,20 +34,29 @@ export async function handleRuntimeManagement(name: string, args: unknown, signa
     case "waitExecution": {
       let timer: ReturnType<typeof setTimeout> | undefined;
       let abort: (() => void) | undefined;
+      const warning = timeoutWarningScope.getStore();
+      let onWarning: (() => void) | undefined;
       try {
         if (timeout !== 0 && e.info.finishedAt === undefined) await Promise.race([
           e.done,
-          new Promise<void>(resolve => { timer = setTimeout(resolve, Math.min(timeout ?? 30, 50) * 1000); }),
+          new Promise<void>(resolve => { timer = setTimeout(resolve, Math.min(timeout ?? DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS) * 1000); }),
+          new Promise<void>(resolve => {
+            onWarning = () => resolve();
+            warning?.addEventListener("abort", onWarning, { once: true });
+            if (warning?.aborted) onWarning();
+          }),
           new Promise<never>((_, reject) => {
             abort = () => reject(new Error("Tool call aborted"));
             signal?.addEventListener("abort", abort, { once: true });
             if (signal?.aborted) abort();
           }),
         ]);
+        signal?.throwIfAborted();
         return result(metadata(e.info));
       } finally {
         if (timer !== undefined) clearTimeout(timer);
         if (abort) signal?.removeEventListener("abort", abort);
+        if (onWarning) warning?.removeEventListener("abort", onWarning);
       }
     }
     default: throw new Error("Unknown runtime management tool");

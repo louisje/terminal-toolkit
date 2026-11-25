@@ -26,7 +26,7 @@ for (const mode of ['headless','proxy']) {
     client.fallbackNotificationHandler=async msg=>{if(msg.method==='notifications/tunnel/response_timeout_ack') acks.push(msg.params.requestId);};
     try {
       await client.connect(transport);
-      for(const [name,args] of [['shell',{command:'sleep 2; echo done'}],['python',{code:'import time; time.sleep(2); print("done")'}]]){
+      for(const [name,args] of [['shell',{command:'sleep 5; echo done'}],['python',{code:'import time; time.sleep(5); print("done")'}]]){
         const pending=client.callTool({name,arguments:{...args,timeout:30}});
         const id=requestId;
         await new Promise(r=>setTimeout(r,100));
@@ -38,6 +38,16 @@ for (const mode of ['headless','proxy']) {
         assert.ok(acks.includes(id));
         const info=JSON.parse((await client.callTool({name:'getExecution',arguments:{executionId}})).content[0].text);
         assert.equal(info.background,true);
+        const waiting=client.callTool({name:'waitExecution',arguments:{executionId,timeout:90}});
+        const waitId=requestId;
+        await new Promise(r=>setTimeout(r,100));
+        await send({jsonrpc:'2.0',method:'notifications/tunnel/response_timeout_warning',params:{requestId:waitId,remainingMs:10000}});
+        const waited=await waiting;
+        assert.notEqual(waited.isError,true,JSON.stringify(waited));
+        const snapshot=JSON.parse(waited.content[0].text);
+        assert.equal(snapshot.executionId,executionId);
+        assert.equal(snapshot.status,'running');
+        assert.ok(acks.includes(waitId));
         await client.callTool({name:'cancelExecution',arguments:{executionId}});
       }
     } finally {

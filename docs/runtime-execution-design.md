@@ -2,7 +2,7 @@
 
 ## Contract
 
-shell() and python() share a server-owned execution registry and file-backed stdout/stderr. Timeout means foreground wait, not process lifetime: default 30 seconds, zero immediately backgrounds after successful spawn, positive values capped at 50 seconds, negative rejected. Foreground completion preserves existing output/error format. Background response is successful and contains only executionId and guidance to getExecution()/waitExecution(). No partial output. The independent 60-second watchdog remains unchanged.
+shell() and python() share a server-owned execution registry and file-backed stdout/stderr. Timeout means foreground wait, not process lifetime: default 90 seconds, zero immediately backgrounds after successful spawn, positive values capped at 90 seconds, negative rejected. Foreground completion preserves existing output/error format. Background response is successful and contains only executionId and guidance to getExecution()/waitExecution(). No partial output. The independent 100-second watchdog applies at the MCP entrypoint.
 
 ## Architecture
 
@@ -14,7 +14,7 @@ Runtime tools: listExecutions(status?), getExecution(executionId), waitExecution
 
 ## Limits and cleanup
 
-Implemented limits: 16 concurrent executions, 100 MiB per execution combined output, 1 GiB aggregate, 100 completed records, 24h retention, 60s sweep. No background runtime limit. On output cap continue draining pipes and mark truncation; evict oldest completed records first, never delete active output. Foreground records not exposed to agents can be removed after response materialization. Handle disk errors without hanging or unhandled rejection. Normal server shutdown terminates managed process trees and closes files; abnormal shutdown may leave children, do not kill arbitrary reused PIDs. On first execution, reclaim marked instance directories only when owner.json identifies a PID that returns ESRCH. Retain unknown or live owners; PID reuse may defer reclamation. No attempt to kill orphan processes from a previous instance. Restrict storage permissions. No new control notification protocol.
+Implemented limits: 16 concurrent executions, 100 MiB per execution combined output, 1 GiB aggregate, 100 completed records, 24h retention, 60s sweep. No background runtime limit. On output cap continue draining pipes and mark truncation; evict oldest completed records first, never delete active output. Foreground records not exposed to agents can be removed after response materialization. Handle disk errors without hanging or unhandled rejection. Normal server shutdown terminates managed process trees and closes files; abnormal shutdown may leave children, do not kill arbitrary reused PIDs. On first execution, reclaim marked instance directories only when owner.json identifies a PID that returns ESRCH. Retain unknown or live owners; PID reuse may defer reclamation. No attempt to kill orphan processes from a previous instance. Restrict storage permissions. See response-timeout-warning.md for the warning protocol.
 
 ## Delivery phases and acceptance
 

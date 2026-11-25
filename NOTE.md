@@ -5,11 +5,11 @@
 ## Current Status
 
 - Runtime Execution Manager v1 已於 2026-11-24 完成 macOS 驗收（功能版本 `fa2ed74`）。
-- 正在整合 Tunnel Client response_timeout 預警與 Runtime Execution Manager。
+- 預警機制已部署，正式環境基本功能驗測正常；未刻意觸發上游逾時。
 
 ## In Progress
 
-- Response timeout warning：已移除 test_ping/test_pong，支援 shell/python 提前背景化，直接 MCP 與 Socket Proxy 均通過端對端測試；待正式服務重啟後驗收。詳見 [協定](docs/response-timeout-warning.md)。
+- 死線策略調整：Runtime 90s、Watchdog/Codemode 100s，Socket Client 統一管理 Watchdog，waitExecution 支援預警。詳見 [設計](docs/request-deadline-design.md)。
 
 ## Recently Completed
 

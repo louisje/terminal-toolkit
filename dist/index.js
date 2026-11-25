@@ -26141,7 +26141,7 @@ var init_timeoutWarning = __esm({
   "src/runtime/timeoutWarning.ts"() {
     "use strict";
     timeoutWarningScope = new AsyncLocalStorage();
-    supportsTimeoutWarning = (name) => name === "shell" || name === "python";
+    supportsTimeoutWarning = (name) => name === "shell" || name === "python" || name === "waitExecution";
   }
 });
 
@@ -40145,8 +40145,8 @@ var init_foreground = __esm({
   "src/runtime/foreground.ts"() {
     "use strict";
     init_timeoutWarning();
-    DEFAULT_WAIT_SECONDS = 30;
-    MAX_WAIT_SECONDS = 50;
+    DEFAULT_WAIT_SECONDS = 90;
+    MAX_WAIT_SECONDS = 90;
     LEGACY_BUFFER_LIMIT = 10 * 1024 * 1024;
     result = (text, isError = false) => ({ content: [{ type: "text", text }], ...isError ? { isError: true } : {} });
   }
@@ -40611,11 +40611,18 @@ async function handleRuntimeManagement(name, args2, signal, manager = executionM
     case "waitExecution": {
       let timer;
       let abort;
+      const warning = timeoutWarningScope.getStore();
+      let onWarning;
       try {
         if (timeout2 !== 0 && e.info.finishedAt === void 0) await Promise.race([
           e.done,
           new Promise((resolve6) => {
-            timer = setTimeout(resolve6, Math.min(timeout2 ?? 30, 50) * 1e3);
+            timer = setTimeout(resolve6, Math.min(timeout2 ?? DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS) * 1e3);
+          }),
+          new Promise((resolve6) => {
+            onWarning = () => resolve6();
+            warning?.addEventListener("abort", onWarning, { once: true });
+            if (warning?.aborted) onWarning();
           }),
           new Promise((_, reject) => {
             abort = () => reject(new Error("Tool call aborted"));
@@ -40623,10 +40630,12 @@ async function handleRuntimeManagement(name, args2, signal, manager = executionM
             if (signal?.aborted) abort();
           })
         ]);
+        signal?.throwIfAborted();
         return result2(metadata(e.info));
       } finally {
         if (timer !== void 0) clearTimeout(timer);
         if (abort) signal?.removeEventListener("abort", abort);
+        if (onWarning) warning?.removeEventListener("abort", onWarning);
       }
     }
     default:
@@ -40639,6 +40648,8 @@ var init_runtime = __esm({
     "use strict";
     init_zod();
     init_manager();
+    init_foreground();
+    init_timeoutWarning();
     init_virtual();
     metadata = (info) => ({ ...info, paths: executionPaths(info.executionId) });
     executionManager = new ExecutionManager();
@@ -40650,7 +40661,7 @@ var init_runtime = __esm({
       ...runtimeManagementNames.slice(1).map((name) => ({
         name,
         description: { getExecution: "Inspect execution status and metadata.", waitExecution: "Wait for execution completion; timeout returns current status without cancelling.", cancelExecution: "Request termination of an execution process tree.", removeExecution: "Remove a finished execution and its output." }[name],
-        inputSchema: { type: "object", properties: { executionId: id, ...name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: "Wait seconds, default 30, maximum 50" } } : {} }, required: ["executionId"] }
+        inputSchema: { type: "object", properties: { executionId: id, ...name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: `Wait seconds, default ${DEFAULT_WAIT_SECONDS}, maximum ${MAX_WAIT_SECONDS}` } } : {} }, required: ["executionId"] }
       }))
     ];
     result2 = (value) => ({ content: [{ type: "text", text: JSON.stringify(value) }] });
@@ -48351,8 +48362,8 @@ var init_operators = __esm({
       { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
       { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
       { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
-      { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 30, maximum 50); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 30, maximum 50; 0 starts in background)" } }, required: ["code"] } },
-      { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; timeout is foreground wait (default 30 seconds, maximum 50). Zero or expiry returns an executionId; use getExecution or waitExecution to inspect background work. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 30, maximum 50; 0 starts in background)" } }, required: ["command"] } }
+      { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 90, maximum 90); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["code"] } },
+      { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; timeout is foreground wait (default 90 seconds, maximum 90). Zero or expiry returns an executionId; use getExecution or waitExecution to inspect background work. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["command"] } }
     ];
     localPath = (path28) => resolve(operatorCwd, path28);
   }
@@ -58550,16 +58561,16 @@ var codemodeDefinition = {
 - Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks are suppressed; filter or split output before emitting. In-memory result:// paths are not supported in Codemode. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
-  inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 6e4, description: "Execution deadline in milliseconds (default 60000)." } }, required: ["code"] }
+  inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 1e5, description: "Execution deadline in milliseconds (default 100000)." } }, required: ["code"] }
 };
 async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, skillsEnabled = false) {
   const code = args2?.code;
   if (typeof code !== "string" || !code.trim()) throw new Error("codemode requires nonempty code");
   const requestedTimeout = args2.timeoutMs;
-  if (requestedTimeout !== void 0 && (!Number.isInteger(requestedTimeout) || Number(requestedTimeout) < 1 || Number(requestedTimeout) > 6e4)) {
-    throw new Error("codemode timeoutMs must be an integer between 1 and 60000");
+  if (requestedTimeout !== void 0 && (!Number.isInteger(requestedTimeout) || Number(requestedTimeout) < 1 || Number(requestedTimeout) > 1e5)) {
+    throw new Error("codemode timeoutMs must be an integer between 1 and 100000");
   }
-  const timeoutMs = requestedTimeout === void 0 ? 6e4 : Number(requestedTimeout);
+  const timeoutMs = requestedTimeout === void 0 ? 1e5 : Number(requestedTimeout);
   const summaries = definitions.map((definition) => ({
     name: definition.name,
     namespace: definition.namespace,
@@ -58677,7 +58688,7 @@ init_getToolStat();
 init_stats();
 
 // src/tools/watchdog.ts
-var TOOL_WATCHDOG_MS = 6e4;
+var TOOL_WATCHDOG_MS = 1e5;
 async function withToolWatchdog(name, execute, parent, timeoutMs = TOOL_WATCHDOG_MS) {
   if (parent?.aborted) throw new Error("Tool call aborted");
   const controller = new AbortController();
@@ -59485,7 +59496,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
                   const execute = (signal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
                     clientPiExtraOperators = clientPiExtraOperators || enabled;
                   }, signal);
-                  return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
+                  return execute(controller.signal);
                 }));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error2) {
