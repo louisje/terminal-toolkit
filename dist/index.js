@@ -26106,6 +26106,45 @@ var init_platform = __esm({
   }
 });
 
+// src/runtime/timeoutWarning.ts
+import { AsyncLocalStorage } from "node:async_hooks";
+function installTimeoutWarning(server) {
+  const pending = /* @__PURE__ */ new Map();
+  const previous = server.fallbackNotificationHandler;
+  server.fallbackNotificationHandler = async (notification) => {
+    if (notification.method !== "notifications/tunnel/response_timeout_warning") {
+      await previous?.(notification);
+      return;
+    }
+    const id2 = notification.params?.requestId;
+    if (typeof id2 !== "string" && typeof id2 !== "number") return;
+    const controller = pending.get(id2);
+    if (!controller || controller.signal.aborted) return;
+    const ack = server.notification({ method: "notifications/tunnel/response_timeout_ack", params: { requestId: id2 } });
+    controller.abort();
+    await ack.catch(() => {
+    });
+  };
+  return async function withWarning(id2, name, execute) {
+    if (!supportsTimeoutWarning(name)) return execute();
+    const controller = new AbortController();
+    pending.set(id2, controller);
+    try {
+      return await timeoutWarningScope.run(controller.signal, execute);
+    } finally {
+      if (pending.get(id2) === controller) pending.delete(id2);
+    }
+  };
+}
+var timeoutWarningScope, supportsTimeoutWarning;
+var init_timeoutWarning = __esm({
+  "src/runtime/timeoutWarning.ts"() {
+    "use strict";
+    timeoutWarningScope = new AsyncLocalStorage();
+    supportsTimeoutWarning = (name) => name === "shell" || name === "python";
+  }
+});
+
 // src/utils/keys.ts
 function getKeySequence(key) {
   const normalized = key.trim();
@@ -40053,12 +40092,19 @@ async function runForeground(manager, options2, timeout2 = DEFAULT_WAIT_SECONDS,
   if (!Number.isFinite(timeout2) || timeout2 < 0) throw new Error("timeout must be a finite non-negative number");
   const execution = await manager.start(options2, signal);
   let timer;
+  const warning = timeoutWarningScope.getStore();
+  let onWarning;
   let onAbort;
   try {
     await execution.ready;
     signal?.throwIfAborted();
     const completed = timeout2 === 0 ? false : await Promise.race([
       execution.done.then(() => true),
+      new Promise((resolve6) => {
+        onWarning = () => resolve6(false);
+        warning?.addEventListener("abort", onWarning, { once: true });
+        if (warning?.aborted) onWarning();
+      }),
       new Promise((resolve6) => {
         timer = setTimeout(() => resolve6(false), Math.min(timeout2, MAX_WAIT_SECONDS) * 1e3);
       }),
@@ -40086,6 +40132,7 @@ async function runForeground(manager, options2, timeout2 = DEFAULT_WAIT_SECONDS,
     throw error2;
   } finally {
     if (timer !== void 0) clearTimeout(timer);
+    if (onWarning) warning?.removeEventListener("abort", onWarning);
     if (onAbort) signal?.removeEventListener("abort", onAbort);
     if (!execution.info.background) {
       void execution.done.then(() => manager.remove(execution.info.executionId)).catch(() => {
@@ -40097,6 +40144,7 @@ var DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS, LEGACY_BUFFER_LIMIT, result;
 var init_foreground = __esm({
   "src/runtime/foreground.ts"() {
     "use strict";
+    init_timeoutWarning();
     DEFAULT_WAIT_SECONDS = 30;
     MAX_WAIT_SECONDS = 50;
     LEGACY_BUFFER_LIMIT = 10 * 1024 * 1024;
@@ -54029,21 +54077,6 @@ function updateNotifier(options2) {
   return updateNotifier2;
 }
 
-// src/tunnelPingExperiment.ts
-function enableTunnelPingExperiment(server) {
-  const previous = server.fallbackNotificationHandler;
-  server.fallbackNotificationHandler = async (notification) => {
-    if (notification.method !== "notifications/tunnel/test_ping") {
-      await previous?.(notification);
-      return;
-    }
-    await server.notification({
-      method: "notifications/tunnel/test_pong",
-      params: notification.params
-    });
-  };
-}
-
 // src/server.ts
 import { exec as exec2 } from "child_process";
 
@@ -57277,11 +57310,14 @@ function readPackageVersion() {
 }
 var VERSION = readPackageVersion();
 
+// src/tools/index.ts
+init_timeoutWarning();
+
 // src/requestContext.ts
 import { createHmac as createHmac2, randomBytes as randomBytes4 } from "node:crypto";
-import { AsyncLocalStorage } from "node:async_hooks";
+import { AsyncLocalStorage as AsyncLocalStorage2 } from "node:async_hooks";
 var identityKey = process.env.TERMINAL_TOOLKIT_IDENTITY_KEY || randomBytes4(32).toString("hex");
-var requestContextStorage = new AsyncLocalStorage();
+var requestContextStorage = new AsyncLocalStorage2();
 function fingerprint(kind, value) {
   if (typeof value !== "string" || !value) return void 0;
   return createHmac2("sha256", identityKey).update(kind).update("\0").update(value).digest("hex");
@@ -58695,12 +58731,13 @@ async function handleSkillDiscovery(name, args2) {
 
 // src/tools/index.ts
 function registerTools(server, manager, piExtraOperators = true, codemode = false, skills2 = false) {
+  const withWarning = installTimeoutWarning(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...skills2 ? skillDiscoveryDefinitions : []]
   }));
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
-    return requestContextStorage.run(createRequestContext(request.params._meta), async () => {
+    return withWarning(extra.requestId, name, () => requestContextStorage.run(createRequestContext(request.params._meta), async () => {
       try {
         if (codemode) {
           if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
@@ -58720,7 +58757,7 @@ function registerTools(server, manager, piExtraOperators = true, codemode = fals
           isError: true
         };
       }
-    });
+    }));
   });
 }
 async function dispatchTool(manager, name, args2, piExtraOperators = true, signal) {
@@ -58998,7 +59035,6 @@ function createServerWithManager(manager, piExtraOperators = true, codemode = fa
       }
     }
   );
-  enableTunnelPingExperiment(server);
   registerTools(server, manager, piExtraOperators, codemode, skills2);
   registerPrompts(server);
   registerSkills(server);
@@ -59073,10 +59109,12 @@ async function startServer(options2 = {}) {
 init_runtime();
 
 // src/client.ts
+init_timeoutWarning();
 import * as net from "net";
 import * as fs17 from "fs";
 
 // src/transport/socket.ts
+init_timeoutWarning();
 init_zod();
 import { Server as NetServer } from "net";
 
@@ -59302,6 +59340,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
     broadcastClientCount();
     let buffer = "";
     const inflight = /* @__PURE__ */ new Map();
+    const warnings = /* @__PURE__ */ new Map();
     let attached = false;
     let attachGeneration = 0;
     let attachPending = false;
@@ -59412,6 +59451,11 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
               }
               continue;
             }
+            if (request.method === "responseTimeoutWarning") {
+              const target = request.params?.requestId;
+              if (typeof target === "number") warnings.get(target)?.abort();
+              continue;
+            }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
               if (typeof target === "number") {
@@ -59433,14 +59477,16 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
               controller.signal.addEventListener("abort", () => console.error(`[cancel-trace] ${(/* @__PURE__ */ new Date()).toISOString()} socket aborted requestId=${request.id}`), { once: true });
             }
             inflight.set(request.id, controller);
+            const warning = new AbortController();
+            if (supportsTimeoutWarning(request.method)) warnings.set(request.id, warning);
             void (async () => {
               try {
-                const response = await requestContextStorage.run(request.requestContext ?? {}, () => {
+                const response = await timeoutWarningScope.run(warning.signal, () => requestContextStorage.run(request.requestContext ?? {}, () => {
                   const execute = (signal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => {
                     clientPiExtraOperators = clientPiExtraOperators || enabled;
                   }, signal);
                   return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
-                });
+                }));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error2) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -59449,6 +59495,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
                 }) + "\n");
               } finally {
                 if (inflight.get(request.id) === controller) inflight.delete(request.id);
+                warnings.delete(request.id);
               }
             })();
           } catch (error2) {
@@ -59474,6 +59521,7 @@ function createToolProxyServer(socketPath, manager, onClientConnected, piExtraOp
       broadcastClientCount();
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
+      warnings.clear();
     });
     socket.on("error", () => {
     });
@@ -59813,7 +59861,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       }
     }
   );
-  enableTunnelPingExperiment(server);
+  const withWarning = installTimeoutWarning(server);
   if (options2.experimentInitialize) enableInitializeExperiment(server);
   if (options2.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options2.experimentMcpEvents) enableMcpEventsExperiment(server);
@@ -59827,7 +59875,14 @@ async function startMcpClientMode(socketPath, options2 = {}) {
         reject(new Error("Tool call aborted"));
         return;
       }
-      const cleanup = () => signal?.removeEventListener("abort", abort);
+      const warning = timeoutWarningScope.getStore();
+      const onWarning = () => {
+        if (pendingRequests.has(id2) && !activeSocket.destroyed) activeSocket.write(JSON.stringify({ id: ++requestId, method: "responseTimeoutWarning", params: { requestId: id2 } }) + "\n");
+      };
+      const cleanup = () => {
+        signal?.removeEventListener("abort", abort);
+        warning?.removeEventListener("abort", onWarning);
+      };
       const abort = () => {
         if (!pendingRequests.delete(id2)) return;
         activeSocket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id2 } }) + "\n");
@@ -59845,9 +59900,12 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       activeSocket.write(JSON.stringify(request) + "\n", (error2) => {
         if (error2) {
           pendingRequests.delete(id2);
+          cleanup();
           reject(error2);
         }
       });
+      warning?.addEventListener("abort", onWarning, { once: true });
+      if (warning?.aborted) onWarning();
     });
   }
   async function dispatchTool2(method, params, signal) {
@@ -59881,7 +59939,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args2 } = request.params;
     const context = createRequestContext(request.params._meta);
-    return requestContextStorage.run(context, async () => {
+    return withWarning(extra.requestId, name, () => requestContextStorage.run(context, async () => {
       try {
         const result4 = options2.codemode ? name === "codemode" ? await trackCall("codemode", () => runCodemodeWithDispatch(
           args2,
@@ -59905,7 +59963,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
           isError: true
         };
       }
-    });
+    }));
   });
   const transport = new StdioServerTransport();
   await server.connect(transport);

@@ -1,3 +1,4 @@
+import { timeoutWarningScope } from "./timeoutWarning.js";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ExecutionManager, ExecutionOptions } from "./manager.js";
@@ -12,12 +13,19 @@ export async function runForeground(manager: ExecutionManager, options: Executio
   if (!Number.isFinite(timeout) || timeout < 0) throw new Error("timeout must be a finite non-negative number");
   const execution = await manager.start(options, signal);
   let timer: ReturnType<typeof setTimeout> | undefined;
+  const warning = timeoutWarningScope.getStore();
+  let onWarning: (() => void) | undefined;
   let onAbort: (() => void) | undefined;
   try {
     await execution.ready;
     signal?.throwIfAborted();
     const completed = timeout === 0 ? false : await Promise.race([
       execution.done.then(() => true),
+      new Promise<boolean>(resolve => {
+        onWarning = () => resolve(false);
+        warning?.addEventListener("abort", onWarning, { once: true });
+        if (warning?.aborted) onWarning();
+      }),
       new Promise<boolean>(resolve => { timer = setTimeout(() => resolve(false), Math.min(timeout, MAX_WAIT_SECONDS) * 1000); }),
       new Promise<never>((_, reject) => {
         onAbort = () => reject(new Error("Command aborted"));
@@ -44,6 +52,7 @@ export async function runForeground(manager: ExecutionManager, options: Executio
     throw error;
   } finally {
     if (timer !== undefined) clearTimeout(timer);
+    if (onWarning) warning?.removeEventListener("abort", onWarning);
     if (onAbort) signal?.removeEventListener("abort", onAbort);
     if (!execution.info.background) {
       // Cancellation may return before the child closes; cleanup follows completion.

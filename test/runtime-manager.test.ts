@@ -187,3 +187,21 @@ test("global quota and concurrent limit protect active executions", async t => {
   assert.equal(manager.list().length,0);
   await assert.rejects(manager.start(options("")),/shutting down/);
 });
+
+test("timeout warning detaches without cancelling execution", async t => {
+  const { timeoutWarningScope } = await import("../src/runtime/timeoutWarning.ts");
+  const manager = await fixture(t);
+  const warning = new AbortController();
+  const cancellation = new AbortController();
+  const pending = timeoutWarningScope.run(warning.signal, () =>
+    runForeground(manager, options("setTimeout(()=>console.log('done'),500)"), 30, cancellation.signal));
+  warning.abort();
+  const response = await pending;
+  const e = manager.list()[0];
+  assert.match(response.content[0].text, new RegExp(e.info.executionId));
+  assert.equal(e.info.background, true);
+  cancellation.abort();
+  await e.done;
+  assert.equal(e.info.status, "completed");
+  assert.equal(await readFile(join(e.directory, "stdout"), "utf8"), "done\n");
+});

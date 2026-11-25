@@ -1,3 +1,4 @@
+import { installTimeoutWarning } from "../runtime/timeoutWarning.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { createRequestContext, requestContextStorage } from "../requestContext.js";
 import {
@@ -35,6 +36,7 @@ import { skillDiscoveryDefinitions, handleSkillDiscovery } from './skillDiscover
 import { limitResponseForTool } from "./outputLimit.js";
 
 export function registerTools(server: Server, manager: TerminalManager, piExtraOperators = true, codemode = false, skills = false): void {
+  const withWarning = installTimeoutWarning(server);
   // Register list tools handler
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: codemode ? [codemodeDefinition] : [...getMcpToolDefinitions(piExtraOperators), ...(skills ? skillDiscoveryDefinitions : [])],
@@ -43,7 +45,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
   // Register call tool handler
   server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
     const { name, arguments: args } = request.params;
-    return requestContextStorage.run(createRequestContext(request.params._meta), async () => {
+    return withWarning(extra.requestId, name, () => requestContextStorage.run(createRequestContext(request.params._meta), async () => {
     try {
       if (codemode) {
         if (name !== "codemode") throw new Error(`Unknown tool: ${name}`);
@@ -63,7 +65,7 @@ export function registerTools(server: Server, manager: TerminalManager, piExtraO
         isError: true,
       };
     }
-    });
+    }));
   });
 }
 

@@ -1,3 +1,4 @@
+import { supportsTimeoutWarning, timeoutWarningScope } from "../runtime/timeoutWarning.js";
 import * as fs from "fs";
 import { requestContextStorage, type RequestContext } from "../requestContext.js";
 import { Server as NetServer, Socket } from "net";
@@ -180,6 +181,7 @@ export function createToolProxyServer(
     broadcastClientCount();
     let buffer = "";
     const inflight = new Map<number, AbortController>();
+    const warnings = new Map<number, AbortController>();
     let attached = false;
     let attachGeneration = 0;
     let attachPending = false;
@@ -290,6 +292,11 @@ export function createToolProxyServer(
               }
               continue;
             }
+            if (request.method === "responseTimeoutWarning") {
+              const target = request.params?.requestId;
+              if (typeof target === "number") warnings.get(target)?.abort();
+              continue;
+            }
             if (request.method === "cancel") {
               const target = request.params?.requestId;
               if (typeof target === "number") {
@@ -310,14 +317,16 @@ export function createToolProxyServer(
               controller.signal.addEventListener("abort", () => console.error(`[cancel-trace] ${new Date().toISOString()} socket aborted requestId=${request.id}`), { once: true });
             }
             inflight.set(request.id, controller);
+            const warning = new AbortController();
+            if (supportsTimeoutWarning(request.method)) warnings.set(request.id, warning);
             // Do not block later NDJSON frames while a tool is running.
             // In particular, cancel must work even in the same data chunk.
             void (async () => {
               try {
-                const response = await requestContextStorage.run(request.requestContext ?? {}, () => {
+                const response = await timeoutWarningScope.run(warning.signal, () => requestContextStorage.run(request.requestContext ?? {}, () => {
                   const execute = (signal: AbortSignal) => handleToolRequest(manager, request, onClientConnected, clientPiExtraOperators, (enabled) => { clientPiExtraOperators = clientPiExtraOperators || enabled; }, signal);
                   return request.method === "clientConnected" ? execute(controller.signal) : withToolWatchdog(request.method, execute, controller.signal);
-                });
+                }));
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify(response) + "\n");
               } catch (error) {
                 if (!controller.signal.aborted && !socket.destroyed) socket.write(JSON.stringify({
@@ -325,6 +334,7 @@ export function createToolProxyServer(
                 }) + "\n");
               } finally {
                 if (inflight.get(request.id) === controller) inflight.delete(request.id);
+                warnings.delete(request.id);
               }
             })();
           } catch (error) {
@@ -352,6 +362,7 @@ export function createToolProxyServer(
       broadcastClientCount();
       for (const controller of inflight.values()) controller.abort();
       inflight.clear();
+      warnings.clear();
     });
     socket.on("error", () => {
       // Client disconnected, ignore

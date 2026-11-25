@@ -1,4 +1,4 @@
-import { enableTunnelPingExperiment } from "./tunnelPingExperiment.js";
+import { installTimeoutWarning, timeoutWarningScope } from "./runtime/timeoutWarning.js";
 import * as net from "net";
 import { trySocketClaim } from "./utils/socketClaim.js";
 import { createRequestContext, requestContextStorage, type RequestContext } from "./requestContext.js";
@@ -251,7 +251,7 @@ export async function startMcpClientMode(
     }
   );
 
-  enableTunnelPingExperiment(server);
+  const withWarning = installTimeoutWarning(server);
   if (options.experimentInitialize) enableInitializeExperiment(server);
   if (options.experimentToolsListChanged) enableToolsListChangedExperiment(server);
   if (options.experimentMcpEvents) enableMcpEventsExperiment(server);
@@ -269,7 +269,11 @@ export async function startMcpClientMode(
 
     return new Promise((resolve, reject) => {
       if (signal?.aborted) { reject(new Error("Tool call aborted")); return; }
-      const cleanup = () => signal?.removeEventListener("abort", abort);
+      const warning = timeoutWarningScope.getStore();
+      const onWarning = () => {
+        if (pendingRequests.has(id) && !activeSocket.destroyed) activeSocket.write(JSON.stringify({ id: ++requestId, method: "responseTimeoutWarning", params: { requestId: id } }) + "\n");
+      };
+      const cleanup = () => { signal?.removeEventListener("abort", abort); warning?.removeEventListener("abort", onWarning); };
       const abort = () => {
         if (!pendingRequests.delete(id)) return;
         activeSocket.write(JSON.stringify({ id: ++requestId, method: "cancel", params: { requestId: id } }) + "\n");
@@ -281,9 +285,12 @@ export async function startMcpClientMode(
       activeSocket.write(JSON.stringify(request) + "\n", (error) => {
         if (error) {
           pendingRequests.delete(id);
+          cleanup();
           reject(error);
         }
       });
+      warning?.addEventListener("abort", onWarning, { once: true });
+      if (warning?.aborted) onWarning();
     });
   }
 
@@ -325,7 +332,7 @@ export async function startMcpClientMode(
     const { name, arguments: args } = request.params;
     const context = createRequestContext(request.params._meta);
 
-    return requestContextStorage.run(context, async () => {
+    return withWarning(extra.requestId, name, () => requestContextStorage.run(context, async () => {
     try {
       const result = options.codemode
         ? name === "codemode"
@@ -349,7 +356,7 @@ export async function startMcpClientMode(
         isError: true,
       };
     }
-    });
+    }));
   });
 
   // Connect MCP server to stdio
