@@ -1,30 +1,16 @@
 # NOTE
 
-開發現況與交接摘要；滾動更新，不作永久流水帳。未來規劃、待辦與研究見 [ROADMAP.md](ROADMAP.md)，長期技術知識與驗收紀錄見 docs/，歷史變更以 Git 為準。
-
-## Current Status
-
-- Runtime Execution Manager v1 已於 2026-11-24 完成 macOS 驗收（功能版本 `fa2ed74`）。
-- 預警機制已部署，正式環境基本功能驗測正常；未刻意觸發上游逾時。
+記錄正在進行及最近完成的開發事項，供進度掌握與接續開發之用。隨開發進程即時滾動更新，主動淘汰過時資訊，不作永久流水帳；歷史由 Git 保存。未來規劃見 [ROADMAP.md](ROADMAP.md)，維護方式見 [Development workflow](docs/development-workflow.md)。
 
 ## In Progress
 
-- 死線策略調整：Runtime 90s、Watchdog/Codemode 100s，Socket Client 統一管理 Watchdog，waitExecution 支援預警。詳見 [設計](docs/request-deadline-design.md)。
+- 三道死線策略：已提交 `d2811ba`，完整回歸測試 196 項（194 通過、2 略過、0 失敗），待正式環境驗收。
+  - 下一步：更新並重啟 Terminal Toolkit Socket Server 與 MCP Server，確認載入新版；Tunnel Client 無須更新版本。
+  - 驗收：確認一般工具、Runtime 背景化、waitExecution、取消及各層死線行為；完整 90／100 秒及上游 deadline 實機時序尚未驗證。
+  - 參照 [死線設計](docs/request-deadline-design.md)、[預警協定](docs/response-timeout-warning.md)。
 
 ## Recently Completed
 
-- Runtime Execution Manager Phase 0–6：背景執行、五支管理工具、execution:// 唯讀 VFS、配額、保留與 shutdown。macOS npm test 189 項（187 通過、2 略過、0 失敗）；正式 MCP/Socket 與獨立 Manager 的 14 類驗測全部通過。詳見 [設計與驗收](docs/runtime-execution-design.md)。
-- In-Memory Result Store：一般非 Codemode 文字結果超過 16 KiB 使用 result://；read()/Codemode text() 維持抑制策略，Skills 探索工具暫不限制。詳見 [輸出策略](docs/output-policy.md)。
-
-## Known Issues
-
-- 本次 Runtime 驗收未發現需修正的 Bug。已知設計限制與未驗證平台見設計文件及 ROADMAP。
-
-## References
-
-- [ROADMAP.md](ROADMAP.md)：未來規劃、待辦、研究及暫緩事項。
-- [Runtime Execution Manager](docs/runtime-execution-design.md)：設計與驗收。
-- [Output policy](docs/output-policy.md)：輸出策略及套用範圍。
-- [MCP experiments](docs/mcp-experiments.md)：歷史實驗與已確認的觀察。
-
-維護方式：啟動工作時從 ROADMAP 選定範圍，更新 NOTE 的進行中事項；完成時更新設計文件與近期成果、整理 ROADMAP。過時摘要可移除，不重複保存 Git 歷史。
+- Runtime Execution Manager v1：2026-11-24 完成 macOS 驗收（`fa2ed74`），詳見 [設計與驗收](docs/runtime-execution-design.md)。
+- Response timeout warning：已部署初版（Toolkit `0fb6217`、Tunnel Client `62e43a6`），正式環境基本功能正常；未刻意觸發上游逾時。
+- In-Memory Result Store：詳見 [輸出策略](docs/output-policy.md)。

@@ -57,6 +57,12 @@ Configure in Claude Code's MCP settings:
 - [Sandbox Mode](./sandbox.md) - Security restrictions for filesystem and network
 - [Examples](./examples.md) - Usage examples and common patterns
 - [Architecture](./architecture.md) - Technical architecture and development guide
+- [Development Workflow](./development-workflow.md) - Development documentation responsibilities, lifecycle, and handoff
+- [Runtime Execution Manager](./runtime-execution-design.md)
+- [Request Deadline Strategy](./request-deadline-design.md)
+- [Response Timeout Warning](./response-timeout-warning.md)
+- [Output Policy](./output-policy.md)
+- [MCP Experiments](./mcp-experiments.md)
 
 ## How It Works
 

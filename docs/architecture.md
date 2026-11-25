@@ -44,10 +44,11 @@ This document describes the technical architecture of Terminal Toolkit and provi
 
 ### Operating Modes
 
-Terminal Toolkit has three operating modes, selected by the `--headless` flag and TTY detection:
+Terminal Toolkit selects its operating mode using CLI flags and TTY detection:
 
 | Mode | Condition | Description |
 |------|-----------|-------------|
+| **Socket-backed MCP** | `--mcp` flag | Connects to an existing socket or claims it and lazily initializes its own PTY. |
 | **Headless** | `--headless` flag | Self-contained: spawns embedded PTY, serves MCP over stdio. No socket or TTY needed. Recommended for MCP client configs. |
 | **Interactive** | stdin is TTY | User gets a shell with PTY I/O. Exposes a Unix socket for AI tool access. |
 | **Client** | stdin is not TTY | Connects to an interactive session's socket, proxies MCP tools over stdio. |
@@ -69,7 +70,7 @@ MCP Client → stdio → [Client: MCP Server + Socket Proxy]
 The entry point handles:
 - Shebang for direct execution (`#!/usr/bin/env node`)
 - Command-line argument parsing
-- Mode selection (`--headless` → `startServer()`, TTY → `startInteractiveMode()`, non-TTY → `startMcpClientMode()`)
+- Mode selection (`--mcp` → `startMcpClientMode()`, `--headless` → `startServer()`, TTY → `startInteractiveMode()`, non-TTY → `startMcpClientMode()`)
 - Error handling
 
 ### MCP Server (`src/server.ts`)
@@ -97,9 +98,9 @@ Manages terminal session lifecycle:
 - Resource cleanup
 
 Design decisions:
-- Single session for simplicity
-- Session created on demand
-- Automatic recreation if disposed
+- Primary Session plus independent named PTY sessions
+- Session initialization depends on operating mode
+- Additional sessions support idle cleanup
 
 ### Terminal Session (`src/terminal/session.ts`)
 
@@ -175,6 +176,13 @@ Maps key names to ANSI escape sequences:
 8. If `visibleOnly: false`, handler applies `maxLines` to the trailing scrollback content
 9. Content returned via MCP response
 ```
+
+## Related subsystem designs
+
+- [Runtime Execution Manager](runtime-execution-design.md)
+- [Request deadline strategy](request-deadline-design.md)
+- [Response timeout warning](response-timeout-warning.md)
+- [Output policy](output-policy.md)
 
 ## Technology Choices
 
@@ -321,15 +329,9 @@ const proc = spawn('node', ['dist/index.js']);
 // Send messages, read responses
 ```
 
-## Future Enhancements
+## Extension and planning
 
-### Planned Features
-
-- **Multiple Sessions**: Named sessions for parallel terminals
-- **Dynamic Resize**: Tool to resize terminal dimensions
-- **Environment Config**: CLI options for environment variables
-- **Session Persistence**: Save/restore session state
-- **Output Streaming**: Real-time output via MCP resources
+Future work is tracked in [ROADMAP.md](../ROADMAP.md).
 
 ### Extension Points
 

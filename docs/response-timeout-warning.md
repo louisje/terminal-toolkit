@@ -6,6 +6,6 @@ Terminal Toolkit 對有效的 shell/python/waitExecution 請求回 notifications
 
 正常完成與取消仍沿用原機制。預警與完成競態可能使通知在回覆附近抵達；未知或已完成 ID 忽略。若無法及時回覆，原 deadline 仍生效。
 
-2026-11-25：Runtime、Socket、MCP headless 與 proxy 測試通過；正式 Tunnel Client 連線驗收待重啟。
+Runtime、Socket、MCP headless 與 proxy 測試涵蓋預警處理；初版正式連線基本功能驗測正常，但未刻意觸發上游逾時。最新部署與驗收進度見 [NOTE.md](../NOTE.md)。
 
 死線層級與所有權見 [Request deadline strategy](request-deadline-design.md)。
