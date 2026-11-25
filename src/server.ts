@@ -9,7 +9,7 @@ import { TerminalManager } from "./terminal/index.js";
 import { VERSION } from "./utils/version.js";
 import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts/index.js";
-import { registerSkills } from "./skills.js";
+import { registerSkills, logSkillsOnStartup } from "./skills.js";
 import { installStdioShutdownHandlers } from "./utils/shutdown.js";
 import { executionManager } from "./tools/runtime.js";
 
@@ -87,6 +87,10 @@ export function createServer(options: ServerOptions = {}): {
  */
 export async function connectServer(server: Server, transport: Transport): Promise<void> {
   await server.connect(transport);
+  // Diagnostics must not delay the MCP handshake.
+  if (process.env.TERMINAL_TOOLKIT !== "1") {
+    void logSkillsOnStartup().catch(error => console.error("[Terminal Toolkit] Skills startup:", error));
+  }
 }
 
 /**
@@ -146,5 +150,5 @@ export async function startServer(options: ServerOptions = {}): Promise<void> {
   }
 
   const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await connectServer(server, transport);
 }

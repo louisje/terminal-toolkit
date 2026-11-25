@@ -8,9 +8,30 @@ Dates and release boundaries follow Git tags.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-25
+
+### Added
+- Runtime Execution Manager for background shell and Python jobs, live stdout/stderr, status, waiting, cancellation, cleanup and bounded retention.
+- Native Python execution and runtime tool namespace.
+- Read-only `execution://` output paths and `result://` virtualization for oversized standard MCP responses.
+- Namespaced Skills discovery in Codemode and optional standard MCP compatibility discovery, including Skill frontmatter metadata.
+- System information, PTY input/output activity timestamps and shared tool usage statistics.
+- Per-tool safety watchdog, response deadline observability and opt-in cancellation tracing.
+- Termux notification and toast support, and MCP tool safety annotations.
+
 ### Changed
-- Core Operators (`read`, `write`, `edit`, `shell`) are always available; only Extra Core Operators (`ls`, `grep`, `find`) are optional. The legacy `--pi-operators` flag is a no-op.
-- Standard MCP `tools/list` descriptions now carry standalone usage guidance; Codemode separates concise discovery descriptions, tool instructions, and namespace guidance. Normal operation no longer depends on `initialize.instructions`; `--experiment-initialize` remains available for testing.
+- Core operators, including `list`, `grep`, and `find`, are enabled by default; legacy operator flags are no-ops.
+- Shell and Python timeout now controls foreground waiting rather than process lifetime; zero or expiry detaches execution.
+- Agent guidance favors background runtime execution for long non-interactive work and PTY for interactive or user-visible work.
+- Codemode text output limit is 16 KiB; standard MCP output virtualization is separate from Codemode and Skill discovery.
+- Standard MCP tool descriptions carry standalone guidance; Codemode separates discovery descriptions, instructions and namespace guidance. Normal operation does not depend on initialize instructions.
+
+### Fixed
+- Serialize socket ownership claims across processes and recover claims left by dead owners.
+- Restrict startup Skills diagnostics to MCP mode and avoid resource digest scans during startup.
+- Socket reconnection and server takeover after disconnect, including stale socket paths on macOS.
+- Tool statistics propagation across socket requests and cancellation/deadline handling.
+- Operator default and discovery test alignment.
 
 ## [0.6.0] - 2026-11-06
 
@@ -47,7 +68,8 @@ For earlier changes, consult the Git history and tagged releases. Older
 versions are not retroactively summarized here to avoid attributing changes
 to the wrong release.
 
-[Unreleased]: https://github.com/louisje/terminal-toolkit/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/louisje/terminal-toolkit/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/louisje/terminal-toolkit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/louisje/terminal-toolkit/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/louisje/terminal-toolkit/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/louisje/terminal-toolkit/releases/tag/v0.5.0

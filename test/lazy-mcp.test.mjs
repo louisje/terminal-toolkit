@@ -9,12 +9,12 @@ async function withMcp(codemode, fn) {
   const dir = await mkdtemp(path.join(tmpdir(), "tt-lazy-"));
   const socket = path.join(dir, "terminal.sock");
   const args = ["dist/index.js", "--mcp", "--socket", socket, ...(codemode ? ["--codemode"] : [])];
-  const first = spawnNode(args);
+  const first = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
   let second;
   try {
     await initialize(first);
     await fn({ first, socket, connect: async () => {
-      second = spawnNode(args);
+      second = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
       await initialize(second);
       return second;
     } });
@@ -105,14 +105,14 @@ test("new owner starts after previous owner exits and releases socket", async ()
   const dir = await mkdtemp(path.join(tmpdir(), "tt-restart-"));
   const socket = path.join(dir, "terminal.sock");
   const args = ["dist/index.js", "--mcp", "--socket", socket];
-  const first = spawnNode(args);
+  const first = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
   let next;
   try {
     await initialize(first);
     assert.equal((await sessions(first, 60, false)).sessions[0].role, "server");
     first.child.stdin.end();
     await waitFor(() => first.exit);
-    next = spawnNode(args);
+    next = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
     await initialize(next);
     const listing = await sessions(next, 61, false);
     assert.equal(listing.sessions[0].role, "server");
@@ -132,7 +132,7 @@ test("stale socket path is reclaimed when the prior server is gone", async () =>
   const socket = path.join(dir, "terminal.sock");
   // A stale socket pathname with no listener must not prevent startup.
   await writeFile(socket, "stale");
-  const state = spawnNode(["dist/index.js", "--mcp", "--socket", socket]);
+  const state = spawnNode(["dist/index.js", "--mcp", "--socket", socket], { env: { HOME: dir, USERPROFILE: dir } });
   try {
     await initialize(state);
     const listing = await sessions(state, 70, false);
@@ -149,11 +149,11 @@ test("attached MCP client takes over when its socket owner dies unexpectedly", a
   const dir = await mkdtemp(path.join(tmpdir(), "tt-owner-dies-"));
   const socket = path.join(dir, "terminal.sock");
   const args = ["dist/index.js", "--mcp", "--socket", socket];
-  const owner = spawnNode(args);
+  const owner = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
   let client;
   try {
     await initialize(owner);
-    client = spawnNode(args);
+    client = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
     await initialize(client);
     assert.equal((await sessions(client, 80, false)).sessions[0].role, "client");
     owner.child.kill("SIGKILL");
@@ -174,12 +174,12 @@ test("concurrent clients recover to one socket owner after server loss", async (
   const dir = await mkdtemp(path.join(tmpdir(), "tt-race-recover-"));
   const socket = path.join(dir, "terminal.sock");
   const args = ["dist/index.js", "--mcp", "--socket", socket];
-  const owner = spawnNode(args);
+  const owner = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
   const clients = [];
   try {
     await initialize(owner);
     for (let i = 0; i < 3; i++) {
-      const client = spawnNode(args);
+      const client = spawnNode(args, { env: { HOME: dir, USERPROFILE: dir } });
       clients.push(client);
       await initialize(client);
       await sessions(client, 200 + i, false);

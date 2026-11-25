@@ -1,4 +1,5 @@
 import * as net from "net";
+import { trySocketClaim } from "./utils/socketClaim.js";
 import { createRequestContext, requestContextStorage, type RequestContext } from "./requestContext.js";
 import * as fs from "fs";
 import { TerminalManager } from "./terminal/index.js";
@@ -10,7 +11,7 @@ import { enableInitializeExperiment } from "./initializeExperiment.js";
 import { enableToolsListChangedExperiment } from "./toolsListChangedExperiment.js";
 import { enableMcpEventsExperiment } from "./mcpEventsExperiment.js";
 import { skillDiscoveryDefinitions, handleSkillDiscovery } from './tools/skillDiscovery.js';
-import { registerSkills } from "./skills.js";
+import { registerSkills, logSkillsOnStartup } from "./skills.js";
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
@@ -152,46 +153,56 @@ export async function startMcpClientMode(
     catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       if (!allowTakeover || (code !== "ENOENT" && code !== "ECONNREFUSED" && code !== "ENOTSOCK")) throw error;
-      // Only reclaim a stale pathname after verifying no server accepts connections.
-      if (code !== "ENOENT") {
-        let stale: { dev: number; ino: number } | undefined;
-        try { const stat = fs.statSync(socketPath); stale = { dev: stat.dev, ino: stat.ino }; }
-        catch (statError) { if ((statError as NodeJS.ErrnoException).code !== "ENOENT") throw statError; }
-        try { await connectToSocket(socketPath).then(s => { s.destroy(); throw new Error("Server recovered"); }); }
+      const releaseClaim = trySocketClaim(socketPath);
+      if (!releaseClaim) throw new Error("Socket ownership claim in progress");
+      try {
+        // Recheck under the claim, including the initial ENOENT case.
+        try { return await connectToSocket(socketPath); }
         catch (retryError) {
           const retryCode = (retryError as NodeJS.ErrnoException).code;
           if (retryCode !== "ENOENT" && retryCode !== "ECONNREFUSED" && retryCode !== "ENOTSOCK") throw retryError;
         }
-        try {
-          const current = fs.statSync(socketPath);
-          if (stale && current.dev === stale.dev && current.ino === stale.ino) fs.unlinkSync(socketPath);
-        } catch { /* Another client may have claimed it. */ }
-      }
-      const manager = new TerminalManager({
-        mode: "interactive", role: "server", shell: options.shell,
-        cols: options.cols, rows: options.rows, login: options.login,
-        maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
-      });
-      const server = createToolProxyServer(socketPath, manager, undefined, options.piExtraOperators);
-      try {
-        if (!server.listening) await new Promise<void>((resolve, reject) => {
-          server.once("listening", resolve);
-          server.once("error", reject);
-        });
-        ownedManager = manager;
-        ownedServer = server;
-        const stat = fs.statSync(socketPath);
-        ownedSocketIdentity = { dev: stat.dev, ino: stat.ino };
-        return await connectToSocket(socketPath);
-      } catch (startupError) {
-        server.close();
-        manager.dispose();
-        // Another client may have won the bind race. Connect to that owner.
-        if ((startupError as NodeJS.ErrnoException).code === "EADDRINUSE") {
-          return connectToSocket(socketPath);
+        // Only reclaim a stale pathname after verifying no server accepts connections.
+        if (process.platform !== "win32") {
+          let stale: { dev: number; ino: number } | undefined;
+          try { const stat = fs.statSync(socketPath); stale = { dev: stat.dev, ino: stat.ino }; }
+          catch (statError) { if ((statError as NodeJS.ErrnoException).code !== "ENOENT") throw statError; }
+          try { await connectToSocket(socketPath).then(s => { s.destroy(); throw new Error("Server recovered"); }); }
+          catch (retryError) {
+            const retryCode = (retryError as NodeJS.ErrnoException).code;
+            if (retryCode !== "ENOENT" && retryCode !== "ECONNREFUSED" && retryCode !== "ENOTSOCK") throw retryError;
+          }
+          try {
+            const current = fs.statSync(socketPath);
+            if (stale && current.dev === stale.dev && current.ino === stale.ino) fs.unlinkSync(socketPath);
+          } catch { /* Another client may have claimed it. */ }
         }
-        throw startupError;
-      }
+        const manager = new TerminalManager({
+          mode: "interactive", role: "server", shell: options.shell,
+          cols: options.cols, rows: options.rows, login: options.login,
+          maxSessions: options.maxSessions, sessionIdleTimeout: options.sessionIdleTimeout,
+        });
+        const server = createToolProxyServer(socketPath, manager, undefined, options.piExtraOperators);
+        try {
+          if (!server.listening) await new Promise<void>((resolve, reject) => {
+            server.once("listening", resolve);
+            server.once("error", reject);
+          });
+          ownedManager = manager;
+          ownedServer = server;
+          const stat = fs.statSync(socketPath);
+          ownedSocketIdentity = { dev: stat.dev, ino: stat.ino };
+          return await connectToSocket(socketPath);
+        } catch (startupError) {
+          server.close();
+          manager.dispose();
+          // Another client may have won the bind race. Connect to that owner.
+          if ((startupError as NodeJS.ErrnoException).code === "EADDRINUSE") {
+            return connectToSocket(socketPath);
+          }
+          throw startupError;
+        }
+      } finally { releaseClaim(); }
     }
   }
 
@@ -342,6 +353,10 @@ export async function startMcpClientMode(
   // Connect MCP server to stdio
   const transport = new StdioServerTransport();
   await server.connect(transport);
+  // Diagnostics must not delay the MCP handshake.
+  if (process.env.TERMINAL_TOOLKIT !== "1") {
+    void logSkillsOnStartup().catch(error => console.error("[Terminal Toolkit] Skills startup:", error));
+  }
 
   // Notify the interactive terminal without blocking MCP startup.
   void notifyClientConnected(sendRequest, { title: options.title, piExtraOperators: options.piExtraOperators }).catch((error) => {

@@ -2,12 +2,12 @@
 
 import * as fs from "fs";
 import * as net from "net";
+import { trySocketClaim } from "./utils/socketClaim.js";
 import { createRequire } from "module";
 import updateNotifier from "update-notifier";
 import { startServer } from "./server.js";
 import { executionManager } from "./tools/runtime.js";
 import { startMcpClientMode } from "./client.js";
-import { logSkillsOnStartup } from "./skills.js";
 import { TerminalManager } from "./terminal/index.js";
 import { createToolProxyServer } from "./transport/index.js";
 import { getBanner } from "./ui/index.js";
@@ -396,7 +396,6 @@ if (options.tmux) {
 
 async function main() {
   const socketPath = resolveSocketPath(options.socket);
-  if (process.env.TERMINAL_TOOLKIT !== "1") await logSkillsOnStartup();
 
   // --mcp uses the lazy socket-backed MCP mode: it claims the socket and
   // starts its PTY only when the first terminal tool is called.
@@ -627,6 +626,15 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
 
   // Start tool proxy socket server. Listening can fail asynchronously if
   // another instance claims the path between the attach probe and listen().
+  let releaseClaim = trySocketClaim(socketPath);
+  for (let attempt = 0; !releaseClaim && attempt < 100; attempt++) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    releaseClaim = trySocketClaim(socketPath);
+  }
+  if (!releaseClaim) {
+    await manager.disposeAsync();
+    throw new Error("Socket ownership claim timed out");
+  }
   const socketServer = createToolProxyServer(socketPath, manager, ({ title }) => {
     setClientTitle(title);
     if (title) manager.setTitle(title);
@@ -642,10 +650,13 @@ async function startInteractiveMode(socketPath: string): Promise<void> {
     socketServer.close();
     await manager.disposeAsync();
     if ((error as NodeJS.ErrnoException).code === "EADDRINUSE") {
+      releaseClaim();
       if (await tryAttachInteractive(socketPath)) return;
       throw new Error(`Socket ${socketPath} is already bound but cannot be reached; the owning server may have lost its socket path. Restart that server before retrying.`, { cause: error });
     }
     throw error;
+  } finally {
+    releaseClaim();
   }
 
   // Only the server that successfully bound the socket may remove its path.

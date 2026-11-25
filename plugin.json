@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "terminal-toolkit",
-  "version": "0.5.1",
+  "version": "0.7.0",
   "description": "Control persistent terminal sessions, run commands, and work with local files through an MCP server.",
   "author": {
     "name": "Louis Jeng"

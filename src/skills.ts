@@ -191,7 +191,21 @@ async function skills() {
 }
 
 export async function logSkillsOnStartup(): Promise<void> {
-  await skills();
+  const locations = await skillLocations();
+  let builtIn = 0;
+  let external = 0;
+  for (const location of locations) {
+    try {
+      await readSkillMetadata(location);
+      if (location.source === "builtin") builtIn++;
+      else external++;
+    } catch (error) {
+      console.error("[Terminal Toolkit] Skill skipped: " + location.namespace + "/" + location.name + ": " + String(error));
+    }
+  }
+  console.error("[Terminal Toolkit] Skills: " + (builtIn + external) + " available (" + builtIn + " built-in, " + external + " external).");
+  for (const warning of skillWarnings) console.error("[Terminal Toolkit] Skills warning: " + warning);
+  loggedSkillSummary = true;
 }
 
 export function registerSkills(server: Server): void {
