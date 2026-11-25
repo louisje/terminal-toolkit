@@ -8,6 +8,14 @@
 
 - [ ] 為 `searchSkills()`、`describeSkill()` 設計分頁及容量控制；保留完整 metadata、穩定排序、過濾與逐頁取得能力，處理多位元組文字、單筆過大及邊界值。現行輸出策略見 [Output policy](docs/output-policy.md)。
 
+### list / grep / find 逾時與取消
+
+- [ ] 為 `list()`、`grep()`、`find()` 增加對外 `timeout` 參數，統一秒數單位，明確定義預設值、上限及零值；與既有 100 秒 Tool Watchdog 保持合理裕度。
+- [ ] 工具自身逾時採部分結果（partial results）策略：停止搜尋或列舉，保留並回傳截至逾時已取得的有效結果，不因逾時而丟棄結果；即使尚未取得任何結果，也必須明確告知 AI agent 已逾時、操作尚未完成，不能將部分結果或空結果誤認為完整結果。逾時狀態應與正常完成、輸出容量限制及筆數限制明確區分，且在輸出截斷或虛擬檔案回覆時仍須可辨識。
+- [ ] 將 `AbortSignal` 貫穿工具分派與底層實作，涵蓋本地及 Socket 路徑、Codemode／非 Codemode、實體與虛擬檔案操作；取消時停止目錄遍歷、搜尋及相關子程序（`rg`、`fd`），清理資源，避免只結束工具回覆而留下工作繼續執行。
+- [ ] 驗證工具自身逾時、Watchdog 逾時、上游取消、正常完成及競態情況；確認不影響既有輸出限制及 Runtime 背景執行機制。
+- 工具自身逾時以停止操作並回傳部分結果為原則，不自動轉入背景；預設值、上限及零值語意待設計階段確認。現行安全期限見 [Request deadline strategy](docs/request-deadline-design.md)。
+
 ## Backlog
 
 ### VFS 共用抽象與測試
