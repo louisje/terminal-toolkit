@@ -11,6 +11,9 @@
     "url": "https://github.com/louisje/terminal-toolkit/issues"
   },
   "homepage": "https://github.com/louisje/terminal-toolkit#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "type": "module",
   "main": "dist/index.js",
   "bin": {

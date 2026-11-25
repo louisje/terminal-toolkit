@@ -100,6 +100,17 @@ connection in ChatGPT; the Plugin manifest does not start the tunnel.
 
 ## Install
 
+Releases after v0.7.0 are intended for GitHub Packages, not npmjs.org.
+Configure the package scope and authenticate with a GitHub personal access
+token (classic) with `read:packages` and access to the package:
+
+```bash
+npm config set @louisje:registry https://npm.pkg.github.com
+npm login --scope=@louisje --registry=https://npm.pkg.github.com --auth-type=legacy
+```
+
+Use your GitHub username and the token as the password.
+
 ```bash
 npm install -g @louisje/terminal-toolkit
 ```
