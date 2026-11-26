@@ -4,6 +4,8 @@
 
 ## In Progress
 
+- 搜尋工具逾時與取消：實作及 macOS 自動化驗測完成（204 項，202 通過、2 略過、0 失敗），待提交及正式環境重啟驗收。MCP SDK 四種路徑連續五輪 20/20 通過；初次偶發整合失敗未重現，另一次全量測試的 PID 就緒時序問題已修正並通過回歸。Windows/MSYS2 實機驗證留在 ROADMAP。詳見 [設計與驗證](docs/search-operators-timeout-design.md)。
+
 - 三道死線策略：已提交 `d2811ba`，完整回歸測試 196 項（194 通過、2 略過、0 失敗），待正式環境驗收。
   - 下一步：更新並重啟 Terminal Toolkit Socket Server 與 MCP Server，確認載入新版；Tunnel Client 無須更新版本。
   - 驗收：確認一般工具、Runtime 背景化、waitExecution、取消及各層死線行為；完整 90／100 秒及上游 deadline 實機時序尚未驗證。

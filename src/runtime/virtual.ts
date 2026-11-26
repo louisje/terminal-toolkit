@@ -1,6 +1,7 @@
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
 import { join, matchesGlob } from "node:path";
+import { setImmediate as yieldLoop } from "node:timers/promises";
 import { executionManager } from "../tools/runtime.js";
 import type { ExecutionManager } from "./manager.js";
 
@@ -23,7 +24,7 @@ export async function readExecutionPath(path: string, manager: ExecutionManager 
   return readExecutionPage(path, 1, undefined, manager);
 }
 // Snapshot the persisted byte count so a live producer cannot extend a read indefinitely.
-export async function* executionLines(path: string, manager = executionManager): AsyncGenerator<string> {
+export async function* executionLines(path: string, manager = executionManager, signal?: AbortSignal): AsyncGenerator<string> {
   const { execution, file } = resolveExecutionPath(path, manager);
   if (!file) throw new Error("Expected execution file");
   if (file === "info.json") {
@@ -34,12 +35,16 @@ export async function* executionLines(path: string, manager = executionManager):
   if (!size) { yield ""; return; }
   const stream = createReadStream(join(execution.directory, file), { end: size - 1 });
   const lines = createInterface({ input: stream, crlfDelay: Infinity });
+  const abort = () => { lines.close(); stream.destroy(); };
+  signal?.addEventListener("abort", abort, { once: true });
+  if (signal?.aborted) abort();
   let lastByte = 0;
   stream.on("data", chunk => { lastByte = typeof chunk === "string" ? chunk.charCodeAt(chunk.length - 1) : chunk[chunk.length - 1]; });
   try {
-    for await (const line of lines) yield line;
-    if (lastByte === 10) yield "";
-  } finally { lines.close(); stream.destroy(); }
+    if (signal?.aborted) return;
+    for await (const line of lines) { if (signal?.aborted) break; yield line; }
+    if (!signal?.aborted && lastByte === 10) yield "";
+  } finally { signal?.removeEventListener("abort", abort); lines.close(); stream.destroy(); }
 }
 export async function readExecutionPage(path: string, offset = 1, limit?: number, manager = executionManager): Promise<string> {
   const selected: string[] = [];
@@ -59,6 +64,25 @@ export function listExecutionPaths(path: string, manager: ExecutionManager = exe
   const { file } = resolveExecutionPath(path, manager);
   if (file) throw new Error("Expected execution directory");
   return [...files].sort();
+}
+export async function* searchExecutionPaths(path: string, pattern: string, signal: AbortSignal, directoryOnly = false): AsyncGenerator<string> {
+  if (path !== "execution://" && directoryOnly) {
+    for (const name of listExecutionPaths(path)) { if (signal.aborted) return; yield name; }
+    return;
+  }
+  const roots = path === "execution://" ? executionManager.list().sort((a, b) => a.info.executionId.localeCompare(b.info.executionId)) : [resolveExecutionPath(path).execution];
+  const selectedFile = path === "execution://" ? undefined : resolveExecutionPath(path).file;
+  let index = 0;
+  for (const execution of roots) {
+    if (++index % 32 === 0) await yieldLoop();
+    if (signal.aborted) return;
+    if (!execution.info.background) continue;
+    const id = execution.info.executionId;
+    if (directoryOnly) { yield id + "/"; continue; }
+    for (const name of selectedFile ? [selectedFile] : files) {
+      if (matchesGlob(name, pattern) || matchesGlob(id + "/" + name, pattern)) yield "execution://" + id + "/" + name;
+    }
+  }
 }
 export function findExecutionPaths(path: string, pattern: string, manager: ExecutionManager = executionManager): string[] {
   const roots = path === "execution://" ? listExecutionPaths(path, manager).map(id => path + id) : [path];

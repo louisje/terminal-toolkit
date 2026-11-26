@@ -10,9 +10,10 @@ const suppressed = "This block was suppressed to protect the context window. Ple
 
 function limitTextBlock(text: string, context: string, policy: OutputPolicy): string {
   if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
-  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}`;
+  const status = text.includes("[search-status timedOut=true incomplete=true;") ? "\n[search-status timedOut=true incomplete=true; search stopped before completion]" : "";
+  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}${status}`;
   const path = storeResult(text);
-  return path ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.`;
+  return path ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.${status}` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.${status}`;
 }
 
 export function limitCodemodeText(text: string): string {

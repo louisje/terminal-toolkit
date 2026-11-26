@@ -113,7 +113,7 @@ Default PTY/tool list: `type`, `sendKey`, `sleep`, `getContent`, `getBufferInfo`
 `takeScreenshot`, `startRecording`, `stopRecording`, `createSession`,
 `listSessions`, `destroySession`, `resize`, `getClipboard`, `setClipboard`,
 `notify` (OS-level desktop notification — useful to alert the user when a
-long-running command finishes while they're not watching). The Core Operators (`read`, `write`, `edit`, `shell`, `list`, `grep`, `find`) are available by default. `python` and the five execution-management tools are also available.
+long-running command finishes while they're not watching). The Core Operators (`read`, `write`, `edit`, `shell`, `list`, `grep`, `find`) are available by default. Search operators accept timeout in seconds (default 30, maximum 90; 0 disables their own timeout, not the 100-second watchdog). A search-status footer with timedOut=true and incomplete=true means partial results, even when empty; narrow the search or retry with a longer timeout. Search timeouts never detach into background execution. `python` and the five execution-management tools are also available.
 
 ## Anti-patterns
 

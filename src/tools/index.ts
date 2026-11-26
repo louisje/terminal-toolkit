@@ -80,7 +80,7 @@ async function dispatchToolUntracked(manager: TerminalManager, name: string, arg
     case "grep":
     case "find":
       if (!piExtraOperators) throw new Error("Unknown tool: " + name);
-      return await handleExtraOperatorTool(name, args);
+      return await handleExtraOperatorTool(name, args, signal);
     case "listExecutions":
     case "getExecution":
     case "waitExecution":

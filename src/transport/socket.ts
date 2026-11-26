@@ -407,7 +407,7 @@ async function handleToolRequest(
       case "grep":
       case "find":
         if (!piExtraOperators) throw new Error("Unknown tool: " + method);
-        result = await handleExtraOperatorTool(method, params);
+        result = await handleExtraOperatorTool(method, params, signal);
         break;
       case "listExecutions":
       case "getExecution":

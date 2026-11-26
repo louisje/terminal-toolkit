@@ -618,9 +618,9 @@ var require_graceful_fs = __commonJS({
         }
       }
       var fs$readdir = fs28.readdir;
-      fs28.readdir = readdir4;
+      fs28.readdir = readdir3;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir4(path28, options2, cb) {
+      function readdir3(path28, options2, cb) {
         if (typeof options2 === "function")
           cb = options2, options2 = null;
         var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path29, options3, cb2, startTime) {
@@ -2592,9 +2592,9 @@ var require_graceful_fs2 = __commonJS({
         }
       }
       var fs$readdir = fs28.readdir;
-      fs28.readdir = readdir4;
+      fs28.readdir = readdir3;
       var noReaddirOptionVersions = /^v[0-5]\./;
-      function readdir4(path28, options2, cb) {
+      function readdir3(path28, options2, cb) {
         if (typeof options2 === "function")
           cb = options2, options2 = null;
         var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path29, options3, cb2, startTime) {
@@ -4104,8 +4104,8 @@ var require_registry_auth_token = __commonJS({
     function urlResolve(from, to) {
       const resolvedUrl = new URL(to, new URL(from.startsWith("//") ? `./${from}` : from, "resolve://"));
       if (resolvedUrl.protocol === "resolve:") {
-        const { pathname, search, hash } = resolvedUrl;
-        return pathname + search + hash;
+        const { pathname, search: search2, hash } = resolvedUrl;
+        return pathname + search2 + hash;
       }
       return resolvedUrl.toString();
     }
@@ -27803,7 +27803,7 @@ var require_cross_spawn = __commonJS({
       enoent.hookChildProcess(spawned, parsed);
       return spawned;
     }
-    function spawnSync6(command, args2, options2) {
+    function spawnSync5(command, args2, options2) {
       const parsed = parse5(command, args2, options2);
       const result4 = cp.spawnSync(parsed.command, parsed.args, parsed.options);
       result4.error = result4.error || enoent.verifyENOENTSync(result4.status, parsed);
@@ -27811,7 +27811,7 @@ var require_cross_spawn = __commonJS({
     }
     module2.exports = spawn8;
     module2.exports.spawn = spawn8;
-    module2.exports.sync = spawnSync6;
+    module2.exports.sync = spawnSync5;
     module2.exports._parse = parse5;
     module2.exports._enoent = enoent;
   }
@@ -40517,6 +40517,7 @@ var init_manager = __esm({
 import { createReadStream as createReadStream2 } from "node:fs";
 import { createInterface } from "node:readline";
 import { join as join11, matchesGlob } from "node:path";
+import { setImmediate as yieldLoop } from "node:timers/promises";
 function executionPaths(id2) {
   return Object.fromEntries(files.map((file) => [file, "execution://" + id2 + "/" + file]));
 }
@@ -40527,7 +40528,7 @@ function resolveExecutionPath(path28, manager = executionManager) {
   if (!execution?.info.background) throw new Error("Unknown background execution");
   return { execution, file: match[2] };
 }
-async function* executionLines(path28, manager = executionManager) {
+async function* executionLines(path28, manager = executionManager, signal) {
   const { execution, file } = resolveExecutionPath(path28, manager);
   if (!file) throw new Error("Expected execution file");
   if (file === "info.json") {
@@ -40541,14 +40542,25 @@ async function* executionLines(path28, manager = executionManager) {
   }
   const stream = createReadStream2(join11(execution.directory, file), { end: size - 1 });
   const lines = createInterface({ input: stream, crlfDelay: Infinity });
+  const abort = () => {
+    lines.close();
+    stream.destroy();
+  };
+  signal?.addEventListener("abort", abort, { once: true });
+  if (signal?.aborted) abort();
   let lastByte = 0;
   stream.on("data", (chunk) => {
     lastByte = typeof chunk === "string" ? chunk.charCodeAt(chunk.length - 1) : chunk[chunk.length - 1];
   });
   try {
-    for await (const line of lines) yield line;
-    if (lastByte === 10) yield "";
+    if (signal?.aborted) return;
+    for await (const line of lines) {
+      if (signal?.aborted) break;
+      yield line;
+    }
+    if (!signal?.aborted && lastByte === 10) yield "";
   } finally {
+    signal?.removeEventListener("abort", abort);
     lines.close();
     stream.destroy();
   }
@@ -40572,12 +40584,30 @@ function listExecutionPaths(path28, manager = executionManager) {
   if (file) throw new Error("Expected execution directory");
   return [...files].sort();
 }
-function findExecutionPaths(path28, pattern, manager = executionManager) {
-  const roots = path28 === "execution://" ? listExecutionPaths(path28, manager).map((id2) => path28 + id2) : [path28];
-  return roots.flatMap((root2) => {
-    const { execution, file } = resolveExecutionPath(root2, manager);
-    return (file ? [file] : files).filter((name) => matchesGlob(name, pattern) || matchesGlob(execution.info.executionId + "/" + name, pattern)).map((name) => "execution://" + execution.info.executionId + "/" + name);
-  });
+async function* searchExecutionPaths(path28, pattern, signal, directoryOnly = false) {
+  if (path28 !== "execution://" && directoryOnly) {
+    for (const name of listExecutionPaths(path28)) {
+      if (signal.aborted) return;
+      yield name;
+    }
+    return;
+  }
+  const roots = path28 === "execution://" ? executionManager.list().sort((a2, b) => a2.info.executionId.localeCompare(b.info.executionId)) : [resolveExecutionPath(path28).execution];
+  const selectedFile = path28 === "execution://" ? void 0 : resolveExecutionPath(path28).file;
+  let index = 0;
+  for (const execution of roots) {
+    if (++index % 32 === 0) await yieldLoop();
+    if (signal.aborted) return;
+    if (!execution.info.background) continue;
+    const id2 = execution.info.executionId;
+    if (directoryOnly) {
+      yield id2 + "/";
+      continue;
+    }
+    for (const name of selectedFile ? [selectedFile] : files) {
+      if (matchesGlob(name, pattern) || matchesGlob(id2 + "/" + name, pattern)) yield "execution://" + id2 + "/" + name;
+    }
+  }
 }
 var files, isExecutionPath;
 var init_virtual = __esm({
@@ -44601,12 +44631,12 @@ var require_util_map_includes = __commonJS({
   "node_modules/yaml/dist/compose/util-map-includes.js"(exports2) {
     "use strict";
     var identity3 = require_identity();
-    function mapIncludes(ctx, items, search) {
+    function mapIncludes(ctx, items, search2) {
       const { uniqueKeys } = ctx.options;
       if (uniqueKeys === false)
         return false;
       const isEqual = typeof uniqueKeys === "function" ? uniqueKeys : (a2, b) => a2 === b || identity3.isScalar(a2) && identity3.isScalar(b) && a2.value === b.value;
-      return items.some((pair) => isEqual(pair.key, search));
+      return items.some((pair) => isEqual(pair.key, search2));
     }
     exports2.mapIncludes = mapIncludes;
   }
@@ -48370,45 +48400,157 @@ var init_operators = __esm({
 });
 
 // src/tools/extra-operators.ts
-import { spawn as spawn5, spawnSync as spawnSync2 } from "node:child_process";
-import { readdir as readdir3, lstat } from "node:fs/promises";
+import { spawn as spawn5 } from "node:child_process";
+import { opendir } from "node:fs/promises";
 import { resolve as resolve2, relative, matchesGlob as matchesGlob2 } from "node:path";
-async function run(binary, args2, empty, allowNoMatch = false, rawOutput = false) {
+import { setImmediate as yieldLoop2 } from "node:timers/promises";
+async function run(binary, args2, signal, consume, allowNoMatch = false) {
+  if (signal.aborted) return;
   return new Promise((done, fail) => {
     const child = spawn5(binary, args2, { cwd, stdio: ["ignore", "pipe", "pipe"] });
-    let stdout = "";
-    let stderr = "";
-    let outputBytes = 0;
-    child.stdout.on("data", (data) => {
-      outputBytes += data.length;
-      if (outputBytes > 8 * 1024 * 1024) {
-        child.kill();
-        return;
+    let pending = "", stderr = "", stopped = false, failure;
+    const stop2 = () => {
+      if (!stopped) {
+        stopped = true;
+        child.kill("SIGKILL");
       }
-      stdout += data.toString();
+    };
+    signal.addEventListener("abort", stop2, { once: true });
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (data) => {
+      if (stopped) return;
+      try {
+        pending += data;
+        let end;
+        while ((end = pending.indexOf("\n")) >= 0) {
+          const line = pending.slice(0, end).replace(/\r$/, "");
+          pending = pending.slice(end + 1);
+          if (!consume(line)) {
+            stop2();
+            return;
+          }
+        }
+        if (Buffer.byteLength(pending) > 8 * 1024 * 1024) throw new Error("Search record exceeded 8MB processing limit");
+      } catch (error2) {
+        failure = error2;
+        stop2();
+      }
     });
     child.stderr.on("data", (data) => {
       if (stderr.length < 8192) stderr += data.toString();
     });
-    child.on("error", fail);
-    child.on("close", (code) => outputBytes > 8 * 1024 * 1024 ? fail(new Error("Search output exceeded 8MB processing limit; narrow the search")) : code === 0 || allowNoMatch && code === 1 ? done(rawOutput ? stdout.trimEnd() || empty : capped(stdout.trimEnd() || empty)) : fail(new Error(stderr.trim() || binary + " exited with code " + code)));
+    child.on("error", (error2) => {
+      failure = error2;
+    });
+    child.on("close", (code) => {
+      signal.removeEventListener("abort", stop2);
+      if (failure) {
+        fail(failure);
+        return;
+      }
+      if (stopped || signal.aborted) {
+        done();
+        return;
+      }
+      if (code !== 0 && !(allowNoMatch && code === 1)) {
+        fail(new Error(stderr.trim() || binary + " exited with code " + code));
+        return;
+      }
+      try {
+        if (pending) consume(pending);
+        done();
+      } catch (error2) {
+        fail(error2);
+      }
+    });
+    if (signal.aborted) stop2();
   });
 }
-async function handleExtraOperatorTool(name, args2) {
+async function runSearch(names, args2, signal, consume, allowNoMatch = false) {
+  for (const name of names) {
+    try {
+      await run(name, args2, signal, consume, allowNoMatch);
+      return;
+    } catch (error2) {
+      if (error2.code !== "ENOENT") throw error2;
+    }
+  }
+  throw hint(names[0]);
+}
+function* resultLines(text) {
+  let start = 0;
+  for (; ; ) {
+    const end = text.indexOf("\n", start);
+    if (end < 0) {
+      yield text.slice(start);
+      return;
+    }
+    yield text.slice(start, end);
+    start = end + 1;
+  }
+}
+async function handleExtraOperatorTool(name, args2, parent) {
+  if (parent?.aborted) throw new Error("Tool call aborted");
+  const timeout2 = external_exports.object({ timeout: timeoutSchema }).parse(args2).timeout ?? 30;
+  const controller = new AbortController();
+  let timedOut = false;
+  const abort = () => controller.abort(parent?.reason);
+  parent?.addEventListener("abort", abort, { once: true });
+  const timer = timeout2 > 0 ? setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeout2 * 1e3) : void 0;
+  try {
+    const result4 = await search(name, args2, controller.signal);
+    if (parent?.aborted) throw new Error("Tool call aborted");
+    if (timedOut) {
+      const value = result4.content[0].text || "No results collected before timeout";
+      return output((value.startsWith("No matches found") || value.startsWith("No files found matching pattern") ? "No results collected before timeout" : value) + "\n[search-status timedOut=true incomplete=true; search stopped before completion]");
+    }
+    return result4;
+  } catch (error2) {
+    if (parent?.aborted) throw new Error("Tool call aborted");
+    throw error2;
+  } finally {
+    if (timer !== void 0) clearTimeout(timer);
+    parent?.removeEventListener("abort", abort);
+  }
+}
+async function search(name, args2, signal) {
   if (name === "list") {
     const params = lsSchema.parse(args2);
-    if (params.path && isExecutionPath(params.path)) return output(capped(listExecutionPaths(params.path).slice(0, params.limit ?? 500).join("\n")));
+    if (params.path && isExecutionPath(params.path)) {
+      const entries3 = [];
+      for await (const entry of searchExecutionPaths(params.path, "*", signal, true)) entries3.push(entry);
+      const limit2 = params.limit ?? 500;
+      return output(capped(entries3.sort().slice(0, limit2).join("\n") + (entries3.length > limit2 ? "\n[" + limit2 + " entries limit reached]" : "")));
+    }
     const dir = resolve2(cwd, params.path || ".");
-    const entries2 = (await readdir3(dir)).sort();
     const limit = params.limit ?? 500;
-    const lines = await Promise.all(entries2.slice(0, limit).map(async (entry) => entry + ((await lstat(resolve2(dir, entry))).isDirectory() ? "/" : "")));
-    return output(capped(lines.join("\n") + (entries2.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
+    const entries2 = [];
+    const directory = await opendir(dir);
+    for await (const entry of directory) {
+      if (signal.aborted) break;
+      entries2.push(entry.name + (entry.isDirectory() ? "/" : ""));
+    }
+    entries2.sort((a2, b) => {
+      const x = a2.replace(/\/$/, ""), y = b.replace(/\/$/, "");
+      return x < y ? -1 : x > y ? 1 : 0;
+    });
+    return output(capped(entries2.slice(0, limit).join("\n") + (entries2.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
   }
   if (name === "find") {
     const params = findSchema.parse(args2);
-    if (params.path && isExecutionPath(params.path)) return output(capped(findExecutionPaths(params.path, params.pattern).slice(0, params.limit ?? 1e3).join("\n") || "No files found matching pattern"));
-    const binary = executable(["fd", "fdfind"]);
-    if (!binary) throw hint("fd");
+    if (params.path && isExecutionPath(params.path)) {
+      const collected2 = new GrepOutput();
+      const limit = params.limit ?? 1e3;
+      let count3 = 0;
+      for await (const entry of searchExecutionPaths(params.path, params.pattern, signal)) {
+        count3++;
+        if (!collected2.add(entry) || count3 >= limit) break;
+      }
+      return output(count3 ? collected2.text() + (count3 >= limit ? "\n[entries limit reached]" : "") : "No files found matching pattern");
+    }
     const target = resolve2(cwd, params.path || ".");
     const commandArgs = ["--glob", "--color=never", "--hidden", "--max-results", String(params.limit ?? 1e3)];
     let pattern = params.pattern;
@@ -48417,18 +48559,24 @@ async function handleExtraOperatorTool(name, args2) {
       if (!pattern.startsWith("/") && !pattern.startsWith("**/")) pattern = "**/" + pattern;
     }
     commandArgs.push("--", pattern, target);
-    const raw = await run(binary, commandArgs, "No files found matching pattern", false, true);
-    if (raw === "No files found matching pattern") return output(raw);
-    return output(capped(raw.split("\n").map((line) => line.startsWith(target) ? relative(target, line) : line).join("\n")));
+    const collected = new GrepOutput();
+    let count2 = 0;
+    await runSearch(["fd", "fdfind"], commandArgs, signal, (line) => {
+      count2++;
+      return collected.add(line.startsWith(target) ? relative(target, line) : line);
+    });
+    return output(count2 ? collected.text() + (count2 >= (params.limit ?? 1e3) ? "\n[entries limit reached]" : "") : "No files found matching pattern");
   }
   if (name === "grep") {
     const params = grepSchema.parse(args2);
     if (params.path && (isExecutionPath(params.path) || isResultPath(params.path))) {
-      const paths = isExecutionPath(params.path) ? findExecutionPaths(params.path, "*").filter((path28) => !params.glob || matchesGlob2(path28.split("/").at(-1), params.glob)) : [params.path];
+      const paths = isExecutionPath(params.path) ? searchExecutionPaths(params.path, "*", signal) : [params.path];
       const regex2 = new RegExp(params.literal ? escapeRegex2(params.pattern) : params.pattern, params.ignoreCase ? "i" : "");
       const collected2 = new GrepOutput();
       let remaining = params.limit ?? 100;
-      for (const path28 of paths) {
+      for await (const path28 of paths) {
+        if (signal.aborted) break;
+        if (isExecutionPath(path28) && params.glob && !matchesGlob2(path28.split("/").at(-1), params.glob)) continue;
         const context = params.context ?? 0;
         const previous = [];
         let index = 0, last = 0, after = 0, previousBytes = 0;
@@ -48437,8 +48585,10 @@ async function handleExtraOperatorTool(name, args2) {
           last = i2;
           return collected2.add(path28 + (match ? ":" : "-") + i2 + ":" + line);
         };
-        const source = isExecutionPath(path28) ? executionLines(path28) : readResult(path28).split("\n");
+        const source = isExecutionPath(path28) ? executionLines(path28, void 0, signal) : resultLines(readResult(path28));
         for await (const line of source) {
+          if (index > 0 && index % 128 === 0) await yieldLoop2();
+          if (signal.aborted) return output(collected2.text());
           index++;
           if (remaining > 0 && regex2.test(line)) {
             for (const p of previous) if (!append(p.index, p.line, false)) return output(collected2.text());
@@ -48459,41 +48609,37 @@ async function handleExtraOperatorTool(name, args2) {
         }
         if (!remaining) break;
       }
-      return output(collected2.text());
+      return output(collected2.text() + (!remaining ? "\n[" + (params.limit ?? 100) + " matches limit reached]" : ""));
     }
-    const binary = executable(["rg"]);
-    if (!binary) throw hint("rg");
-    const commandArgs = ["--json", "--color=never", "--hidden"];
+    const commandArgs = ["--json", "--line-buffered", "--color=never", "--hidden"];
     if (params.ignoreCase) commandArgs.push("--ignore-case");
     if (params.literal) commandArgs.push("--fixed-strings");
     if (params.context !== void 0) commandArgs.push("--context", String(params.context));
     if (params.glob) commandArgs.push("--glob", params.glob);
     commandArgs.push("--", params.pattern, resolve2(cwd, params.path || "."));
-    const raw = await run(binary, commandArgs, "No matches found", true, true);
-    if (raw === "No matches found") return output(raw);
     const limit = params.limit ?? 100;
     const collected = new GrepOutput();
     let matches = 0;
-    for (const line of raw.split("\n")) {
-      if (!line) continue;
+    await runSearch(["rg"], commandArgs, signal, (line) => {
+      if (!line) return true;
       const event = JSON.parse(line);
-      if (event.type !== "match" && event.type !== "context") continue;
+      if (event.type !== "match" && event.type !== "context") return true;
       if (event.type === "match") {
-        if (matches >= limit) break;
+        if (matches >= limit) return false;
         matches++;
       }
       const file = event.data?.path?.text ?? "";
       const relativePath = relative(resolve2(cwd, params.path || "."), file) || file;
       const lineNumber = event.data?.line_number ?? 0;
       const content = (event.data?.lines?.text ?? "").replace(/\r?\n$/, "");
-      if (!collected.add(relativePath + (event.type === "match" ? ":" : "-") + lineNumber + ":" + content)) return output(collected.text());
-    }
+      return collected.add(relativePath + (event.type === "match" ? ":" : "-") + lineNumber + ":" + content);
+    }, true);
     if (matches === 0) return output("No matches found");
     return output(collected.text() + (matches >= limit ? "\n[" + limit + " matches limit reached]" : ""));
   }
   throw new Error("Unknown extra operator tool: " + name);
 }
-var cwd, output, executable, hint, capped, GREP_LIMIT, escapeRegex2, GrepOutput, lsSchema, findSchema, grepSchema, extraOperatorToolDefinitions;
+var cwd, output, hint, capped, GREP_LIMIT, escapeRegex2, GrepOutput, timeoutSchema, timeoutProperty, lsSchema, findSchema, grepSchema, extraOperatorToolDefinitions;
 var init_extra_operators = __esm({
   "src/tools/extra-operators.ts"() {
     "use strict";
@@ -48502,7 +48648,6 @@ var init_extra_operators = __esm({
     init_resultStore();
     cwd = process.cwd();
     output = (value) => ({ content: [{ type: "text", text: value }] });
-    executable = (names) => names.find((name) => !spawnSync2(name, ["--version"], { stdio: "ignore" }).error);
     hint = (name) => new Error((name === "fd" ? "fd/fdfind" : name) + " not found on PATH. Install manually: macOS: brew install " + (name === "rg" ? "ripgrep" : "fd") + "; Ubuntu/Debian: sudo apt install " + (name === "rg" ? "ripgrep" : "fd-find") + "; Termux: pkg install " + (name === "rg" ? "ripgrep" : "fd"));
     capped = (value) => Buffer.byteLength(value) > 51200 ? Buffer.from(value).subarray(0, 51200).toString("utf8") + "\n[50KB limit reached]" : value;
     GREP_LIMIT = 51200;
@@ -48528,13 +48673,15 @@ var init_extra_operators = __esm({
         return (this.lines.join("\n") || "No matches found") + (this.truncated ? "\n[50KB limit reached; results truncated]" : "");
       }
     };
-    lsSchema = external_exports.object({ path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
-    findSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
-    grepSchema = external_exports.object({ pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
+    timeoutSchema = external_exports.number().min(0).max(90).optional();
+    timeoutProperty = { type: "number", minimum: 0, maximum: 90, description: "Seconds, default 30; 0 disables tool timeout. Timeout returns incomplete partial results." };
+    lsSchema = external_exports.object({ timeout: timeoutSchema, path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
+    findSchema = external_exports.object({ timeout: timeoutSchema, pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
+    grepSchema = external_exports.object({ timeout: timeoutSchema, pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
     extraOperatorToolDefinitions = [
-      { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// directories.", inputSchema: { type: "object", properties: { path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
-      { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result:// and execution:// virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
-      { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
+      { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// directories.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+      { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result:// and execution:// virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+      { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
     ];
   }
 });
@@ -52416,23 +52563,23 @@ var findUnknownOptions = (request, options2) => {
   }
   return unknownOptions;
 };
-var hasSearchParameters = (search) => {
-  if (search === void 0) {
+var hasSearchParameters = (search2) => {
+  if (search2 === void 0) {
     return false;
   }
-  if (Array.isArray(search)) {
-    return search.length > 0;
+  if (Array.isArray(search2)) {
+    return search2.length > 0;
   }
-  if (search instanceof URLSearchParams) {
-    return search.size > 0;
+  if (search2 instanceof URLSearchParams) {
+    return search2.size > 0;
   }
-  if (typeof search === "object") {
-    return Object.keys(search).length > 0;
+  if (typeof search2 === "object") {
+    return Object.keys(search2).length > 0;
   }
-  if (typeof search === "string") {
-    return search.trim().length > 0;
+  if (typeof search2 === "string") {
+    return search2.trim().length > 0;
   }
-  return Boolean(search);
+  return Boolean(search2);
 };
 
 // node_modules/ky/distribution/utils/type-guards.js
@@ -58527,9 +58674,10 @@ var toolPolicies = {
 var suppressed = "This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.";
 function limitTextBlock(text, context, policy) {
   if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
-  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}`;
+  const status = text.includes("[search-status timedOut=true incomplete=true;") ? "\n[search-status timedOut=true incomplete=true; search stopped before completion]" : "";
+  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}${status}`;
   const path28 = storeResult(text);
-  return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.`;
+  return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.${status}` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.${status}`;
 }
 function limitCodemodeText(text) {
   return limitTextBlock(text, "Codemode text() output", "suppress");
@@ -58781,7 +58929,7 @@ async function dispatchToolUntracked(manager, name, args2, piExtraOperators = tr
     case "grep":
     case "find":
       if (!piExtraOperators) throw new Error("Unknown tool: " + name);
-      return await handleExtraOperatorTool(name, args2);
+      return await handleExtraOperatorTool(name, args2, signal);
     case "listExecutions":
     case "getExecution":
     case "waitExecution":
@@ -59564,7 +59712,7 @@ async function handleToolRequest(manager, request, onClientConnected, piExtraOpe
       case "grep":
       case "find":
         if (!piExtraOperators) throw new Error("Unknown tool: " + method);
-        result4 = await handleExtraOperatorTool(method, params);
+        result4 = await handleExtraOperatorTool(method, params, signal);
         break;
       case "listExecutions":
       case "getExecution":
@@ -59926,7 +60074,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       }
       const virtualPath = typeof params?.path === "string" && isResultPath(params.path);
       if (virtualPath && (method === "write" || method === "edit")) throw new Error("Virtual paths are read-only");
-      const result4 = virtualPath && method === "read" ? await handleOperatorTool(method, params, void 0, callSignal) : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params) : await sendRequest(method, params, callSignal);
+      const result4 = virtualPath && method === "read" ? await handleOperatorTool(method, params, void 0, callSignal) : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params, callSignal) : await sendRequest(method, params, callSignal);
       if (method !== "listSessions" || !isRemoteClient()) return result4;
       const response = result4;
       return { ...response, content: response.content?.map((item) => {
@@ -61844,13 +61992,13 @@ function getPlatform() {
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/sandbox-manager.js
 import * as fs23 from "fs";
-import { spawnSync as spawnSync5 } from "child_process";
+import { spawnSync as spawnSync4 } from "child_process";
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/linux-sandbox-utils.js
 var import_shell_quote = __toESM(require_shell_quote(), 1);
 import { randomBytes as randomBytes5 } from "node:crypto";
 import * as fs22 from "fs";
-import { spawn as spawn6, spawnSync as spawnSync3 } from "node:child_process";
+import { spawn as spawn6, spawnSync as spawnSync2 } from "node:child_process";
 import { tmpdir as tmpdir4 } from "node:os";
 import path24, { join as join15 } from "node:path";
 
@@ -62351,11 +62499,11 @@ function registerSeccompCleanupHandler() {
 function checkLinuxDependencies(seccompConfig) {
   const errors = [];
   const warnings = [];
-  const bwrap = spawnSync3("which", ["bwrap"], {
+  const bwrap = spawnSync2("which", ["bwrap"], {
     stdio: "ignore",
     timeout: 1e3
   });
-  const socat = spawnSync3("which", ["socat"], {
+  const socat = spawnSync2("which", ["socat"], {
     stdio: "ignore",
     timeout: 1e3
   });
@@ -62626,7 +62774,7 @@ async function wrapCommandWithSandboxLinux(params) {
       bwrapArgs.push("--proc", "/proc");
     }
     const shellName = binShell || "bash";
-    const shellPathResult = spawnSync3("which", [shellName], {
+    const shellPathResult = spawnSync2("which", [shellName], {
       encoding: "utf8"
     });
     if (shellPathResult.status !== 0) {
@@ -62678,7 +62826,7 @@ async function wrapCommandWithSandboxLinux(params) {
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/macos-sandbox-utils.js
 var import_shell_quote2 = __toESM(require_shell_quote(), 1);
-import { spawn as spawn7, spawnSync as spawnSync4 } from "child_process";
+import { spawn as spawn7, spawnSync as spawnSync3 } from "child_process";
 import * as path25 from "path";
 function macGetMandatoryDenyPatterns(allowGitConfig = false) {
   const cwd2 = process.cwd();
@@ -63033,7 +63181,7 @@ function wrapCommandWithSandboxMacOS(params) {
   });
   const proxyEnvArgs = generateProxyEnvVars(httpProxyPort, socksProxyPort);
   const shellName = binShell || "bash";
-  const shellPathResult = spawnSync4("which", [shellName], { encoding: "utf8" });
+  const shellPathResult = spawnSync3("which", [shellName], { encoding: "utf8" });
   if (shellPathResult.status !== 0) {
     throw new Error(`Shell '${shellName}' not found in PATH`);
   }
@@ -63369,7 +63517,7 @@ function checkDependencies(ripgrepConfig) {
   const errors = [];
   const warnings = [];
   const rgToCheck = ripgrepConfig ?? config2?.ripgrep ?? { command: "rg" };
-  const rgResult = spawnSync5("which", [rgToCheck.command], {
+  const rgResult = spawnSync4("which", [rgToCheck.command], {
     stdio: "ignore",
     timeout: 1e3
   });

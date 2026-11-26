@@ -303,7 +303,7 @@ export async function startMcpClientMode(
     const virtualPath = typeof params?.path === "string" && isResultPath(params.path);
     if (virtualPath && (method === "write" || method === "edit")) throw new Error("Virtual paths are read-only");
     const result = virtualPath && method === "read" ? await handleOperatorTool(method, params, undefined, callSignal)
-      : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params)
+      : virtualPath && method === "grep" ? await handleExtraOperatorTool(method, params, callSignal)
       : await sendRequest(method, params, callSignal);
     if (method !== "listSessions" || !isRemoteClient()) return result;
     const response = result as { content?: Array<{ type: string; text?: string }> };
