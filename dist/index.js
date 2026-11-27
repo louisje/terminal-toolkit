@@ -6183,9 +6183,9 @@ function assertNever(_x) {
 }
 function assert(_) {
 }
-function getEnumValues(entries2) {
-  const numericValues = Object.values(entries2).filter((v) => typeof v === "number");
-  const values = Object.entries(entries2).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
+function getEnumValues(entries3) {
+  const numericValues = Object.values(entries3).filter((v) => typeof v === "number");
+  const values = Object.entries(entries3).filter(([k, _]) => numericValues.indexOf(+k) === -1).map(([_, v]) => v);
   return values;
 }
 function joinValues(array2, separator = "|") {
@@ -9397,10 +9397,10 @@ function record(keyType, valueType, params) {
   });
 }
 function _enum(values, params) {
-  const entries2 = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
+  const entries3 = Array.isArray(values) ? Object.fromEntries(values.map((v) => [v, v])) : values;
   return new ZodEnum({
     type: "enum",
-    entries: entries2,
+    entries: entries3,
     ...util_exports.normalizeParams(params)
   });
 }
@@ -17617,8 +17617,8 @@ var require_keyword = __commonJS({
       var _a;
       const { gen, keyword, schema, parentSchema, $data, it } = cxt;
       checkAsyncKeyword(it, def);
-      const validate4 = !$data && def.compile ? def.compile.call(it.self, schema, parentSchema, it) : def.validate;
-      const validateRef = useKeyword(gen, keyword, validate4);
+      const validate5 = !$data && def.compile ? def.compile.call(it.self, schema, parentSchema, it) : def.validate;
+      const validateRef = useKeyword(gen, keyword, validate5);
       const valid = gen.let("valid");
       cxt.block$data(valid, validateKeyword);
       cxt.ok((_a = def.valid) !== null && _a !== void 0 ? _a : valid);
@@ -18691,28 +18691,28 @@ var require_compile = __commonJS({
         if (this.opts.code.process)
           sourceCode = this.opts.code.process(sourceCode, sch);
         const makeValidate = new Function(`${names_1.default.self}`, `${names_1.default.scope}`, sourceCode);
-        const validate4 = makeValidate(this, this.scope.get());
-        this.scope.value(validateName, { ref: validate4 });
-        validate4.errors = null;
-        validate4.schema = sch.schema;
-        validate4.schemaEnv = sch;
+        const validate5 = makeValidate(this, this.scope.get());
+        this.scope.value(validateName, { ref: validate5 });
+        validate5.errors = null;
+        validate5.schema = sch.schema;
+        validate5.schemaEnv = sch;
         if (sch.$async)
-          validate4.$async = true;
+          validate5.$async = true;
         if (this.opts.code.source === true) {
-          validate4.source = { validateName, validateCode, scopeValues: gen._values };
+          validate5.source = { validateName, validateCode, scopeValues: gen._values };
         }
         if (this.opts.unevaluated) {
           const { props, items } = schemaCxt;
-          validate4.evaluated = {
+          validate5.evaluated = {
             props: props instanceof codegen_1.Name ? void 0 : props,
             items: items instanceof codegen_1.Name ? void 0 : items,
             dynamicProps: props instanceof codegen_1.Name,
             dynamicItems: items instanceof codegen_1.Name
           };
-          if (validate4.source)
-            validate4.source.evaluated = (0, codegen_1.stringify)(validate4.evaluated);
+          if (validate5.source)
+            validate5.source.evaluated = (0, codegen_1.stringify)(validate5.evaluated);
         }
-        sch.validate = validate4;
+        sch.validate = validate5;
         return sch;
       } catch (e) {
         delete sch.validate;
@@ -22351,8 +22351,8 @@ var require_formats = __commonJS({
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.formatNames = exports2.fastFormats = exports2.fullFormats = void 0;
-    function fmtDef(validate4, compare) {
-      return { validate: validate4, compare };
+    function fmtDef(validate5, compare) {
+      return { validate: validate5, compare };
     }
     exports2.fullFormats = {
       // date: http://tools.ietf.org/html/rfc3339#section-5.6
@@ -26142,6 +26142,45 @@ var init_timeoutWarning = __esm({
     "use strict";
     timeoutWarningScope = new AsyncLocalStorage();
     supportsTimeoutWarning = (name) => name === "shell" || name === "python" || name === "waitExecution";
+  }
+});
+
+// src/requestContext.ts
+import { createHmac as createHmac2, randomBytes as randomBytes4 } from "node:crypto";
+import { AsyncLocalStorage as AsyncLocalStorage2 } from "node:async_hooks";
+function fingerprint(kind, value) {
+  if (typeof value !== "string" || !value) return void 0;
+  return createHmac2("sha256", identityKey).update(kind).update("\0").update(value).digest("hex");
+}
+function createRequestContext(meta) {
+  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return {};
+  const fields = meta;
+  const organizationId = fingerprint("openai/organization", fields["openai/organization"]);
+  const subjectId = fingerprint("openai/subject", fields["openai/subject"]);
+  const conversationId = fingerprint("openai/session", fields["openai/session"]);
+  const rawDeadline = fields["terminal-toolkit/responseDeadline"];
+  let responseDeadline;
+  if (rawDeadline && typeof rawDeadline === "object" && !Array.isArray(rawDeadline)) {
+    const hint2 = rawDeadline;
+    if (typeof hint2.remainingMs === "number" && Number.isSafeInteger(hint2.remainingMs) && hint2.remainingMs >= 0 && hint2.remainingMs <= 864e5 && typeof hint2.timeoutMs === "number" && Number.isSafeInteger(hint2.timeoutMs) && hint2.timeoutMs >= 0) {
+      const receivedAt = Date.now();
+      responseDeadline = {
+        timeoutMs: hint2.timeoutMs,
+        receivedAt,
+        deadlineAt: receivedAt + hint2.remainingMs,
+        ...typeof hint2.deadline === "string" ? { upstreamDeadline: hint2.deadline } : {}
+      };
+    }
+  }
+  if (!organizationId && !subjectId && !conversationId && !responseDeadline) return {};
+  return { ...organizationId || subjectId || conversationId ? { provider: "openai" } : {}, ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {}, ...responseDeadline ? { responseDeadline } : {} };
+}
+var identityKey, requestContextStorage;
+var init_requestContext = __esm({
+  "src/requestContext.ts"() {
+    "use strict";
+    identityKey = process.env.TERMINAL_TOOLKIT_IDENTITY_KEY || randomBytes4(32).toString("hex");
+    requestContextStorage = new AsyncLocalStorage2();
   }
 });
 
@@ -39913,11 +39952,11 @@ function readOptional(path28) {
 function linuxDistribution() {
   const content = readOptional("/etc/os-release");
   if (!content) return null;
-  const entries2 = Object.fromEntries(content.split("\n").flatMap((line) => {
+  const entries3 = Object.fromEntries(content.split("\n").flatMap((line) => {
     const match = line.match(/^([A-Z_]+)=(.*)$/);
     return match ? [[match[1], match[2].replace(/^['"]|['"]$/g, "")]] : [];
   }));
-  return { name: entries2.PRETTY_NAME ?? entries2.NAME ?? "Linux", version: entries2.VERSION_ID ?? null };
+  return { name: entries3.PRETTY_NAME ?? entries3.NAME ?? "Linux", version: entries3.VERSION_ID ?? null };
 }
 function getSystemInfo(manager) {
   const platform2 = process.platform;
@@ -40026,15 +40065,15 @@ function getToolStat(options2 = {}, namespaces = {}) {
   if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
   if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
   if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
-  const entries2 = [...counters.entries()].filter(([name]) => {
+  const entries3 = [...counters.entries()].filter(([name]) => {
     const discovery = ["search", "describe"].includes(name);
     return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
   }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
-  entries2.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
+  entries3.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
   return {
     since: startedAt,
-    totalCalls: entries2.reduce((sum, e) => sum + e.calls, 0),
-    tools: entries2.slice(0, options2.limit),
+    totalCalls: entries3.reduce((sum, e) => sum + e.calls, 0),
+    tools: entries3.slice(0, options2.limit),
     ...!options2.category || options2.category === "discovery" ? {
       discovery: {
         search: { queries: [...searches.entries()].map(([query, stat2]) => ({ query, ...stat2, avgResults: stat2.totalResults / stat2.calls })).sort((a2, b) => b.calls - a2.calls).slice(0, options2.limit), otherQueries },
@@ -47488,7 +47527,7 @@ async function skillLocations(overrideRoots) {
       if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error2 instanceof Error ? error2.message : String(error2)));
     }
   }
-  return locations;
+  return locations.sort((a2, b) => Number(b.source === "builtin") - Number(a2.source === "builtin"));
 }
 async function skillCatalog(overrideRoots) {
   const result4 = [];
@@ -47541,9 +47580,9 @@ async function secureFile(name, relative2, namespace) {
   return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
 }
 async function enumerateFiles(dir, base = "") {
-  const entries2 = await readdir(path21.join(dir, base), { withFileTypes: true });
+  const entries3 = await readdir(path21.join(dir, base), { withFileTypes: true });
   const files2 = [];
-  for (const item of entries2) {
+  for (const item of entries3) {
     const rel = path21.posix.join(base, item.name);
     if (item.isSymbolicLink()) continue;
     if (item.isDirectory()) files2.push(...await enumerateFiles(dir, rel));
@@ -48300,6 +48339,54 @@ var init_resultStore = __esm({
   }
 });
 
+// src/tools/memoryStore.ts
+function isMemoryPath(path28) {
+  return path28.startsWith("memory://");
+}
+function scope() {
+  const context = requestContextStorage.getStore();
+  if (!context?.conversationId) throw new Error("memory:// requires a conversation identity");
+  const now = Date.now();
+  for (const [key, entry] of entries2) if (now - entry.touched >= TTL_MS2) entries2.delete(key);
+  return JSON.stringify([context.provider, context.organizationId, context.subjectId, context.conversationId]);
+}
+function validate4(path28) {
+  if (path28 !== PATH) throw new Error("Only memory://scratchpad.md is supported");
+}
+function readMemory(path28) {
+  validate4(path28);
+  const entry = entries2.get(scope());
+  if (!entry) throw new Error("Scratchpad not found; create it with write()");
+  entry.touched = Date.now();
+  return entry.text;
+}
+function writeMemory(path28, text) {
+  validate4(path28);
+  const key = scope();
+  if (Buffer.byteLength(text) > MAX_BYTES2) throw new Error("Scratchpad exceeds 16 KiB; summarize before writing");
+  if (!entries2.has(key) && entries2.size >= MAX_SESSIONS) throw new Error("Scratchpad capacity reached; retry after idle expiration");
+  entries2.set(key, { text, touched: Date.now() });
+}
+function listMemory(path28) {
+  if (path28 !== "memory://") throw new Error("Expected memory:// root");
+  const entry = entries2.get(scope());
+  if (!entry) return [];
+  entry.touched = Date.now();
+  return ["scratchpad.md"];
+}
+var MAX_BYTES2, MAX_SESSIONS, TTL_MS2, PATH, entries2;
+var init_memoryStore = __esm({
+  "src/tools/memoryStore.ts"() {
+    "use strict";
+    init_requestContext();
+    MAX_BYTES2 = 16 * 1024;
+    MAX_SESSIONS = 256;
+    TTL_MS2 = 24 * 60 * 60 * 1e3;
+    PATH = "memory://scratchpad.md";
+    entries2 = /* @__PURE__ */ new Map();
+  }
+});
+
 // src/tools/outputLimit.ts
 function limitTextBlock(text, context, policy) {
   if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
@@ -48354,7 +48441,8 @@ async function readRange(args2, parent) {
   const offset = args2.offset ?? 1;
   try {
     let path28 = args2.path;
-    if (isResultPath(path28)) memory = Buffer.from(readResult(path28));
+    if (isMemoryPath(path28)) memory = Buffer.from(readMemory(path28));
+    else if (isResultPath(path28)) memory = Buffer.from(readResult(path28));
     else if (isExecutionPath(path28)) {
       const { execution, file } = resolveExecutionPath(path28);
       if (!file) throw new Error("Expected execution file");
@@ -48438,6 +48526,7 @@ var init_readRange = __esm({
     init_skills();
     init_virtual();
     init_resultStore();
+    init_memoryStore();
     init_outputLimit();
     cwd = process.cwd();
   }
@@ -48455,6 +48544,10 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
     }
     case "write": {
       const parsed = writeSchema.parse(args2);
+      if (isMemoryPath(parsed.path)) {
+        writeMemory(parsed.path, parsed.content);
+        return result3(`Wrote ${parsed.path}`);
+      }
       if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path) || isExecutionPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
       await mkdir2(dirname2(target), { recursive: true });
@@ -48466,7 +48559,8 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
       const parsed = editSchema.parse(args2);
       if (parsed.path.startsWith("builtin://") || isResultPath(parsed.path) || isExecutionPath(parsed.path)) throw new Error("Virtual paths are read-only");
       const target = localPath(parsed.path);
-      const original = await readFile4(target, "utf8");
+      const memory = isMemoryPath(parsed.path);
+      const original = memory ? readMemory(parsed.path) : await readFile4(target, "utf8");
       const ranges = [];
       for (const edit of parsed.edits) {
         if (!edit.oldText) throw new Error("Each oldText must be non-empty");
@@ -48480,7 +48574,8 @@ async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal
       let updated = original;
       for (const edit of [...ranges].reverse()) updated = updated.slice(0, edit.start) + edit.newText + updated.slice(edit.end);
       if (signal?.aborted) throw new Error("Tool call aborted");
-      await writeFile2(target, updated, "utf8");
+      if (memory) writeMemory(parsed.path, updated);
+      else await writeFile2(target, updated, "utf8");
       return result3(`Edited ${parsed.path}`);
     }
     case "shell": {
@@ -48505,6 +48600,7 @@ var init_operators = __esm({
     init_virtual();
     init_zod();
     init_platform();
+    init_memoryStore();
     init_resultStore();
     operatorCwd = process.cwd();
     readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().refine((n2) => n2 !== 0).optional(), limit: external_exports.number().int().positive().optional(), timeout: external_exports.number().min(0).max(90).optional() });
@@ -48514,9 +48610,9 @@ var init_operators = __esm({
     pythonSchema = external_exports.object({ code: external_exports.string(), timeout: external_exports.number().finite().nonnegative().optional() });
     result3 = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
     operatorToolDefinitions = [
-      { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number or negative from EOF (-1 is last line). Metadata reports size in bytes and totalLines. Content exceeding 16 KiB is suppressed; narrow offset/limit. Timeout returns incomplete results.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", description: "Nonzero; negative counts from EOF" }, limit: { type: "integer", minimum: 1 }, timeout: { type: "number", minimum: 0, maximum: 90, description: "Seconds, default 30; 0 disables tool timeout" } }, required: ["path"] } },
-      { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
-      { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
+      { name: "read", description: "Read a text file or builtin://, result://, execution:// or conversation-scoped memory://scratchpad.md virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number or negative from EOF (-1 is last line). Metadata reports size in bytes and totalLines. Content exceeding 16 KiB is suppressed; narrow offset/limit. Timeout returns incomplete results.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", description: "Nonzero; negative counts from EOF" }, limit: { type: "integer", minimum: 1 }, timeout: { type: "number", minimum: 0, maximum: 90, description: "Seconds, default 30; 0 disables tool timeout" } }, required: ["path"] } },
+      { name: "write", description: "Create or replace a complete text file (including conversation-scoped memory://scratchpad.md) directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
+      { name: "edit", description: "Modify an existing text file (including memory://scratchpad.md) with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
       { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 90, maximum 90); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["code"] } },
       { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; timeout is foreground wait (default 90 seconds, maximum 90). Zero or expiry returns an executionId; use getExecution or waitExecution to inspect background work. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["command"] } }
     ];
@@ -48644,28 +48740,33 @@ async function handleExtraOperatorTool(name, args2, parent) {
 async function search(name, args2, signal) {
   if (name === "list") {
     const params = lsSchema.parse(args2);
+    if (params.path && isMemoryPath(params.path)) return output(listMemory(params.path).join("\n"));
     if (params.path && isExecutionPath(params.path)) {
-      const entries3 = [];
-      for await (const entry of searchExecutionPaths(params.path, "*", signal, true)) entries3.push(entry);
+      const entries4 = [];
+      for await (const entry of searchExecutionPaths(params.path, "*", signal, true)) entries4.push(entry);
       const limit2 = params.limit ?? 500;
-      return output(capped(entries3.sort().slice(0, limit2).join("\n") + (entries3.length > limit2 ? "\n[" + limit2 + " entries limit reached]" : "")));
+      return output(capped(entries4.sort().slice(0, limit2).join("\n") + (entries4.length > limit2 ? "\n[" + limit2 + " entries limit reached]" : "")));
     }
     const dir = resolve3(cwd2, params.path || ".");
     const limit = params.limit ?? 500;
-    const entries2 = [];
+    const entries3 = [];
     const directory = await opendir(dir);
     for await (const entry of directory) {
       if (signal.aborted) break;
-      entries2.push(entry.name + (entry.isDirectory() ? "/" : ""));
+      entries3.push(entry.name + (entry.isDirectory() ? "/" : ""));
     }
-    entries2.sort((a2, b) => {
+    entries3.sort((a2, b) => {
       const x = a2.replace(/\/$/, ""), y = b.replace(/\/$/, "");
       return x < y ? -1 : x > y ? 1 : 0;
     });
-    return output(capped(entries2.slice(0, limit).join("\n") + (entries2.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
+    return output(capped(entries3.slice(0, limit).join("\n") + (entries3.length > limit ? "\n[" + limit + " entries limit reached]" : "")));
   }
   if (name === "find") {
     const params = findSchema.parse(args2);
+    if (params.path && isMemoryPath(params.path)) {
+      const entries3 = listMemory(params.path).filter((path28) => matchesGlob2(path28, params.pattern));
+      return output(entries3.map((path28) => "memory://" + path28).join("\n") || "No files found matching pattern");
+    }
     if (params.path && isExecutionPath(params.path)) {
       const collected2 = new GrepOutput();
       const limit = params.limit ?? 1e3;
@@ -48694,14 +48795,14 @@ async function search(name, args2, signal) {
   }
   if (name === "grep") {
     const params = grepSchema.parse(args2);
-    if (params.path && (isExecutionPath(params.path) || isResultPath(params.path))) {
-      const paths = isExecutionPath(params.path) ? searchExecutionPaths(params.path, "*", signal) : [params.path];
+    if (params.path && (isExecutionPath(params.path) || isResultPath(params.path) || isMemoryPath(params.path))) {
+      const paths = isExecutionPath(params.path) ? searchExecutionPaths(params.path, "*", signal) : params.path === "memory://" ? listMemory(params.path).map((path28) => "memory://" + path28) : [params.path];
       const regex2 = new RegExp(params.literal ? escapeRegex2(params.pattern) : params.pattern, params.ignoreCase ? "i" : "");
       const collected2 = new GrepOutput();
       let remaining = params.limit ?? 100;
       for await (const path28 of paths) {
         if (signal.aborted) break;
-        if (isExecutionPath(path28) && params.glob && !matchesGlob2(path28.split("/").at(-1), params.glob)) continue;
+        if ((isExecutionPath(path28) || isMemoryPath(path28)) && params.glob && !matchesGlob2(path28.split("/").at(-1), params.glob)) continue;
         const context = params.context ?? 0;
         const previous = [];
         let index = 0, last = 0, after = 0, previousBytes = 0;
@@ -48710,7 +48811,7 @@ async function search(name, args2, signal) {
           last = i2;
           return collected2.add(path28 + (match ? ":" : "-") + i2 + ":" + line);
         };
-        const source = isExecutionPath(path28) ? executionLines(path28, void 0, signal) : resultLines(readResult(path28));
+        const source = isExecutionPath(path28) ? executionLines(path28, void 0, signal) : resultLines(isMemoryPath(path28) ? readMemory(path28) : readResult(path28));
         for await (const line of source) {
           if (index > 0 && index % 128 === 0) await yieldLoop3();
           if (signal.aborted) return output(collected2.text());
@@ -48770,6 +48871,7 @@ var init_extra_operators = __esm({
     "use strict";
     init_virtual();
     init_zod();
+    init_memoryStore();
     init_resultStore();
     cwd2 = process.cwd();
     output = (value) => ({ content: [{ type: "text", text: value }] });
@@ -48804,9 +48906,9 @@ var init_extra_operators = __esm({
     findSchema = external_exports.object({ timeout: timeoutSchema, pattern: external_exports.string(), path: external_exports.string().optional(), limit: external_exports.number().int().positive().optional() });
     grepSchema = external_exports.object({ timeout: timeoutSchema, pattern: external_exports.string(), path: external_exports.string().optional(), glob: external_exports.string().optional(), ignoreCase: external_exports.boolean().optional(), literal: external_exports.boolean().optional(), context: external_exports.number().int().nonnegative().optional(), limit: external_exports.number().int().positive().optional() });
     extraOperatorToolDefinitions = [
-      { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// directories.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
-      { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result:// and execution:// virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
-      { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
+      { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// and memory:// directories.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+      { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result://, execution:// and memory://scratchpad.md virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+      { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// and memory:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } }
     ];
   }
 });
@@ -50966,14 +51068,14 @@ function trySocketClaim(socketPath) {
         const code = error2.code;
         if (code !== "EEXIST" && code !== "ENOTEMPTY") throw error2;
       }
-      let entries2;
+      let entries3;
       try {
-        entries2 = fs.readdirSync(lock);
+        entries3 = fs.readdirSync(lock);
       } catch {
         continue;
       }
-      if (entries2.length !== 1 || !/^\d+-[0-9a-f-]+$/.test(entries2[0])) return void 0;
-      const owner = Number(entries2[0].split("-")[0]);
+      if (entries3.length !== 1 || !/^\d+-[0-9a-f-]+$/.test(entries3[0])) return void 0;
+      const owner = Number(entries3[0].split("-")[0]);
       if (!Number.isSafeInteger(owner) || owner <= 0) return void 0;
       try {
         process.kill(owner, 0);
@@ -50982,7 +51084,7 @@ function trySocketClaim(socketPath) {
         if (error2.code !== "ESRCH") return void 0;
       }
       try {
-        fs.unlinkSync(lock + "/" + entries2[0]);
+        fs.unlinkSync(lock + "/" + entries3[0]);
       } catch {
         continue;
       }
@@ -53055,9 +53157,9 @@ var distribution_default = ky;
 
 // node_modules/registry-url/index.js
 var import_rc = __toESM(require_rc(), 1);
-function registryUrl(scope) {
+function registryUrl(scope2) {
   const result4 = (0, import_rc.default)("npm", { registry: "https://registry.npmjs.org/" });
-  const url = result4[`${scope}:registry`] || result4.config_registry || result4.registry;
+  const url = result4[`${scope2}:registry`] || result4.config_registry || result4.registry;
   return url.slice(-1) === "/" ? url : `${url}/`;
 }
 
@@ -53079,8 +53181,8 @@ var VersionNotFoundError = class extends Error {
 async function packageJson(packageName, options2 = {}) {
   let { version: version5 = "latest" } = options2;
   const { omitDeprecated = true } = options2;
-  const scope = packageName.split("/")[0];
-  const registryUrl_ = options2.registryUrl ?? registryUrl(scope);
+  const scope2 = packageName.split("/")[0];
+  const registryUrl_ = options2.registryUrl ?? registryUrl(scope2);
   const packageUrl = new URL(encodeURIComponent(packageName).replace(/^%40/, "@"), registryUrl_);
   const authInfo = (0, import_registry_auth_token.default)(registryUrl_.toString(), { recursive: true });
   const headers = {
@@ -57595,41 +57697,7 @@ var VERSION = readPackageVersion();
 
 // src/tools/index.ts
 init_timeoutWarning();
-
-// src/requestContext.ts
-import { createHmac as createHmac2, randomBytes as randomBytes4 } from "node:crypto";
-import { AsyncLocalStorage as AsyncLocalStorage2 } from "node:async_hooks";
-var identityKey = process.env.TERMINAL_TOOLKIT_IDENTITY_KEY || randomBytes4(32).toString("hex");
-var requestContextStorage = new AsyncLocalStorage2();
-function fingerprint(kind, value) {
-  if (typeof value !== "string" || !value) return void 0;
-  return createHmac2("sha256", identityKey).update(kind).update("\0").update(value).digest("hex");
-}
-function createRequestContext(meta) {
-  if (!meta || typeof meta !== "object" || Array.isArray(meta)) return {};
-  const fields = meta;
-  const organizationId = fingerprint("openai/organization", fields["openai/organization"]);
-  const subjectId = fingerprint("openai/subject", fields["openai/subject"]);
-  const conversationId = fingerprint("openai/session", fields["openai/session"]);
-  const rawDeadline = fields["terminal-toolkit/responseDeadline"];
-  let responseDeadline;
-  if (rawDeadline && typeof rawDeadline === "object" && !Array.isArray(rawDeadline)) {
-    const hint2 = rawDeadline;
-    if (typeof hint2.remainingMs === "number" && Number.isSafeInteger(hint2.remainingMs) && hint2.remainingMs >= 0 && hint2.remainingMs <= 864e5 && typeof hint2.timeoutMs === "number" && Number.isSafeInteger(hint2.timeoutMs) && hint2.timeoutMs >= 0) {
-      const receivedAt = Date.now();
-      responseDeadline = {
-        timeoutMs: hint2.timeoutMs,
-        receivedAt,
-        deadlineAt: receivedAt + hint2.remainingMs,
-        ...typeof hint2.deadline === "string" ? { upstreamDeadline: hint2.deadline } : {}
-      };
-    }
-  }
-  if (!organizationId && !subjectId && !conversationId && !responseDeadline) return {};
-  return { ...organizationId || subjectId || conversationId ? { provider: "openai" } : {}, ...organizationId ? { organizationId } : {}, ...subjectId ? { subjectId } : {}, ...conversationId ? { conversationId } : {}, ...responseDeadline ? { responseDeadline } : {} };
-}
-
-// src/tools/index.ts
+init_requestContext();
 init_types();
 init_definitions();
 
@@ -57687,11 +57755,11 @@ function parseBridgeJson(json, what) {
   }
 }
 function parseStoreWrites(json) {
-  const entries2 = parseBridgeJson(json, "store writes");
-  if (!Array.isArray(entries2))
+  const entries3 = parseBridgeJson(json, "store writes");
+  if (!Array.isArray(entries3))
     throw new BridgeError("store writes are not an array");
   const writes = { set: {}, delete: [] };
-  for (const entry of entries2) {
+  for (const entry of entries3) {
     if (!Array.isArray(entry) || typeof entry[0] !== "string" || (entry.length === 2 ? typeof entry[1] !== "string" : entry.length !== 1)) {
       throw new BridgeError("store writes contain a malformed entry");
     }
@@ -58856,9 +58924,9 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
         if ([query, namespace, name].some((v) => v !== void 0 && typeof v !== "string")) throw new Error("search() filters must be strings");
         if (limit !== void 0 && (!Number.isInteger(limit) || limit < 1)) throw new Error("search() limit must be positive");
         const skills2 = skillsEnabled ? await skillCatalog() : [];
-        const entries2 = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
+        const entries3 = [...summaries.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "tool" })), ...skills2.map(({ name: name2, namespace: namespace2, description }) => ({ name: name2, namespace: namespace2, description, kind: "skill" }))];
         const words = (query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-        const found = entries2.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
+        const found = entries3.filter((item) => matchGlob(item.namespace ?? "", namespace) && matchGlob(item.name, name) && words.every((w) => (item.name + " " + item.description).toLowerCase().includes(w)));
         recordSearch(query ?? "", found.length);
         return found.slice(0, Math.min(limit ?? 100, 100));
       })
@@ -58974,16 +59042,16 @@ var fullName = (s) => s.namespace.slice("skills/".length) + "/" + s.name;
 var skillFields = (s) => ({ ...s.frontmatter, name: s.name, description: s.description });
 async function handleSkillDiscovery(name, args2) {
   const catalog = await skillCatalog();
-  const entries2 = catalog.map((s) => ({ ...s, name: fullName(s) }));
+  const entries3 = catalog.map((s) => ({ ...s, name: fullName(s) }));
   if (name === "searchSkills") {
     const options2 = searchSchema.parse(args2 ?? {});
     const words = (options2.query ?? "").toLowerCase().split(/\s+/).filter(Boolean);
-    const found = entries2.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
+    const found = entries3.filter((s) => glob(s.name, options2.name) && words.every((w) => (s.name + " " + s.description).toLowerCase().includes(w)));
     return { content: [{ type: "text", text: JSON.stringify({ skills: found.slice(0, Math.min(options2.limit ?? 100, 100)).map(skillFields), total: found.length }) }] };
   }
   if (name === "describeSkill") {
     const { name: target } = describeSchema.parse(args2);
-    const found = entries2.find((s) => s.name === target);
+    const found = entries3.find((s) => s.name === target);
     if (!found) throw new Error("Skill not found: " + target);
     return { content: [{ type: "text", text: JSON.stringify({ ...found, ...skillFields(found) }) }] };
   }
@@ -59373,10 +59441,12 @@ init_runtime();
 // src/client.ts
 init_timeoutWarning();
 import * as net from "net";
+init_requestContext();
 import * as fs17 from "fs";
 
 // src/transport/socket.ts
 init_timeoutWarning();
+init_requestContext();
 init_zod();
 import { Server as NetServer } from "net";
 
@@ -61424,11 +61494,11 @@ function hashSet(key, value) {
 var hashSet_default = hashSet;
 
 // node_modules/lodash-es/_Hash.js
-function Hash(entries2) {
-  var index = -1, length = entries2 == null ? 0 : entries2.length;
+function Hash(entries3) {
+  var index = -1, length = entries3 == null ? 0 : entries3.length;
   this.clear();
   while (++index < length) {
-    var entry = entries2[index];
+    var entry = entries3[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -61504,11 +61574,11 @@ function listCacheSet(key, value) {
 var listCacheSet_default = listCacheSet;
 
 // node_modules/lodash-es/_ListCache.js
-function ListCache(entries2) {
-  var index = -1, length = entries2 == null ? 0 : entries2.length;
+function ListCache(entries3) {
+  var index = -1, length = entries3 == null ? 0 : entries3.length;
   this.clear();
   while (++index < length) {
-    var entry = entries2[index];
+    var entry = entries3[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -61578,11 +61648,11 @@ function mapCacheSet(key, value) {
 var mapCacheSet_default = mapCacheSet;
 
 // node_modules/lodash-es/_MapCache.js
-function MapCache(entries2) {
-  var index = -1, length = entries2 == null ? 0 : entries2.length;
+function MapCache(entries3) {
+  var index = -1, length = entries3 == null ? 0 : entries3.length;
   this.clear();
   while (++index < length) {
-    var entry = entries2[index];
+    var entry = entries3[index];
     this.set(entry[0], entry[1]);
   }
 }
@@ -61654,8 +61724,8 @@ function stackSet(key, value) {
 var stackSet_default = stackSet;
 
 // node_modules/lodash-es/_Stack.js
-function Stack(entries2) {
-  var data = this.__data__ = new ListCache_default(entries2);
+function Stack(entries3) {
+  var data = this.__data__ = new ListCache_default(entries3);
   this.size = data.size;
 }
 Stack.prototype.clear = stackClear_default;

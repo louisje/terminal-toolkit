@@ -85,7 +85,8 @@ export async function skillLocations(overrideRoots?: string[]): Promise<SkillLoc
       if (rootPath !== SKILLS_ROOT) skillWarnings.add("Cannot load skills directory " + rootPath + ": " + (error instanceof Error ? error.message : String(error)));
     }
   }
-  return locations;
+  // Built-in guidance must precede external skills before discovery limits apply.
+  return locations.sort((a, b) => Number(b.source === "builtin") - Number(a.source === "builtin"));
 }
 
 export async function skillCatalog(overrideRoots?: string[]) {

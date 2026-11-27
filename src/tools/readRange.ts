@@ -6,6 +6,7 @@ import { setImmediate as yieldLoop } from "node:timers/promises";
 import { resolveBuiltinSkillPath } from "../skills.js";
 import { isExecutionPath, resolveExecutionPath, executionPaths } from "../runtime/virtual.js";
 import { isResultPath, readResult } from "./resultStore.js";
+import { isMemoryPath, readMemory } from "./memoryStore.js";
 import { MAX_TEXT_BLOCK_BYTES } from "./outputLimit.js";
 
 type Args = { path: string; offset?: number; limit?: number; timeout?: number };
@@ -26,7 +27,8 @@ export async function readRange(args: Args, parent?: AbortSignal) {
   const offset = args.offset ?? 1;
   try {
     let path = args.path;
-    if (isResultPath(path)) memory = Buffer.from(readResult(path));
+    if (isMemoryPath(path)) memory = Buffer.from(readMemory(path));
+    else if (isResultPath(path)) memory = Buffer.from(readResult(path));
     else if (isExecutionPath(path)) {
       const { execution, file } = resolveExecutionPath(path);
       if (!file) throw new Error("Expected execution file");

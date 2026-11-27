@@ -4,6 +4,8 @@
 
 ## In Progress
 
+- Conversation working memory：已實作 memory://scratchpad.md、六支核心檔案工具及內建 scratchpad Skill；完整回歸 207 項（205 通過、2 略過、0 失敗），四種 MCP SDK 整合模式通過；內建 Skills 優先排序及相關測試通過。待提交及部署驗收。詳見 [設計](docs/working-memory.md)。
+
 - read() 擴充：負數 offset、timeout/AbortSignal、獨立大小與行數 metadata，維持 16 KiB suppress；已實作並通過完整回歸（205 項，203 通過、2 略過、0 失敗），待提交及正式環境重啟驗收。詳見 [輸出策略](docs/output-policy.md)。
 
 - 搜尋工具逾時與取消：實作及 macOS 自動化驗測完成（204 項，202 通過、2 略過、0 失敗），待提交及正式環境重啟驗收。MCP SDK 四種路徑連續五輪 20/20 通過；初次偶發整合失敗未重現，另一次全量測試的 PID 就緒時序問題已修正並通過回歸。Windows/MSYS2 實機驗證留在 ROADMAP。詳見 [設計與驗證](docs/search-operators-timeout-design.md)。

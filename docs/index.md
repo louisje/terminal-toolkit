@@ -62,6 +62,7 @@ Configure in Claude Code's MCP settings:
 - [Request Deadline Strategy](./request-deadline-design.md)
 - [Response Timeout Warning](./response-timeout-warning.md)
 - [Output Policy](./output-policy.md)
+- [Conversation working memory](./working-memory.md)
 - [MCP Experiments](./mcp-experiments.md)
 
 ## How It Works

@@ -13,6 +13,8 @@ description: |
 
 At the beginning of each conversation, discover Skills once **only if Skills discovery is available** (`--skills` may be disabled). In standard MCP, call `searchSkills()` only when that tool is exposed; in Codemode, use `search({namespace: "skills/*"})` to discover Skills (an empty result means none are available). Inspect relevant Skill metadata and read its `SKILL.md` only when needed. If Skills discovery is not exposed, skip this step and continue with ordinary tool discovery. Do not repeat the initial Skills discovery on every tool call.
 
+For complex or long-running work, optionally read `builtin://skills/scratchpad/SKILL.md` for lightweight conversation-scoped working memory guidance.
+
 ## Default rule
 
 Discover `read`, `write`, and `edit` under `tools/core` before choosing `shell`. Use these for direct text-file

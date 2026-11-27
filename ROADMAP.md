@@ -4,6 +4,10 @@
 
 ## Planned
 
+### Conversation working memory
+
+- [ ] 正式環境驗證 standard MCP / Codemode 對話隔離、重新連線與對話分支；目前實作進度見 NOTE，契約見 [working memory](docs/working-memory.md)。
+
 ### Skills 探索分頁
 
 - [ ] 為 `searchSkills()`、`describeSkill()` 設計分頁及容量控制；保留完整 metadata、穩定排序、過濾與逐頁取得能力，處理多位元組文字、單筆過大及邊界值。現行輸出策略見 [Output policy](docs/output-policy.md)。

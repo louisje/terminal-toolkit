@@ -5,6 +5,7 @@ import { isExecutionPath, searchExecutionPaths, executionLines } from "../runtim
 import { setImmediate as yieldLoop } from "node:timers/promises";
 import { z } from "zod";
 import type { ToolDefinition } from "./definitions.js";
+import { isMemoryPath, listMemory, readMemory } from "./memoryStore.js";
 import { isResultPath, readResult } from "./resultStore.js";
 
 const cwd = process.cwd();
@@ -89,9 +90,9 @@ const lsSchema = z.object({ timeout: timeoutSchema, path: z.string().optional(),
 const findSchema = z.object({ timeout: timeoutSchema, pattern: z.string(), path: z.string().optional(), limit: z.number().int().positive().optional() });
 const grepSchema = z.object({ timeout: timeoutSchema, pattern: z.string(), path: z.string().optional(), glob: z.string().optional(), ignoreCase: z.boolean().optional(), literal: z.boolean().optional(), context: z.number().int().nonnegative().optional(), limit: z.number().int().positive().optional() });
 export const extraOperatorToolDefinitions: ToolDefinition[] = [
-  { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// directories.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
-  { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result:// and execution:// virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
-  { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+  { name: "list", description: "List directory entries alphabetically, including dotfiles, with / for directories (default 500 entries). Supports execution:// and memory:// directories.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, path: { type: "string" }, limit: { type: "integer", minimum: 1 } } } },
+  { name: "grep", description: "Search text with rg, respecting .gitignore; also supports result://, execution:// and memory://scratchpad.md virtual files. Output is capped at 50 KiB. Requires system ripgrep for local paths; never installs it.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, glob: { type: "string" }, ignoreCase: { type: "boolean" }, literal: { type: "boolean" }, context: { type: "integer", minimum: 0 }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
+  { name: "find", description: "Find files by glob using fd or fdfind, respecting .gitignore; supports execution:// and memory:// virtual paths; never installs dependencies.", inputSchema: { type: "object", properties: { timeout: timeoutProperty, pattern: { type: "string" }, path: { type: "string" }, limit: { type: "integer", minimum: 1 } }, required: ["pattern"] } },
 ];
 export async function handleExtraOperatorTool(name: string, args: unknown, parent?: AbortSignal) {
   if (parent?.aborted) throw new Error("Tool call aborted");
@@ -120,6 +121,7 @@ export async function handleExtraOperatorTool(name: string, args: unknown, paren
 async function search(name: string, args: unknown, signal: AbortSignal) {
   if (name === "list") {
     const params = lsSchema.parse(args);
+    if (params.path && isMemoryPath(params.path)) return output(listMemory(params.path).join("\n"));
     if (params.path && isExecutionPath(params.path)) {
       const entries: string[] = [];
       for await (const entry of searchExecutionPaths(params.path, "*", signal, true)) entries.push(entry);
@@ -139,6 +141,10 @@ async function search(name: string, args: unknown, signal: AbortSignal) {
   }
   if (name === "find") {
     const params = findSchema.parse(args);
+    if (params.path && isMemoryPath(params.path)) {
+      const entries = listMemory(params.path).filter(path => matchesGlob(path, params.pattern));
+      return output(entries.map(path => "memory://" + path).join("\n") || "No files found matching pattern");
+    }
     if (params.path && isExecutionPath(params.path)) {
       const collected = new GrepOutput();
       const limit = params.limit ?? 1000;
@@ -167,14 +173,14 @@ async function search(name: string, args: unknown, signal: AbortSignal) {
   }
   if (name === "grep") {
     const params = grepSchema.parse(args);
-    if (params.path && (isExecutionPath(params.path) || isResultPath(params.path))) {
-      const paths = isExecutionPath(params.path) ? searchExecutionPaths(params.path, "*", signal) : [params.path];
+    if (params.path && (isExecutionPath(params.path) || isResultPath(params.path) || isMemoryPath(params.path))) {
+      const paths = isExecutionPath(params.path) ? searchExecutionPaths(params.path, "*", signal) : params.path === "memory://" ? listMemory(params.path).map(path => "memory://" + path) : [params.path];
       const regex = new RegExp(params.literal ? escapeRegex(params.pattern) : params.pattern, params.ignoreCase ? "i" : "");
       const collected = new GrepOutput();
       let remaining = params.limit ?? 100;
       for await (const path of paths) {
         if (signal.aborted) break;
-        if (isExecutionPath(path) && params.glob && !matchesGlob(path.split("/").at(-1)!, params.glob)) continue;
+        if ((isExecutionPath(path) || isMemoryPath(path)) && params.glob && !matchesGlob(path.split("/").at(-1)!, params.glob)) continue;
         const context = params.context ?? 0;
         const previous: { index: number; line: string; bytes: number }[] = [];
         let index = 0, last = 0, after = 0, previousBytes = 0;
@@ -183,7 +189,7 @@ async function search(name: string, args: unknown, signal: AbortSignal) {
           last = i;
           return collected.add(path + (match ? ":" : "-") + i + ":" + line);
         };
-        const source = isExecutionPath(path) ? executionLines(path, undefined, signal) : resultLines(readResult(path));
+        const source = isExecutionPath(path) ? executionLines(path, undefined, signal) : resultLines(isMemoryPath(path) ? readMemory(path) : readResult(path));
         for await (const line of source) {
           if (index > 0 && index % 128 === 0) await yieldLoop();
           if (signal.aborted) return output(collected.text());
