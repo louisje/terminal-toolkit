@@ -1,13 +1,13 @@
+import { readRange } from "./readRange.js";
 import { runForeground } from "../runtime/foreground.js";
 import { executionManager } from "./runtime.js";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { isExecutionPath, readExecutionPage } from "../runtime/virtual.js";
+import { isExecutionPath } from "../runtime/virtual.js";
 import { z } from "zod";
 import type { ToolDefinition } from "./definitions.js";
 import { getDefaultShell } from "../utils/platform.js";
-import { resolveBuiltinSkillPath } from "../skills.js";
-import { isResultPath, readResult } from "./resultStore.js";
+import { isResultPath } from "./resultStore.js";
 
 const operatorCwd = process.cwd();
 
@@ -15,7 +15,7 @@ const operatorCwd = process.cwd();
 
 type TextResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
 
-const readSchema = z.object({ path: z.string(), offset: z.number().int().positive().optional(), limit: z.number().int().positive().optional() });
+const readSchema = z.object({ path: z.string(), offset: z.number().int().refine(n => n !== 0).optional(), limit: z.number().int().positive().optional(), timeout: z.number().min(0).max(90).optional() });
 const writeSchema = z.object({ path: z.string(), content: z.string() });
 const editSchema = z.object({ path: z.string(), edits: z.array(z.object({ oldText: z.string(), newText: z.string() })).min(1) });
 const shellSchema = z.object({ command: z.string(), timeout: z.number().finite().nonnegative().optional() });
@@ -24,7 +24,7 @@ const pythonSchema = z.object({ code: z.string(), timeout: z.number().finite().n
 const result = (value: string, isError = false): TextResult => ({ content: [{ type: "text", text: value }], ...(isError ? { isError: true } : {}) });
 
 export const operatorToolDefinitions: ToolDefinition[] = [
-  { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+  { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number or negative from EOF (-1 is last line). Metadata reports size in bytes and totalLines. Content exceeding 16 KiB is suppressed; narrow offset/limit. Timeout returns incomplete results.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", description: "Nonzero; negative counts from EOF" }, limit: { type: "integer", minimum: 1 }, timeout: { type: "number", minimum: 0, maximum: 90, description: "Seconds, default 30; 0 disables tool timeout" } }, required: ["path"] } },
   { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
   { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
   { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 90, maximum 90); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["code"] } },
@@ -38,12 +38,7 @@ export async function handleOperatorTool(name: string, args: unknown, shell = ge
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args);
-      if (isExecutionPath(parsed.path)) return result(await readExecutionPage(parsed.path, parsed.offset, parsed.limit));
-      const target = isResultPath(parsed.path) ? "" : parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
-      const lines = (isResultPath(parsed.path) ? readResult(parsed.path) : await readFile(target, "utf8")).split("\n");
-      const start = (parsed.offset ?? 1) - 1;
-      if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
-      return result(lines.slice(start, parsed.limit === undefined ? undefined : start + parsed.limit).join("\n"));
+      return readRange(parsed, signal);
     }
     case "write": {
       const parsed = writeSchema.parse(args);

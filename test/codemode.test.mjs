@@ -94,7 +94,7 @@ test('codemode works through a real socket-connected MCP client', { timeout: 250
     const info = JSON.parse(await invoke('text(await tools.waitExecution('+args+'))'));
     assert.equal(info.status,'completed');
     const path = info.paths.stdout;
-    assert.equal(await invoke('text(await tools.read('+JSON.stringify({path})+'))'),'background-ok');
+    assert.match(await invoke('text(await tools.read('+JSON.stringify({path})+'))'), /^background-ok\n\[read-metadata\]/);
     assert.match(await invoke('text(await tools.grep('+JSON.stringify({path,pattern:'background-ok'})+'))'),/background-ok/);
     await invoke('text(await tools.removeExecution('+args+'))');
     const saved = await client.callTool({ name: 'codemode', arguments: { code: 'text(Array.from({length:3000},(_,i)=>i===1234?"socket-needle":"line-"+i).join("\\n"))' } });

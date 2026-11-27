@@ -199,3 +199,5 @@ to the existing server command.
 
 Cancellation cannot undo a completed file edit or a command's side effects.
 A stopped script also does not imply that a PTY session has been terminated.
+
+For `read()`, use positive 1-based offsets or negative offsets from EOF (e.g. -10), with an optional line limit. The read metadata reports full file size in bytes and totalLines even if content is suppressed at 16 KiB; narrow the range yourself. Timeout defaults to 30 seconds (0 disables it, maximum 90); incomplete metadata may be null.

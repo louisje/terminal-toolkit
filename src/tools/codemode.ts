@@ -7,7 +7,7 @@ import { dispatchTool } from "./index.js";
 import { namespaceRegistryGuidance } from "./namespaceGuidance.js";
 import { trackCall, recordSearch, recordDescribe } from "./stats.js";
 
-import { limitCodemodeText } from "./outputLimit.js";
+import { limitCodemodeText, MAX_TEXT_BLOCK_BYTES } from "./outputLimit.js";
 import { isResultPath } from "./resultStore.js";
 import { skillCatalog } from "../skills.js";
 
@@ -65,6 +65,11 @@ export async function runCodemodeWithDispatch(
       if (result.isError) throw new Error(result.content?.filter(c => c.type === "text").map(c => c.text).join("\n") || `Tool ${definition.name} failed`);
       if (result.structuredContent !== undefined) return result.structuredContent;
       const content = result.content ?? [];
+      if (definition.name === "read" && content.every(c => c.type === "text")) {
+        const combined = content.map(c => c.text).join("\n");
+        if (Buffer.byteLength(combined) <= MAX_TEXT_BLOCK_BYTES) return combined;
+        return ["Tool output exceeded the 16 KiB text block limit. Content suppressed; narrow offset/limit.", ...content.slice(1).map(c => c.text)].join("\n");
+      }
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     },

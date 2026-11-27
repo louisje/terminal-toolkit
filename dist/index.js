@@ -57,14 +57,14 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // node_modules/graceful-fs/polyfills.js
 var require_polyfills = __commonJS({
   "node_modules/graceful-fs/polyfills.js"(exports2, module2) {
-    var constants4 = __require("constants");
+    var constants5 = __require("constants");
     var origCwd = process.cwd;
-    var cwd2 = null;
+    var cwd3 = null;
     var platform2 = process.env.GRACEFUL_FS_PLATFORM || process.platform;
     process.cwd = function() {
-      if (!cwd2)
-        cwd2 = origCwd.call(process);
-      return cwd2;
+      if (!cwd3)
+        cwd3 = origCwd.call(process);
+      return cwd3;
     };
     try {
       process.cwd();
@@ -73,7 +73,7 @@ var require_polyfills = __commonJS({
     if (typeof process.chdir === "function") {
       chdir = process.chdir;
       process.chdir = function(d) {
-        cwd2 = null;
+        cwd3 = null;
         chdir.call(process, d);
       };
       if (Object.setPrototypeOf) Object.setPrototypeOf(process.chdir, chdir);
@@ -81,7 +81,7 @@ var require_polyfills = __commonJS({
     var chdir;
     module2.exports = patch;
     function patch(fs27) {
-      if (constants4.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
+      if (constants5.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
         patchLchmod(fs27);
       }
       if (!fs27.lutimes) {
@@ -183,7 +183,7 @@ var require_polyfills = __commonJS({
         fs28.lchmod = function(path28, mode, callback) {
           fs28.open(
             path28,
-            constants4.O_WRONLY | constants4.O_SYMLINK,
+            constants5.O_WRONLY | constants5.O_SYMLINK,
             mode,
             function(err, fd) {
               if (err) {
@@ -199,7 +199,7 @@ var require_polyfills = __commonJS({
           );
         };
         fs28.lchmodSync = function(path28, mode) {
-          var fd = fs28.openSync(path28, constants4.O_WRONLY | constants4.O_SYMLINK, mode);
+          var fd = fs28.openSync(path28, constants5.O_WRONLY | constants5.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
@@ -219,9 +219,9 @@ var require_polyfills = __commonJS({
         };
       }
       function patchLutimes(fs28) {
-        if (constants4.hasOwnProperty("O_SYMLINK") && fs28.futimes) {
+        if (constants5.hasOwnProperty("O_SYMLINK") && fs28.futimes) {
           fs28.lutimes = function(path28, at, mt, cb) {
-            fs28.open(path28, constants4.O_SYMLINK, function(er, fd) {
+            fs28.open(path28, constants5.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
@@ -234,7 +234,7 @@ var require_polyfills = __commonJS({
             });
           };
           fs28.lutimesSync = function(path28, at, mt) {
-            var fd = fs28.openSync(path28, constants4.O_SYMLINK);
+            var fd = fs28.openSync(path28, constants5.O_SYMLINK);
             var ret;
             var threw = true;
             try {
@@ -723,7 +723,7 @@ var require_graceful_fs = __commonJS({
       }
       function ReadStream$open() {
         var that = this;
-        open2(that.path, that.flags, that.mode, function(err, fd) {
+        open3(that.path, that.flags, that.mode, function(err, fd) {
           if (err) {
             if (that.autoClose)
               that.destroy();
@@ -743,7 +743,7 @@ var require_graceful_fs = __commonJS({
       }
       function WriteStream$open() {
         var that = this;
-        open2(that.path, that.flags, that.mode, function(err, fd) {
+        open3(that.path, that.flags, that.mode, function(err, fd) {
           if (err) {
             that.destroy();
             that.emit("error", err);
@@ -760,8 +760,8 @@ var require_graceful_fs = __commonJS({
         return new fs28.WriteStream(path28, options2);
       }
       var fs$open = fs28.open;
-      fs28.open = open2;
-      function open2(path28, flags, mode, cb) {
+      fs28.open = open3;
+      function open3(path28, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
         return go$open(path28, flags, mode, cb);
@@ -1981,7 +1981,7 @@ var require_minimist = __commonJS({
 var require_rc = __commonJS({
   "node_modules/rc/index.js"(exports2, module2) {
     var cc = require_utils();
-    var join18 = __require("path").join;
+    var join19 = __require("path").join;
     var deepExtend = require_deep_extend();
     var etc = "/etc";
     var win = process.platform === "win32";
@@ -2006,15 +2006,15 @@ var require_rc = __commonJS({
       }
       if (!win)
         [
-          join18(etc, name, "config"),
-          join18(etc, name + "rc")
+          join19(etc, name, "config"),
+          join19(etc, name + "rc")
         ].forEach(addConfigFile);
       if (home)
         [
-          join18(home, ".config", name, "config"),
-          join18(home, ".config", name),
-          join18(home, "." + name, "config"),
-          join18(home, "." + name + "rc")
+          join19(home, ".config", name, "config"),
+          join19(home, ".config", name),
+          join19(home, "." + name, "config"),
+          join19(home, "." + name + "rc")
         ].forEach(addConfigFile);
       addConfigFile(cc.find("." + name + "rc"));
       if (env5.config) addConfigFile(env5.config);
@@ -2031,14 +2031,14 @@ var require_rc = __commonJS({
 // node_modules/@pnpm/network.ca-file/node_modules/graceful-fs/polyfills.js
 var require_polyfills2 = __commonJS({
   "node_modules/@pnpm/network.ca-file/node_modules/graceful-fs/polyfills.js"(exports2, module2) {
-    var constants4 = __require("constants");
+    var constants5 = __require("constants");
     var origCwd = process.cwd;
-    var cwd2 = null;
+    var cwd3 = null;
     var platform2 = process.env.GRACEFUL_FS_PLATFORM || process.platform;
     process.cwd = function() {
-      if (!cwd2)
-        cwd2 = origCwd.call(process);
-      return cwd2;
+      if (!cwd3)
+        cwd3 = origCwd.call(process);
+      return cwd3;
     };
     try {
       process.cwd();
@@ -2047,7 +2047,7 @@ var require_polyfills2 = __commonJS({
     if (typeof process.chdir === "function") {
       chdir = process.chdir;
       process.chdir = function(d) {
-        cwd2 = null;
+        cwd3 = null;
         chdir.call(process, d);
       };
       if (Object.setPrototypeOf) Object.setPrototypeOf(process.chdir, chdir);
@@ -2055,7 +2055,7 @@ var require_polyfills2 = __commonJS({
     var chdir;
     module2.exports = patch;
     function patch(fs27) {
-      if (constants4.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
+      if (constants5.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
         patchLchmod(fs27);
       }
       if (!fs27.lutimes) {
@@ -2157,7 +2157,7 @@ var require_polyfills2 = __commonJS({
         fs28.lchmod = function(path28, mode, callback) {
           fs28.open(
             path28,
-            constants4.O_WRONLY | constants4.O_SYMLINK,
+            constants5.O_WRONLY | constants5.O_SYMLINK,
             mode,
             function(err, fd) {
               if (err) {
@@ -2173,7 +2173,7 @@ var require_polyfills2 = __commonJS({
           );
         };
         fs28.lchmodSync = function(path28, mode) {
-          var fd = fs28.openSync(path28, constants4.O_WRONLY | constants4.O_SYMLINK, mode);
+          var fd = fs28.openSync(path28, constants5.O_WRONLY | constants5.O_SYMLINK, mode);
           var threw = true;
           var ret;
           try {
@@ -2193,9 +2193,9 @@ var require_polyfills2 = __commonJS({
         };
       }
       function patchLutimes(fs28) {
-        if (constants4.hasOwnProperty("O_SYMLINK") && fs28.futimes) {
+        if (constants5.hasOwnProperty("O_SYMLINK") && fs28.futimes) {
           fs28.lutimes = function(path28, at, mt, cb) {
-            fs28.open(path28, constants4.O_SYMLINK, function(er, fd) {
+            fs28.open(path28, constants5.O_SYMLINK, function(er, fd) {
               if (er) {
                 if (cb) cb(er);
                 return;
@@ -2208,7 +2208,7 @@ var require_polyfills2 = __commonJS({
             });
           };
           fs28.lutimesSync = function(path28, at, mt) {
-            var fd = fs28.openSync(path28, constants4.O_SYMLINK);
+            var fd = fs28.openSync(path28, constants5.O_SYMLINK);
             var ret;
             var threw = true;
             try {
@@ -2697,7 +2697,7 @@ var require_graceful_fs2 = __commonJS({
       }
       function ReadStream$open() {
         var that = this;
-        open2(that.path, that.flags, that.mode, function(err, fd) {
+        open3(that.path, that.flags, that.mode, function(err, fd) {
           if (err) {
             if (that.autoClose)
               that.destroy();
@@ -2717,7 +2717,7 @@ var require_graceful_fs2 = __commonJS({
       }
       function WriteStream$open() {
         var that = this;
-        open2(that.path, that.flags, that.mode, function(err, fd) {
+        open3(that.path, that.flags, that.mode, function(err, fd) {
           if (err) {
             that.destroy();
             that.emit("error", err);
@@ -2734,8 +2734,8 @@ var require_graceful_fs2 = __commonJS({
         return new fs28.WriteStream(path28, options2);
       }
       var fs$open = fs28.open;
-      fs28.open = open2;
-      function open2(path28, flags, mode, cb) {
+      fs28.open = open3;
+      function open3(path28, flags, mode, cb) {
         if (typeof mode === "function")
           cb = mode, mode = null;
         return go$open(path28, flags, mode, cb);
@@ -5489,7 +5489,7 @@ var require_semver2 = __commonJS({
   "node_modules/semver/index.js"(exports2, module2) {
     "use strict";
     var internalRe = require_re();
-    var constants4 = require_constants();
+    var constants5 = require_constants();
     var SemVer = require_semver();
     var identifiers = require_identifiers();
     var parse5 = require_parse();
@@ -5571,8 +5571,8 @@ var require_semver2 = __commonJS({
       re: internalRe.re,
       src: internalRe.src,
       tokens: internalRe.t,
-      SEMVER_SPEC_VERSION: constants4.SEMVER_SPEC_VERSION,
-      RELEASE_TYPES: constants4.RELEASE_TYPES,
+      SEMVER_SPEC_VERSION: constants5.SEMVER_SPEC_VERSION,
+      RELEASE_TYPES: constants5.RELEASE_TYPES,
       compareIdentifiers: identifiers.compareIdentifiers,
       rcompareIdentifiers: identifiers.rcompareIdentifiers
     };
@@ -15672,7 +15672,7 @@ async function postSigned(sub, id2, body) {
   const url = callbackURL(sub.url);
   const address = await publicAddress(url);
   const timestamp = String(Math.floor(Date.now() / 1e3));
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const req = httpsRequest(url, {
       method: "POST",
       timeout: 1e4,
@@ -15695,7 +15695,7 @@ async function postSigned(sub, id2, body) {
         data += chunk;
         if (data.length > 4096) req.destroy(new Error("Callback response too large"));
       });
-      res.on("end", () => resolve6({ status: res.statusCode || 0, body: data }));
+      res.on("end", () => resolve7({ status: res.statusCode || 0, body: data }));
     });
     req.on("timeout", () => req.destroy(new Error("Callback timeout")));
     req.on("error", reject);
@@ -16157,11 +16157,11 @@ var require_codegen = __commonJS({
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
         return `${varKind} ${this.name}${rhs};` + _n;
       }
-      optimizeNames(names, constants4) {
+      optimizeNames(names, constants5) {
         if (!names[this.name.str])
           return;
         if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants4);
+          this.rhs = optimizeExpr(this.rhs, names, constants5);
         return this;
       }
       get names() {
@@ -16178,10 +16178,10 @@ var require_codegen = __commonJS({
       render({ _n }) {
         return `${this.lhs} = ${this.rhs};` + _n;
       }
-      optimizeNames(names, constants4) {
+      optimizeNames(names, constants5) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
           return;
-        this.rhs = optimizeExpr(this.rhs, names, constants4);
+        this.rhs = optimizeExpr(this.rhs, names, constants5);
         return this;
       }
       get names() {
@@ -16242,8 +16242,8 @@ var require_codegen = __commonJS({
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
       }
-      optimizeNames(names, constants4) {
-        this.code = optimizeExpr(this.code, names, constants4);
+      optimizeNames(names, constants5) {
+        this.code = optimizeExpr(this.code, names, constants5);
         return this;
       }
       get names() {
@@ -16272,12 +16272,12 @@ var require_codegen = __commonJS({
         }
         return nodes.length > 0 ? this : void 0;
       }
-      optimizeNames(names, constants4) {
+      optimizeNames(names, constants5) {
         const { nodes } = this;
         let i2 = nodes.length;
         while (i2--) {
           const n2 = nodes[i2];
-          if (n2.optimizeNames(names, constants4))
+          if (n2.optimizeNames(names, constants5))
             continue;
           subtractNames(names, n2.names);
           nodes.splice(i2, 1);
@@ -16330,12 +16330,12 @@ var require_codegen = __commonJS({
           return void 0;
         return this;
       }
-      optimizeNames(names, constants4) {
+      optimizeNames(names, constants5) {
         var _a;
-        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants4);
-        if (!(super.optimizeNames(names, constants4) || this.else))
+        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants5);
+        if (!(super.optimizeNames(names, constants5) || this.else))
           return;
-        this.condition = optimizeExpr(this.condition, names, constants4);
+        this.condition = optimizeExpr(this.condition, names, constants5);
         return this;
       }
       get names() {
@@ -16358,10 +16358,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.iteration})` + super.render(opts);
       }
-      optimizeNames(names, constants4) {
-        if (!super.optimizeNames(names, constants4))
+      optimizeNames(names, constants5) {
+        if (!super.optimizeNames(names, constants5))
           return;
-        this.iteration = optimizeExpr(this.iteration, names, constants4);
+        this.iteration = optimizeExpr(this.iteration, names, constants5);
         return this;
       }
       get names() {
@@ -16397,10 +16397,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
       }
-      optimizeNames(names, constants4) {
-        if (!super.optimizeNames(names, constants4))
+      optimizeNames(names, constants5) {
+        if (!super.optimizeNames(names, constants5))
           return;
-        this.iterable = optimizeExpr(this.iterable, names, constants4);
+        this.iterable = optimizeExpr(this.iterable, names, constants5);
         return this;
       }
       get names() {
@@ -16442,11 +16442,11 @@ var require_codegen = __commonJS({
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
-      optimizeNames(names, constants4) {
+      optimizeNames(names, constants5) {
         var _a, _b;
-        super.optimizeNames(names, constants4);
-        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants4);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants4);
+        super.optimizeNames(names, constants5);
+        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants5);
+        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants5);
         return this;
       }
       get names() {
@@ -16747,7 +16747,7 @@ var require_codegen = __commonJS({
     function addExprNames(names, from) {
       return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
     }
-    function optimizeExpr(expr, names, constants4) {
+    function optimizeExpr(expr, names, constants5) {
       if (expr instanceof code_1.Name)
         return replaceName(expr);
       if (!canOptimize(expr))
@@ -16762,14 +16762,14 @@ var require_codegen = __commonJS({
         return items;
       }, []));
       function replaceName(n2) {
-        const c3 = constants4[n2.str];
+        const c3 = constants5[n2.str];
         if (c3 === void 0 || names[n2.str] !== 1)
           return n2;
         delete names[n2.str];
         return c3;
       }
       function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c3) => c3 instanceof code_1.Name && names[c3.str] === 1 && constants4[c3.str] !== void 0);
+        return e instanceof code_1._Code && e._items.some((c3) => c3 instanceof code_1.Name && names[c3.str] === 1 && constants5[c3.str] !== void 0);
       }
     }
     function subtractNames(names, from) {
@@ -18731,7 +18731,7 @@ var require_compile = __commonJS({
       const schOrFunc = root2.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve6.call(this, root2, ref);
+      let _sch = resolve7.call(this, root2, ref);
       if (_sch === void 0) {
         const schema = (_a = root2.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -18758,7 +18758,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve6(root2, ref) {
+    function resolve7(root2, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -19389,7 +19389,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve6(baseURI, relativeURI, options2) {
+    function resolve7(baseURI, relativeURI, options2) {
       const schemelessOptions = options2 ? Object.assign({ scheme: "null" }, options2) : { scheme: "null" };
       const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed } = parseWithStatus(baseURI, schemelessOptions);
       const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed } = parseWithStatus(relativeURI, schemelessOptions);
@@ -19673,7 +19673,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize: normalize2,
-      resolve: resolve6,
+      resolve: resolve7,
       resolveComponent,
       equal,
       serialize: serialize2,
@@ -26307,7 +26307,7 @@ async function handleType(manager, args2) {
     if (enterSequence) {
       manager.write(enterSequence, parsed.sessionId);
     }
-    await new Promise((resolve6) => setTimeout(resolve6, 250));
+    await new Promise((resolve7) => setTimeout(resolve7, 250));
     const content = manager.getVisibleContent(parsed.sessionId);
     return {
       content: [
@@ -26439,11 +26439,11 @@ function formatMilliseconds(milliseconds) {
 }
 async function handleSleep(_manager, args2, signal) {
   const parsed = sleepSchema.parse(args2 ?? {});
-  await new Promise((resolve6, reject) => {
+  await new Promise((resolve7, reject) => {
     if (signal?.aborted) return reject(new Error("Sleep aborted"));
     const timer = setTimeout(() => {
       cleanup();
-      resolve6();
+      resolve7();
     }, parsed.milliseconds);
     const abort = () => {
       clearTimeout(timer);
@@ -26494,8 +26494,8 @@ var init_sleep = __esm({
 async function handleGetContent(manager, args2) {
   const parsed = getContentSchema.parse(args2 ?? {});
   if (parsed.delay > 0) {
-    await new Promise((resolve6) => {
-      setTimeout(resolve6, parsed.delay);
+    await new Promise((resolve7) => {
+      setTimeout(resolve7, parsed.delay);
     });
   }
   const useVisible = parsed.visibleOnly === true || parsed.visibleOnly === void 0 && parsed.maxLines === void 0;
@@ -27414,12 +27414,12 @@ var require_isexe = __commonJS({
         if (typeof Promise !== "function") {
           throw new TypeError("callback not provided");
         }
-        return new Promise(function(resolve6, reject) {
+        return new Promise(function(resolve7, reject) {
           isexe(path28, options2 || {}, function(er, is) {
             if (er) {
               reject(er);
             } else {
-              resolve6(is);
+              resolve7(is);
             }
           });
         });
@@ -27485,27 +27485,27 @@ var require_which = __commonJS({
         opt = {};
       const { pathEnv, pathExt, pathExtExe } = getPathInfo(cmd, opt);
       const found = [];
-      const step = (i2) => new Promise((resolve6, reject) => {
+      const step = (i2) => new Promise((resolve7, reject) => {
         if (i2 === pathEnv.length)
-          return opt.all && found.length ? resolve6(found) : reject(getNotFoundError(cmd));
+          return opt.all && found.length ? resolve7(found) : reject(getNotFoundError(cmd));
         const ppRaw = pathEnv[i2];
         const pathPart = /^".*"$/.test(ppRaw) ? ppRaw.slice(1, -1) : ppRaw;
         const pCmd = path28.join(pathPart, cmd);
         const p = !pathPart && /^\.[\\\/]/.test(cmd) ? cmd.slice(0, 2) + pCmd : pCmd;
-        resolve6(subStep(p, i2, 0));
+        resolve7(subStep(p, i2, 0));
       });
-      const subStep = (p, i2, ii) => new Promise((resolve6, reject) => {
+      const subStep = (p, i2, ii) => new Promise((resolve7, reject) => {
         if (ii === pathExt.length)
-          return resolve6(step(i2 + 1));
+          return resolve7(step(i2 + 1));
         const ext = pathExt[ii];
         isexe(p + ext, { pathExt: pathExtExe }, (er, is) => {
           if (!er && is) {
             if (opt.all)
               found.push(p + ext);
             else
-              return resolve6(p + ext);
+              return resolve7(p + ext);
           }
-          return resolve6(subStep(p, i2, ii + 1));
+          return resolve7(subStep(p, i2, ii + 1));
         });
       });
       return cb ? step(0).then((res) => cb(null, res), cb) : step(0);
@@ -27570,7 +27570,7 @@ var require_resolveCommand = __commonJS({
     var getPathKey = require_path_key();
     function resolveCommandAttempt(parsed, withoutPathExt) {
       const env5 = parsed.options.env || process.env;
-      const cwd2 = process.cwd();
+      const cwd3 = process.cwd();
       const hasCustomCwd = parsed.options.cwd != null;
       const shouldSwitchCwd = hasCustomCwd && process.chdir !== void 0 && !process.chdir.disabled;
       if (shouldSwitchCwd) {
@@ -27588,7 +27588,7 @@ var require_resolveCommand = __commonJS({
       } catch (e) {
       } finally {
         if (shouldSwitchCwd) {
-          process.chdir(cwd2);
+          process.chdir(cwd3);
         }
       }
       if (resolved) {
@@ -28696,7 +28696,7 @@ var require_kill = __commonJS({
         return spawnedPromise;
       }
       let timeoutId;
-      const timeoutPromise = new Promise((resolve6, reject) => {
+      const timeoutPromise = new Promise((resolve7, reject) => {
         timeoutId = setTimeout(() => {
           timeoutKill(spawned, killSignal, reject);
         }, timeout2);
@@ -28815,7 +28815,7 @@ var require_get_stream = __commonJS({
       };
       const { maxBuffer } = options2;
       const stream2 = bufferStream(options2);
-      await new Promise((resolve6, reject) => {
+      await new Promise((resolve7, reject) => {
         const rejectPromise = (error2) => {
           if (error2 && stream2.getBufferedLength() <= BufferConstants.MAX_LENGTH) {
             error2.bufferedData = stream2.getBufferedValue();
@@ -28825,7 +28825,7 @@ var require_get_stream = __commonJS({
         (async () => {
           try {
             await streamPipelinePromisified(inputStream, stream2);
-            resolve6();
+            resolve7();
           } catch (error2) {
             rejectPromise(error2);
           }
@@ -28982,9 +28982,9 @@ var require_promise = __commonJS({
       return spawned;
     };
     var getSpawnedPromise = (spawned) => {
-      return new Promise((resolve6, reject) => {
+      return new Promise((resolve7, reject) => {
         spawned.on("exit", (exitCode, signal) => {
-          resolve6({ exitCode, signal });
+          resolve7({ exitCode, signal });
         });
         spawned.on("error", (error2) => {
           reject(error2);
@@ -30462,11 +30462,11 @@ var hasColors, format2, reset, bold, dim, italic, underline, underlineDouble, un
 var init_base = __esm({
   "node_modules/yoctocolors/base.js"() {
     hasColors = tty2?.WriteStream?.prototype?.hasColors?.() ?? false;
-    format2 = (open2, close) => {
+    format2 = (open3, close) => {
       if (!hasColors) {
         return (input) => input;
       }
-      const openCode = `\x1B[${open2}m`;
+      const openCode = `\x1B[${open3}m`;
       const closeCode = `\x1B[${close}m`;
       return (input) => {
         const string3 = input + "";
@@ -30820,13 +30820,13 @@ var init_npm_run_path = __esm({
     init_path_key();
     init_node();
     npmRunPath = ({
-      cwd: cwd2 = process18.cwd(),
+      cwd: cwd3 = process18.cwd(),
       path: pathOption = process18.env[pathKey()],
       preferLocal = true,
       execPath: execPath2 = process18.execPath,
       addExecPath = true
     } = {}) => {
-      const cwdPath = path14.resolve(toPath(cwd2));
+      const cwdPath = path14.resolve(toPath(cwd3));
       const result4 = [];
       const pathParts = pathOption.split(path14.delimiter);
       if (preferLocal) {
@@ -31527,8 +31527,8 @@ var init_deferred = __esm({
   "node_modules/execa/lib/utils/deferred.js"() {
     createDeferred = () => {
       const methods = {};
-      const promise = new Promise((resolve6, reject) => {
-        Object.assign(methods, { resolve: resolve6, reject });
+      const promise = new Promise((resolve7, reject) => {
+        Object.assign(methods, { resolve: resolve7, reject });
       });
       return Object.assign(promise, methods);
     };
@@ -32145,7 +32145,7 @@ var init_node2 = __esm({
       node: shouldHandleNode = false,
       nodePath = execPath,
       nodeOptions = execArgv.filter((nodeOption) => !nodeOption.startsWith("--inspect")),
-      cwd: cwd2,
+      cwd: cwd3,
       execPath: formerNodePath,
       ...options2
     }) => {
@@ -32153,12 +32153,12 @@ var init_node2 = __esm({
         throw new TypeError('The "execPath" option has been removed. Please use the "nodePath" option instead.');
       }
       const normalizedNodePath = safeNormalizeFileUrl(nodePath, 'The "nodePath" option');
-      const resolvedNodePath = path15.resolve(cwd2, normalizedNodePath);
+      const resolvedNodePath = path15.resolve(cwd3, normalizedNodePath);
       const newOptions = {
         ...options2,
         nodePath: resolvedNodePath,
         node: shouldHandleNode,
-        cwd: cwd2
+        cwd: cwd3
       };
       if (!shouldHandleNode) {
         return [file, commandArguments2, newOptions];
@@ -32271,8 +32271,8 @@ var normalizeCwd, getDefaultCwd, fixCwdError;
 var init_cwd = __esm({
   "node_modules/execa/lib/arguments/cwd.js"() {
     init_file_url();
-    normalizeCwd = (cwd2 = getDefaultCwd()) => {
-      const cwdString = safeNormalizeFileUrl(cwd2, 'The "cwd" option');
+    normalizeCwd = (cwd3 = getDefaultCwd()) => {
+      const cwdString = safeNormalizeFileUrl(cwd3, 'The "cwd" option');
       return path16.resolve(cwdString);
     };
     getDefaultCwd = () => {
@@ -32284,20 +32284,20 @@ ${error2.message}`;
         throw error2;
       }
     };
-    fixCwdError = (originalMessage, cwd2) => {
-      if (cwd2 === getDefaultCwd()) {
+    fixCwdError = (originalMessage, cwd3) => {
+      if (cwd3 === getDefaultCwd()) {
         return originalMessage;
       }
       let cwdStat;
       try {
-        cwdStat = statSync2(cwd2);
+        cwdStat = statSync2(cwd3);
       } catch (error2) {
-        return `The "cwd" option is invalid: ${cwd2}.
+        return `The "cwd" option is invalid: ${cwd3}.
 ${error2.message}
 ${originalMessage}`;
       }
       if (!cwdStat.isDirectory()) {
-        return `The "cwd" option is not a directory: ${cwd2}.
+        return `The "cwd" option is not a directory: ${cwd3}.
 ${originalMessage}`;
       }
       return originalMessage;
@@ -32348,8 +32348,8 @@ var init_options = __esm({
     addDefaultOptions = ({
       extendEnv = true,
       preferLocal = false,
-      cwd: cwd2,
-      localDir: localDirectory = cwd2,
+      cwd: cwd3,
+      localDir: localDirectory = cwd3,
       encoding = "utf8",
       reject = true,
       cleanup = true,
@@ -32366,7 +32366,7 @@ var init_options = __esm({
       ...options2,
       extendEnv,
       preferLocal,
-      cwd: cwd2,
+      cwd: cwd3,
       localDirectory,
       encoding,
       reject,
@@ -32969,7 +32969,7 @@ var init_message = __esm({
       killSignal,
       maxBuffer,
       timeout: timeout2,
-      cwd: cwd2
+      cwd: cwd3
     }) => {
       const errorCode = originalError?.code;
       const prefix = getErrorPrefix({
@@ -32988,7 +32988,7 @@ var init_message = __esm({
         forceKillAfterDelay,
         killSignal
       });
-      const originalMessage = getOriginalMessage(originalError, cwd2);
+      const originalMessage = getOriginalMessage(originalError, cwd3);
       const suffix = originalMessage === void 0 ? "" : `
 ${originalMessage}`;
       const shortMessage = `${prefix}: ${escapedCommand}${suffix}`;
@@ -33048,12 +33048,12 @@ ${originalMessage}`;
       return "Command failed";
     };
     getForcefulSuffix = (isForcefullyTerminated, forceKillAfterDelay) => isForcefullyTerminated ? ` and was forcefully terminated after ${forceKillAfterDelay} milliseconds` : "";
-    getOriginalMessage = (originalError, cwd2) => {
+    getOriginalMessage = (originalError, cwd3) => {
       if (originalError instanceof DiscardedError) {
         return;
       }
       const originalMessage = isExecaError(originalError) ? originalError.originalMessage : String(originalError?.message ?? originalError);
-      const escapedOriginalMessage = escapeLines(fixCwdError(originalMessage, cwd2));
+      const escapedOriginalMessage = escapeLines(fixCwdError(originalMessage, cwd3));
       return escapedOriginalMessage === "" ? void 0 : escapedOriginalMessage;
     };
     serializeIpcMessage = (ipcMessage) => typeof ipcMessage === "string" ? ipcMessage : inspect2(ipcMessage);
@@ -33084,12 +33084,12 @@ var init_result = __esm({
       stdio,
       all,
       ipcOutput,
-      options: { cwd: cwd2 },
+      options: { cwd: cwd3 },
       startTime
     }) => omitUndefinedProperties({
       command,
       escapedCommand,
-      cwd: cwd2,
+      cwd: cwd3,
       durationMs: getDurationMs(startTime),
       failed: false,
       timedOut: false,
@@ -33149,7 +33149,7 @@ var init_result = __esm({
         timeout: timeout2 = timeoutDuration,
         forceKillAfterDelay,
         killSignal,
-        cwd: cwd2,
+        cwd: cwd3,
         maxBuffer
       },
       isSync
@@ -33173,7 +33173,7 @@ var init_result = __esm({
         killSignal,
         maxBuffer,
         timeout: timeout2,
-        cwd: cwd2
+        cwd: cwd3
       });
       const error2 = getFinalError(originalError, message, isSync);
       Object.assign(error2, getErrorProperties({
@@ -33192,7 +33192,7 @@ var init_result = __esm({
         stdio,
         all,
         ipcOutput,
-        cwd: cwd2,
+        cwd: cwd3,
         originalMessage,
         shortMessage
       }));
@@ -33214,7 +33214,7 @@ var init_result = __esm({
       stdio,
       all,
       ipcOutput,
-      cwd: cwd2,
+      cwd: cwd3,
       originalMessage,
       shortMessage
     }) => omitUndefinedProperties({
@@ -33222,7 +33222,7 @@ var init_result = __esm({
       originalMessage,
       command,
       escapedCommand,
-      cwd: cwd2,
+      cwd: cwd3,
       durationMs: getDurationMs(startTime),
       failed: true,
       timedOut,
@@ -36825,11 +36825,11 @@ var init_concurrent = __esm({
       const promises = weakMap.get(stream);
       const promise = createDeferred();
       promises.push(promise);
-      const resolve6 = promise.resolve.bind(promise);
-      return { resolve: resolve6, promises };
+      const resolve7 = promise.resolve.bind(promise);
+      return { resolve: resolve7, promises };
     };
-    waitForConcurrentStreams = async ({ resolve: resolve6, promises }, subprocess) => {
-      resolve6();
+    waitForConcurrentStreams = async ({ resolve: resolve7, promises }, subprocess) => {
+      resolve7();
       const [isSubprocessExit] = await Promise.race([
         Promise.allSettled([true, subprocess]),
         Promise.all([false, ...promises])
@@ -38695,7 +38695,7 @@ var require_utils3 = __commonJS({
     }
     module2.exports.createNamedPipe = (server) => {
       const buf = Buffer.alloc(BUFFER_SIZE);
-      return new Promise((resolve6) => {
+      return new Promise((resolve7) => {
         server.instance = net3.createServer((stream) => {
           stream.on("data", (c3) => {
             buf.write(c3.toString());
@@ -38705,7 +38705,7 @@ var require_utils3 = __commonJS({
           });
         });
         server.instance.listen(server.namedPipe, () => {
-          resolve6(buf);
+          resolve7(buf);
         });
       });
     };
@@ -39831,7 +39831,7 @@ async function handleNotify(_manager, args2) {
     return { content: [{ type: "text", text: `Notification and toast sent: "${parsed.message}"` }] };
   }
   try {
-    await new Promise((resolve6, reject) => {
+    await new Promise((resolve7, reject) => {
       import_node_notifier.default.notify(
         {
           title: parsed.title,
@@ -39841,7 +39841,7 @@ async function handleNotify(_manager, args2) {
         },
         (error2) => {
           if (error2) reject(error2);
-          else resolve6();
+          else resolve7();
         }
       );
     });
@@ -40082,619 +40082,6 @@ var init_getToolStat = __esm({
         }
       }
     };
-  }
-});
-
-// src/runtime/foreground.ts
-import { readFile } from "node:fs/promises";
-import { join as join6 } from "node:path";
-async function runForeground(manager, options2, timeout2 = DEFAULT_WAIT_SECONDS, signal) {
-  if (!Number.isFinite(timeout2) || timeout2 < 0) throw new Error("timeout must be a finite non-negative number");
-  const execution = await manager.start(options2, signal);
-  let timer;
-  const warning = timeoutWarningScope.getStore();
-  let onWarning;
-  let onAbort;
-  try {
-    await execution.ready;
-    signal?.throwIfAborted();
-    const completed = timeout2 === 0 ? false : await Promise.race([
-      execution.done.then(() => true),
-      new Promise((resolve6) => {
-        onWarning = () => resolve6(false);
-        warning?.addEventListener("abort", onWarning, { once: true });
-        if (warning?.aborted) onWarning();
-      }),
-      new Promise((resolve6) => {
-        timer = setTimeout(() => resolve6(false), Math.min(timeout2, MAX_WAIT_SECONDS) * 1e3);
-      }),
-      new Promise((_, reject) => {
-        onAbort = () => reject(new Error("Command aborted"));
-        signal?.addEventListener("abort", onAbort, { once: true });
-        if (signal?.aborted) onAbort();
-      })
-    ]);
-    signal?.throwIfAborted();
-    if (!completed && (timeout2 === 0 || execution.info.finishedAt === void 0)) {
-      execution.detach();
-      return result("Execution moved to background.\n\nexecutionId: " + execution.info.executionId + "\n\nUse getExecution() to inspect its status and output paths, or waitExecution() to wait for completion.");
-    }
-    const info = execution.info;
-    if (info.error) return result(info.error, true);
-    if (info.stdoutSize + info.stderrSize > LEGACY_BUFFER_LIMIT || info.outputTruncated) return result("Command output exceeded 10 MiB buffer.", true);
-    const output2 = await readFile(join6(execution.directory, "stdout"), "utf8") + await readFile(join6(execution.directory, "stderr"), "utf8");
-    signal?.throwIfAborted();
-    if (info.exitCode !== 0) return result(output2 + (output2 ? "\n" : "") + "Command exited with code " + (info.exitCode ?? "unknown") + ".", true);
-    return result(output2);
-  } catch (error2) {
-    execution.cancel();
-    if (signal?.aborted) throw new Error("Command aborted");
-    throw error2;
-  } finally {
-    if (timer !== void 0) clearTimeout(timer);
-    if (onWarning) warning?.removeEventListener("abort", onWarning);
-    if (onAbort) signal?.removeEventListener("abort", onAbort);
-    if (!execution.info.background) {
-      void execution.done.then(() => manager.remove(execution.info.executionId)).catch(() => {
-      });
-    }
-  }
-}
-var DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS, LEGACY_BUFFER_LIMIT, result;
-var init_foreground = __esm({
-  "src/runtime/foreground.ts"() {
-    "use strict";
-    init_timeoutWarning();
-    DEFAULT_WAIT_SECONDS = 90;
-    MAX_WAIT_SECONDS = 90;
-    LEGACY_BUFFER_LIMIT = 10 * 1024 * 1024;
-    result = (text, isError = false) => ({ content: [{ type: "text", text }], ...isError ? { isError: true } : {} });
-  }
-});
-
-// src/runtime/processTree.ts
-import { spawn as spawn3 } from "node:child_process";
-import { join as join7 } from "node:path";
-function killProcessTree(pid) {
-  if (process.platform === "win32") {
-    const killer = spawn3(
-      join7(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe"),
-      ["/F", "/T", "/PID", String(pid)],
-      { stdio: "ignore", detached: true, windowsHide: true }
-    );
-    killer.once("error", () => {
-    });
-    killer.unref();
-  } else {
-    try {
-      process.kill(-pid, "SIGKILL");
-    } catch {
-      try {
-        process.kill(pid, "SIGKILL");
-      } catch {
-      }
-    }
-  }
-}
-var init_processTree = __esm({
-  "src/runtime/processTree.ts"() {
-    "use strict";
-  }
-});
-
-// src/runtime/retention.ts
-import { readdir, readFile as readFile2, rm, writeFile } from "node:fs/promises";
-import { join as join8 } from "node:path";
-async function markInstance(directory) {
-  await writeFile(join8(directory, "owner.json"), JSON.stringify({ pid: process.pid }), { mode: 384, flag: "wx" });
-}
-async function reclaimStaleInstances(root2) {
-  for (const entry of await readdir(root2, { withFileTypes: true })) {
-    if (!entry.isDirectory() || !entry.name.startsWith("instance-")) continue;
-    const directory = join8(root2, entry.name);
-    try {
-      const owner = JSON.parse(await readFile2(join8(directory, "owner.json"), "utf8"));
-      if (!Number.isSafeInteger(owner.pid) || owner.pid <= 0) continue;
-      try {
-        process.kill(owner.pid, 0);
-      } catch (error2) {
-        if (error2.code === "ESRCH")
-          await rm(directory, { recursive: true, force: true });
-      }
-    } catch {
-    }
-  }
-}
-var init_retention = __esm({
-  "src/runtime/retention.ts"() {
-    "use strict";
-  }
-});
-
-// src/runtime/output.ts
-import { open } from "node:fs/promises";
-import { join as join9 } from "node:path";
-var DEFAULT_OUTPUT_LIMIT, ExecutionOutput;
-var init_output2 = __esm({
-  "src/runtime/output.ts"() {
-    "use strict";
-    DEFAULT_OUTPUT_LIMIT = 100 * 1024 * 1024;
-    ExecutionOutput = class _ExecutionOutput {
-      constructor(files2, limit, reserveGlobal, onProgress) {
-        this.files = files2;
-        this.limit = limit;
-        this.reserveGlobal = reserveGlobal;
-        this.onProgress = onProgress;
-      }
-      files;
-      limit;
-      reserveGlobal;
-      onProgress;
-      reserved = 0;
-      sizes = { stdout: 0, stderr: 0 };
-      truncated = false;
-      lastOutputAt;
-      static async create(directory, limit, reserveGlobal, onProgress) {
-        const stdout = await open(join9(directory, "stdout"), "wx", 384);
-        try {
-          const stderr = await open(join9(directory, "stderr"), "wx", 384);
-          return new _ExecutionOutput({ stdout, stderr }, limit, reserveGlobal, onProgress);
-        } catch (error2) {
-          await stdout.close();
-          throw error2;
-        }
-      }
-      async collect(name, stream) {
-        for await (const value of stream) {
-          const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
-          this.lastOutputAt = Date.now();
-          const count2 = this.reserveGlobal(Math.min(chunk.length, Math.max(0, this.limit - this.reserved)));
-          this.reserved += count2;
-          if (count2 < chunk.length) this.truncated = true;
-          let offset = 0;
-          while (offset < count2) {
-            const { bytesWritten } = await this.files[name].write(chunk, offset, count2 - offset);
-            if (!bytesWritten) throw new Error("Output write made no progress");
-            offset += bytesWritten;
-            this.sizes[name] += bytesWritten;
-            this.onProgress();
-          }
-          this.onProgress();
-        }
-      }
-      async close() {
-        const results = await Promise.allSettled(Object.values(this.files).map((file) => file.close()));
-        const failure = results.find((result4) => result4.status === "rejected");
-        if (failure?.status === "rejected") throw failure.reason;
-      }
-    };
-  }
-});
-
-// src/runtime/manager.ts
-import { spawn as spawn4 } from "node:child_process";
-import { randomUUID as randomUUID3 } from "node:crypto";
-import { mkdir, mkdtemp, rm as rm2 } from "node:fs/promises";
-import { homedir as homedir5 } from "node:os";
-import { join as join10 } from "node:path";
-var ExecutionManager;
-var init_manager = __esm({
-  "src/runtime/manager.ts"() {
-    "use strict";
-    init_processTree();
-    init_retention();
-    init_output2();
-    ExecutionManager = class {
-      constructor(root2 = join10(homedir5(), ".local", "state", "terminal-toolkit", "executions"), outputLimit = DEFAULT_OUTPUT_LIMIT, totalLimit = 1024 * 1024 * 1024, concurrency = 16) {
-        this.root = root2;
-        this.outputLimit = outputLimit;
-        this.totalLimit = totalLimit;
-        this.concurrency = concurrency;
-      }
-      root;
-      outputLimit;
-      totalLimit;
-      concurrency;
-      entries = /* @__PURE__ */ new Map();
-      directory;
-      starting = 0;
-      closing = false;
-      reserved = 0;
-      reservations = /* @__PURE__ */ new Map();
-      removals = /* @__PURE__ */ new Map();
-      sweepTimer;
-      sweeping;
-      shutdownPromise;
-      instanceDirectory() {
-        return this.directory ??= (async () => {
-          await mkdir(this.root, { recursive: true, mode: 448 });
-          await reclaimStaleInstances(this.root);
-          const directory = await mkdtemp(join10(this.root, "instance-"));
-          try {
-            await markInstance(directory);
-          } catch (error2) {
-            await rm2(directory, { recursive: true, force: true });
-            throw error2;
-          }
-          return directory;
-        })();
-      }
-      get(id2) {
-        return this.entries.get(id2);
-      }
-      list() {
-        return [...this.entries.values()];
-      }
-      async start(options2, signal) {
-        signal?.throwIfAborted();
-        if (this.closing) throw new Error("Execution manager is shutting down");
-        if (this.starting + this.list().filter((e) => e.info.finishedAt === void 0).length >= this.concurrency) throw new Error("Concurrent execution limit reached");
-        this.starting++;
-        const id2 = randomUUID3();
-        let directory;
-        try {
-          await this.sweep();
-          directory = join10(await this.instanceDirectory(), id2);
-          await mkdir(directory, { mode: 448 });
-          if (this.closing) {
-            await rm2(directory, { recursive: true, force: true });
-            throw new Error("Execution manager is shutting down");
-          }
-        } finally {
-          this.starting--;
-        }
-        this.sweepTimer ??= setInterval(() => {
-          void this.sweep().catch(() => {
-          });
-        }, 6e4).unref();
-        let child;
-        let finishing = false;
-        let output2;
-        let collectors = [];
-        const info = {
-          executionId: id2,
-          tool: options2.tool,
-          status: "starting",
-          background: false,
-          startedAt: Date.now(),
-          stdoutSize: 0,
-          stderrSize: 0
-        };
-        let readyResolve;
-        let readyReject;
-        let doneResolve;
-        const ready = new Promise((resolve6, reject) => {
-          readyResolve = resolve6;
-          readyReject = reject;
-        });
-        void ready.catch(() => {
-        });
-        const done = new Promise((resolve6) => {
-          doneResolve = resolve6;
-        });
-        const execution = { info, directory, ready, done, cancel: () => {
-          if (finishing || info.finishedAt !== void 0 || info.status === "cancelling") return;
-          info.status = "cancelling";
-          if (child?.pid) killProcessTree(child.pid);
-        }, detach: () => {
-          signal?.throwIfAborted();
-          if (info.status === "cancelling") throw new Error("Execution cancelled");
-          info.background = true;
-          info.detachedAt ??= Date.now();
-          signal?.removeEventListener("abort", onAbort);
-        } };
-        this.entries.set(id2, execution);
-        const onAbort = () => execution.cancel();
-        signal?.addEventListener("abort", onAbort, { once: true });
-        const finish = async (code, exitSignal, error2) => {
-          if (finishing || info.finishedAt !== void 0) return;
-          finishing = true;
-          const cancelled = info.status === "cancelling";
-          info.exitCode = code;
-          info.signal = exitSignal;
-          if (error2) info.error = error2.message;
-          await Promise.all(collectors);
-          if (output2) {
-            try {
-              await output2.close();
-            } catch (failure) {
-              info.error ??= String(failure);
-            }
-            info.stdoutSize = output2.sizes.stdout;
-            info.stderrSize = output2.sizes.stderr;
-            info.outputTruncated = output2.truncated;
-            info.lastOutputAt = output2.lastOutputAt;
-          }
-          info.status = cancelled ? "cancelled" : error2 || info.error || code !== 0 ? "failed" : "completed";
-          info.finishedAt = Date.now();
-          signal?.removeEventListener("abort", onAbort);
-          doneResolve();
-        };
-        try {
-          output2 = await ExecutionOutput.create(directory, this.outputLimit, (bytes) => {
-            const count2 = Math.min(bytes, Math.max(0, this.totalLimit - this.reserved));
-            this.reserved += count2;
-            this.reservations.set(id2, (this.reservations.get(id2) ?? 0) + count2);
-            return count2;
-          }, () => {
-            if (!output2) return;
-            info.stdoutSize = output2.sizes.stdout;
-            info.stderrSize = output2.sizes.stderr;
-            info.outputTruncated = output2.truncated;
-            info.lastOutputAt = output2.lastOutputAt;
-          });
-          if (this.closing) throw new Error("Execution manager is shutting down");
-          signal?.throwIfAborted();
-          child = spawn4(options2.command, options2.args ?? [], {
-            cwd: options2.cwd,
-            shell: options2.shell,
-            detached: process.platform !== "win32",
-            windowsHide: true,
-            stdio: [options2.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
-          });
-          const capture = (name, stream) => output2.collect(name, stream).catch((error2) => {
-            info.error ??= String(error2);
-            if (child?.pid) killProcessTree(child.pid);
-          });
-          collectors = [capture("stdout", child.stdout), capture("stderr", child.stderr)];
-          child.once("spawn", () => {
-            info.pid = child?.pid;
-            if (info.status !== "cancelling") info.status = "running";
-            else if (child?.pid) killProcessTree(child.pid);
-            readyResolve();
-          });
-          child.once("error", (error2) => {
-            info.error = error2.message;
-            readyReject(error2);
-          });
-          child.once("close", (code, exitSignal) => {
-            void finish(code, exitSignal);
-          });
-          child.stdin?.on("error", () => {
-          });
-          if (options2.input !== void 0) child.stdin?.end(options2.input);
-        } catch (error2) {
-          const failure = error2 instanceof Error ? error2 : new Error(String(error2));
-          readyReject(failure);
-          await finish(null, null, failure);
-        }
-        return execution;
-      }
-      async remove(id2) {
-        const pending = this.removals.get(id2);
-        if (pending) return pending;
-        const execution = this.entries.get(id2);
-        if (!execution) throw new Error("Unknown execution");
-        if (execution.info.finishedAt === void 0) throw new Error("Execution is still active");
-        const removal = (async () => {
-          await rm2(execution.directory, { recursive: true, force: true });
-          if (this.entries.delete(id2)) {
-            this.reserved -= this.reservations.get(id2) ?? 0;
-            this.reservations.delete(id2);
-          }
-        })().finally(() => this.removals.delete(id2));
-        this.removals.set(id2, removal);
-        return removal;
-      }
-      sweep() {
-        if (this.sweeping) return this.sweeping;
-        this.sweeping = (async () => {
-          const completed = this.list().filter((e) => e.info.background && e.info.finishedAt !== void 0).sort((a2, b) => a2.info.finishedAt - b.info.finishedAt);
-          for (let i2 = 0; i2 < completed.length; i2++) {
-            const e = completed[i2];
-            if (Date.now() - e.info.finishedAt > 864e5 || completed.length - i2 > 100 || this.reserved + this.outputLimit > this.totalLimit)
-              await this.remove(e.info.executionId).catch(() => {
-              });
-          }
-        })().finally(() => {
-          this.sweeping = void 0;
-        });
-        return this.sweeping;
-      }
-      cancelAll() {
-        this.closing = true;
-        for (const e of this.list()) e.cancel();
-      }
-      shutdown() {
-        return this.shutdownPromise ??= (async () => {
-          this.cancelAll();
-          if (this.sweepTimer) clearInterval(this.sweepTimer);
-          while (this.starting) await new Promise((resolve6) => setTimeout(resolve6, 10));
-          await Promise.all(this.list().map((e) => e.done));
-          await this.sweeping;
-          await Promise.allSettled(this.removals.values());
-          if (this.directory) await rm2(await this.directory, { recursive: true, force: true });
-          this.entries.clear();
-          this.reservations.clear();
-          this.reserved = 0;
-        })();
-      }
-    };
-  }
-});
-
-// src/runtime/virtual.ts
-import { createReadStream as createReadStream2 } from "node:fs";
-import { createInterface } from "node:readline";
-import { join as join11, matchesGlob } from "node:path";
-import { setImmediate as yieldLoop } from "node:timers/promises";
-function executionPaths(id2) {
-  return Object.fromEntries(files.map((file) => [file, "execution://" + id2 + "/" + file]));
-}
-function resolveExecutionPath(path28, manager = executionManager) {
-  const match = /^execution:\/\/([0-9a-f-]{36})(?:\/(stdout|stderr|info\.json)?)?$/.exec(path28);
-  if (!match) throw new Error("Invalid execution path");
-  const execution = manager.get(match[1]);
-  if (!execution?.info.background) throw new Error("Unknown background execution");
-  return { execution, file: match[2] };
-}
-async function* executionLines(path28, manager = executionManager, signal) {
-  const { execution, file } = resolveExecutionPath(path28, manager);
-  if (!file) throw new Error("Expected execution file");
-  if (file === "info.json") {
-    yield* JSON.stringify({ ...execution.info, paths: executionPaths(execution.info.executionId) }, null, 2).split("\n");
-    return;
-  }
-  const size = file === "stdout" ? execution.info.stdoutSize : execution.info.stderrSize;
-  if (!size) {
-    yield "";
-    return;
-  }
-  const stream = createReadStream2(join11(execution.directory, file), { end: size - 1 });
-  const lines = createInterface({ input: stream, crlfDelay: Infinity });
-  const abort = () => {
-    lines.close();
-    stream.destroy();
-  };
-  signal?.addEventListener("abort", abort, { once: true });
-  if (signal?.aborted) abort();
-  let lastByte = 0;
-  stream.on("data", (chunk) => {
-    lastByte = typeof chunk === "string" ? chunk.charCodeAt(chunk.length - 1) : chunk[chunk.length - 1];
-  });
-  try {
-    if (signal?.aborted) return;
-    for await (const line of lines) {
-      if (signal?.aborted) break;
-      yield line;
-    }
-    if (!signal?.aborted && lastByte === 10) yield "";
-  } finally {
-    signal?.removeEventListener("abort", abort);
-    lines.close();
-    stream.destroy();
-  }
-}
-async function readExecutionPage(path28, offset = 1, limit, manager = executionManager) {
-  const selected = [];
-  let index = 0, bytes = 0;
-  for await (const line of executionLines(path28, manager)) {
-    if (++index < offset) continue;
-    bytes += Buffer.byteLength(line) + 1;
-    if (bytes > 10 * 1024 * 1024) throw new Error("Execution read exceeds 10 MiB; use a smaller line range");
-    selected.push(line);
-    if (limit !== void 0 && selected.length >= limit) break;
-  }
-  if (!selected.length) throw new Error("Offset " + offset + " is beyond end of file");
-  return selected.join("\n");
-}
-function listExecutionPaths(path28, manager = executionManager) {
-  if (path28 === "execution://") return manager.list().filter((e) => e.info.background).map((e) => e.info.executionId + "/").sort();
-  const { file } = resolveExecutionPath(path28, manager);
-  if (file) throw new Error("Expected execution directory");
-  return [...files].sort();
-}
-async function* searchExecutionPaths(path28, pattern, signal, directoryOnly = false) {
-  if (path28 !== "execution://" && directoryOnly) {
-    for (const name of listExecutionPaths(path28)) {
-      if (signal.aborted) return;
-      yield name;
-    }
-    return;
-  }
-  const roots = path28 === "execution://" ? executionManager.list().sort((a2, b) => a2.info.executionId.localeCompare(b.info.executionId)) : [resolveExecutionPath(path28).execution];
-  const selectedFile = path28 === "execution://" ? void 0 : resolveExecutionPath(path28).file;
-  let index = 0;
-  for (const execution of roots) {
-    if (++index % 32 === 0) await yieldLoop();
-    if (signal.aborted) return;
-    if (!execution.info.background) continue;
-    const id2 = execution.info.executionId;
-    if (directoryOnly) {
-      yield id2 + "/";
-      continue;
-    }
-    for (const name of selectedFile ? [selectedFile] : files) {
-      if (matchesGlob(name, pattern) || matchesGlob(id2 + "/" + name, pattern)) yield "execution://" + id2 + "/" + name;
-    }
-  }
-}
-var files, isExecutionPath;
-var init_virtual = __esm({
-  "src/runtime/virtual.ts"() {
-    "use strict";
-    init_runtime();
-    files = ["stdout", "stderr", "info.json"];
-    isExecutionPath = (path28) => path28.startsWith("execution://");
-  }
-});
-
-// src/tools/runtime.ts
-async function handleRuntimeManagement(name, args2, signal, manager = executionManager) {
-  signal?.throwIfAborted();
-  if (name === "listExecutions") {
-    const { status } = external_exports.object({ status: external_exports.enum(statuses).optional() }).parse(args2);
-    return result2(manager.list().filter((e2) => e2.info.background && (!status || e2.info.status === status)).map((e2) => e2.info));
-  }
-  const { executionId, timeout: timeout2 } = external_exports.object({ executionId: external_exports.string().uuid(), timeout: external_exports.number().finite().nonnegative().optional() }).parse(args2);
-  const e = manager.get(executionId);
-  if (!e?.info.background) throw new Error("Unknown background execution");
-  switch (name) {
-    case "getExecution":
-      return result2(metadata(e.info));
-    case "cancelExecution":
-      e.cancel();
-      return result2(e.info);
-    case "removeExecution":
-      await manager.remove(executionId);
-      return result2({ executionId, removed: true });
-    case "waitExecution": {
-      let timer;
-      let abort;
-      const warning = timeoutWarningScope.getStore();
-      let onWarning;
-      try {
-        if (timeout2 !== 0 && e.info.finishedAt === void 0) await Promise.race([
-          e.done,
-          new Promise((resolve6) => {
-            timer = setTimeout(resolve6, Math.min(timeout2 ?? DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS) * 1e3);
-          }),
-          new Promise((resolve6) => {
-            onWarning = () => resolve6();
-            warning?.addEventListener("abort", onWarning, { once: true });
-            if (warning?.aborted) onWarning();
-          }),
-          new Promise((_, reject) => {
-            abort = () => reject(new Error("Tool call aborted"));
-            signal?.addEventListener("abort", abort, { once: true });
-            if (signal?.aborted) abort();
-          })
-        ]);
-        signal?.throwIfAborted();
-        return result2(metadata(e.info));
-      } finally {
-        if (timer !== void 0) clearTimeout(timer);
-        if (abort) signal?.removeEventListener("abort", abort);
-        if (onWarning) warning?.removeEventListener("abort", onWarning);
-      }
-    }
-    default:
-      throw new Error("Unknown runtime management tool");
-  }
-}
-var metadata, executionManager, runtimeManagementNames, id, statuses, runtimeManagementDefinitions, result2;
-var init_runtime = __esm({
-  "src/tools/runtime.ts"() {
-    "use strict";
-    init_zod();
-    init_manager();
-    init_foreground();
-    init_timeoutWarning();
-    init_virtual();
-    metadata = (info) => ({ ...info, paths: executionPaths(info.executionId) });
-    executionManager = new ExecutionManager();
-    runtimeManagementNames = ["listExecutions", "getExecution", "waitExecution", "cancelExecution", "removeExecution"];
-    id = { type: "string", description: "Execution ID returned by shell or python" };
-    statuses = ["starting", "running", "completed", "failed", "cancelling", "cancelled"];
-    runtimeManagementDefinitions = [
-      { name: "listExecutions", description: "List retained background executions, optionally filtered by status.", inputSchema: { type: "object", properties: { status: { type: "string", enum: statuses } } } },
-      ...runtimeManagementNames.slice(1).map((name) => ({
-        name,
-        description: { getExecution: "Inspect execution status and metadata.", waitExecution: "Wait for execution completion; timeout returns current status without cancelling.", cancelExecution: "Request termination of an execution process tree.", removeExecution: "Remove a finished execution and its output." }[name],
-        inputSchema: { type: "object", properties: { executionId: id, ...name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: `Wait seconds, default ${DEFAULT_WAIT_SECONDS}, maximum ${MAX_WAIT_SECONDS}` } } : {} }, required: ["executionId"] }
-      }))
-    ];
-    result2 = (value) => ({ content: [{ type: "text", text: JSON.stringify(value) }] });
   }
 });
 
@@ -48030,7 +47417,7 @@ var require_dist4 = __commonJS({
 
 // src/skills.ts
 import { createHash as createHash2 } from "node:crypto";
-import { readFile as readFile3, readdir as readdir2, realpath, stat } from "node:fs/promises";
+import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import path21 from "node:path";
 import os12 from "node:os";
 import { fileURLToPath as fileURLToPath8 } from "node:url";
@@ -48064,7 +47451,7 @@ async function decodeSkillUri(uri) {
 async function skillLocations(overrideRoots) {
   const roots = overrideRoots ?? [SKILLS_ROOT];
   if (!overrideRoots) try {
-    const config3 = JSON.parse(await readFile3(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
+    const config3 = JSON.parse(await readFile(path21.join(os12.homedir(), ".config", "terminal-toolkit", "settings.json"), "utf8"));
     if (Array.isArray(config3.skills)) for (const value of config3.skills) {
       if (typeof value !== "string" || !value.trim()) continue;
       const expanded = value === "~" ? os12.homedir() : value.startsWith("~/") ? path21.join(os12.homedir(), value.slice(2)) : value;
@@ -48092,7 +47479,7 @@ async function skillLocations(overrideRoots) {
         continue;
       }
       namespaces.set(namespace, root2);
-      for (const item of await readdir2(root2, { withFileTypes: true })) {
+      for (const item of await readdir(root2, { withFileTypes: true })) {
         if (!item.isDirectory() || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(item.name)) continue;
         const dir = await realpath(path21.join(root2, item.name));
         if (path21.dirname(dir) === root2) locations.push({ namespace, name: item.name, directory: dir, source: builtin ? "builtin" : "file" });
@@ -48116,7 +47503,7 @@ async function skillCatalog(overrideRoots) {
 }
 async function readSkillMetadata(location) {
   const file = await secureSkillFile(location.directory, "SKILL.md");
-  const source = await readFile3(file, "utf8");
+  const source = await readFile(file, "utf8");
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(source);
   if (!match) invalid("Skill frontmatter missing");
   let frontmatter;
@@ -48154,7 +47541,7 @@ async function secureFile(name, relative2, namespace) {
   return secureSkillFile(skill.directory, relative2).catch(() => invalid("Resource not found"));
 }
 async function enumerateFiles(dir, base = "") {
-  const entries2 = await readdir2(path21.join(dir, base), { withFileTypes: true });
+  const entries2 = await readdir(path21.join(dir, base), { withFileTypes: true });
   const files2 = [];
   for (const item of entries2) {
     const rel = path21.posix.join(base, item.name);
@@ -48172,7 +47559,7 @@ async function skillEntry(location, locations) {
   const dir = location.directory;
   const resources = [];
   for (const rel of (await enumerateFiles(dir)).sort()) {
-    const bytes = await readFile3(await secureSkillFile(location.directory, rel));
+    const bytes = await readFile(await secureSkillFile(location.directory, rel));
     resources.push({
       uri: `${prefix}/${rel.split("/").map(encodeURIComponent).join("/")}`,
       digest: `sha256:${createHash2("sha256").update(bytes).digest("hex")}`,
@@ -48231,7 +47618,7 @@ function registerSkills(server) {
   });
   server.setRequestHandler(readRequest, async ({ params }) => {
     const { name, namespace, relative: relative2 } = await decodeSkillUri(params.uri);
-    const bytes = await readFile3(await secureFile(name, relative2, namespace));
+    const bytes = await readFile(await secureFile(name, relative2, namespace));
     const isText = /\.(md|txt|json|yaml|yml|ts|js|mjs|cjs|sh|py|html|css|xml|svg)$/i.test(relative2);
     return { resultType: "complete", ttlMs: 0, cacheScope: "public", contents: [isText ? { uri: params.uri, mimeType: relative2.endsWith(".md") ? "text/markdown" : "text/plain", text: bytes.toString("utf8") } : { uri: params.uri, mimeType: "application/octet-stream", blob: bytes.toString("base64") }] };
   });
@@ -48259,6 +47646,606 @@ var init_skills = __esm({
     listResourcesRequest = external_exports.object({ method: external_exports.literal("resources/list"), params: external_exports.object({ cursor: external_exports.string().optional() }).passthrough().optional() });
     skillWarnings = /* @__PURE__ */ new Set();
     loggedSkillSummary = false;
+  }
+});
+
+// src/runtime/processTree.ts
+import { spawn as spawn3 } from "node:child_process";
+import { join as join6 } from "node:path";
+function killProcessTree(pid) {
+  if (process.platform === "win32") {
+    const killer = spawn3(
+      join6(process.env.SystemRoot ?? "C:\\Windows", "System32", "taskkill.exe"),
+      ["/F", "/T", "/PID", String(pid)],
+      { stdio: "ignore", detached: true, windowsHide: true }
+    );
+    killer.once("error", () => {
+    });
+    killer.unref();
+  } else {
+    try {
+      process.kill(-pid, "SIGKILL");
+    } catch {
+      try {
+        process.kill(pid, "SIGKILL");
+      } catch {
+      }
+    }
+  }
+}
+var init_processTree = __esm({
+  "src/runtime/processTree.ts"() {
+    "use strict";
+  }
+});
+
+// src/runtime/retention.ts
+import { readdir as readdir2, readFile as readFile2, rm, writeFile } from "node:fs/promises";
+import { join as join7 } from "node:path";
+async function markInstance(directory) {
+  await writeFile(join7(directory, "owner.json"), JSON.stringify({ pid: process.pid }), { mode: 384, flag: "wx" });
+}
+async function reclaimStaleInstances(root2) {
+  for (const entry of await readdir2(root2, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith("instance-")) continue;
+    const directory = join7(root2, entry.name);
+    try {
+      const owner = JSON.parse(await readFile2(join7(directory, "owner.json"), "utf8"));
+      if (!Number.isSafeInteger(owner.pid) || owner.pid <= 0) continue;
+      try {
+        process.kill(owner.pid, 0);
+      } catch (error2) {
+        if (error2.code === "ESRCH")
+          await rm(directory, { recursive: true, force: true });
+      }
+    } catch {
+    }
+  }
+}
+var init_retention = __esm({
+  "src/runtime/retention.ts"() {
+    "use strict";
+  }
+});
+
+// src/runtime/output.ts
+import { open } from "node:fs/promises";
+import { join as join8 } from "node:path";
+var DEFAULT_OUTPUT_LIMIT, ExecutionOutput;
+var init_output2 = __esm({
+  "src/runtime/output.ts"() {
+    "use strict";
+    DEFAULT_OUTPUT_LIMIT = 100 * 1024 * 1024;
+    ExecutionOutput = class _ExecutionOutput {
+      constructor(files2, limit, reserveGlobal, onProgress) {
+        this.files = files2;
+        this.limit = limit;
+        this.reserveGlobal = reserveGlobal;
+        this.onProgress = onProgress;
+      }
+      files;
+      limit;
+      reserveGlobal;
+      onProgress;
+      reserved = 0;
+      sizes = { stdout: 0, stderr: 0 };
+      truncated = false;
+      lastOutputAt;
+      static async create(directory, limit, reserveGlobal, onProgress) {
+        const stdout = await open(join8(directory, "stdout"), "wx", 384);
+        try {
+          const stderr = await open(join8(directory, "stderr"), "wx", 384);
+          return new _ExecutionOutput({ stdout, stderr }, limit, reserveGlobal, onProgress);
+        } catch (error2) {
+          await stdout.close();
+          throw error2;
+        }
+      }
+      async collect(name, stream) {
+        for await (const value of stream) {
+          const chunk = Buffer.isBuffer(value) ? value : Buffer.from(value);
+          this.lastOutputAt = Date.now();
+          const count2 = this.reserveGlobal(Math.min(chunk.length, Math.max(0, this.limit - this.reserved)));
+          this.reserved += count2;
+          if (count2 < chunk.length) this.truncated = true;
+          let offset = 0;
+          while (offset < count2) {
+            const { bytesWritten } = await this.files[name].write(chunk, offset, count2 - offset);
+            if (!bytesWritten) throw new Error("Output write made no progress");
+            offset += bytesWritten;
+            this.sizes[name] += bytesWritten;
+            this.onProgress();
+          }
+          this.onProgress();
+        }
+      }
+      async close() {
+        const results = await Promise.allSettled(Object.values(this.files).map((file) => file.close()));
+        const failure = results.find((result4) => result4.status === "rejected");
+        if (failure?.status === "rejected") throw failure.reason;
+      }
+    };
+  }
+});
+
+// src/runtime/manager.ts
+import { spawn as spawn4 } from "node:child_process";
+import { randomUUID as randomUUID3 } from "node:crypto";
+import { mkdir, mkdtemp, rm as rm2 } from "node:fs/promises";
+import { homedir as homedir5 } from "node:os";
+import { join as join9 } from "node:path";
+var ExecutionManager;
+var init_manager = __esm({
+  "src/runtime/manager.ts"() {
+    "use strict";
+    init_processTree();
+    init_retention();
+    init_output2();
+    ExecutionManager = class {
+      constructor(root2 = join9(homedir5(), ".local", "state", "terminal-toolkit", "executions"), outputLimit = DEFAULT_OUTPUT_LIMIT, totalLimit = 1024 * 1024 * 1024, concurrency = 16) {
+        this.root = root2;
+        this.outputLimit = outputLimit;
+        this.totalLimit = totalLimit;
+        this.concurrency = concurrency;
+      }
+      root;
+      outputLimit;
+      totalLimit;
+      concurrency;
+      entries = /* @__PURE__ */ new Map();
+      directory;
+      starting = 0;
+      closing = false;
+      reserved = 0;
+      reservations = /* @__PURE__ */ new Map();
+      removals = /* @__PURE__ */ new Map();
+      sweepTimer;
+      sweeping;
+      shutdownPromise;
+      instanceDirectory() {
+        return this.directory ??= (async () => {
+          await mkdir(this.root, { recursive: true, mode: 448 });
+          await reclaimStaleInstances(this.root);
+          const directory = await mkdtemp(join9(this.root, "instance-"));
+          try {
+            await markInstance(directory);
+          } catch (error2) {
+            await rm2(directory, { recursive: true, force: true });
+            throw error2;
+          }
+          return directory;
+        })();
+      }
+      get(id2) {
+        return this.entries.get(id2);
+      }
+      list() {
+        return [...this.entries.values()];
+      }
+      async start(options2, signal) {
+        signal?.throwIfAborted();
+        if (this.closing) throw new Error("Execution manager is shutting down");
+        if (this.starting + this.list().filter((e) => e.info.finishedAt === void 0).length >= this.concurrency) throw new Error("Concurrent execution limit reached");
+        this.starting++;
+        const id2 = randomUUID3();
+        let directory;
+        try {
+          await this.sweep();
+          directory = join9(await this.instanceDirectory(), id2);
+          await mkdir(directory, { mode: 448 });
+          if (this.closing) {
+            await rm2(directory, { recursive: true, force: true });
+            throw new Error("Execution manager is shutting down");
+          }
+        } finally {
+          this.starting--;
+        }
+        this.sweepTimer ??= setInterval(() => {
+          void this.sweep().catch(() => {
+          });
+        }, 6e4).unref();
+        let child;
+        let finishing = false;
+        let output2;
+        let collectors = [];
+        const info = {
+          executionId: id2,
+          tool: options2.tool,
+          status: "starting",
+          background: false,
+          startedAt: Date.now(),
+          stdoutSize: 0,
+          stderrSize: 0
+        };
+        let readyResolve;
+        let readyReject;
+        let doneResolve;
+        const ready = new Promise((resolve7, reject) => {
+          readyResolve = resolve7;
+          readyReject = reject;
+        });
+        void ready.catch(() => {
+        });
+        const done = new Promise((resolve7) => {
+          doneResolve = resolve7;
+        });
+        const execution = { info, directory, ready, done, cancel: () => {
+          if (finishing || info.finishedAt !== void 0 || info.status === "cancelling") return;
+          info.status = "cancelling";
+          if (child?.pid) killProcessTree(child.pid);
+        }, detach: () => {
+          signal?.throwIfAborted();
+          if (info.status === "cancelling") throw new Error("Execution cancelled");
+          info.background = true;
+          info.detachedAt ??= Date.now();
+          signal?.removeEventListener("abort", onAbort);
+        } };
+        this.entries.set(id2, execution);
+        const onAbort = () => execution.cancel();
+        signal?.addEventListener("abort", onAbort, { once: true });
+        const finish = async (code, exitSignal, error2) => {
+          if (finishing || info.finishedAt !== void 0) return;
+          finishing = true;
+          const cancelled = info.status === "cancelling";
+          info.exitCode = code;
+          info.signal = exitSignal;
+          if (error2) info.error = error2.message;
+          await Promise.all(collectors);
+          if (output2) {
+            try {
+              await output2.close();
+            } catch (failure) {
+              info.error ??= String(failure);
+            }
+            info.stdoutSize = output2.sizes.stdout;
+            info.stderrSize = output2.sizes.stderr;
+            info.outputTruncated = output2.truncated;
+            info.lastOutputAt = output2.lastOutputAt;
+          }
+          info.status = cancelled ? "cancelled" : error2 || info.error || code !== 0 ? "failed" : "completed";
+          info.finishedAt = Date.now();
+          signal?.removeEventListener("abort", onAbort);
+          doneResolve();
+        };
+        try {
+          output2 = await ExecutionOutput.create(directory, this.outputLimit, (bytes) => {
+            const count2 = Math.min(bytes, Math.max(0, this.totalLimit - this.reserved));
+            this.reserved += count2;
+            this.reservations.set(id2, (this.reservations.get(id2) ?? 0) + count2);
+            return count2;
+          }, () => {
+            if (!output2) return;
+            info.stdoutSize = output2.sizes.stdout;
+            info.stderrSize = output2.sizes.stderr;
+            info.outputTruncated = output2.truncated;
+            info.lastOutputAt = output2.lastOutputAt;
+          });
+          if (this.closing) throw new Error("Execution manager is shutting down");
+          signal?.throwIfAborted();
+          child = spawn4(options2.command, options2.args ?? [], {
+            cwd: options2.cwd,
+            shell: options2.shell,
+            detached: process.platform !== "win32",
+            windowsHide: true,
+            stdio: [options2.input === void 0 ? "ignore" : "pipe", "pipe", "pipe"]
+          });
+          const capture = (name, stream) => output2.collect(name, stream).catch((error2) => {
+            info.error ??= String(error2);
+            if (child?.pid) killProcessTree(child.pid);
+          });
+          collectors = [capture("stdout", child.stdout), capture("stderr", child.stderr)];
+          child.once("spawn", () => {
+            info.pid = child?.pid;
+            if (info.status !== "cancelling") info.status = "running";
+            else if (child?.pid) killProcessTree(child.pid);
+            readyResolve();
+          });
+          child.once("error", (error2) => {
+            info.error = error2.message;
+            readyReject(error2);
+          });
+          child.once("close", (code, exitSignal) => {
+            void finish(code, exitSignal);
+          });
+          child.stdin?.on("error", () => {
+          });
+          if (options2.input !== void 0) child.stdin?.end(options2.input);
+        } catch (error2) {
+          const failure = error2 instanceof Error ? error2 : new Error(String(error2));
+          readyReject(failure);
+          await finish(null, null, failure);
+        }
+        return execution;
+      }
+      async remove(id2) {
+        const pending = this.removals.get(id2);
+        if (pending) return pending;
+        const execution = this.entries.get(id2);
+        if (!execution) throw new Error("Unknown execution");
+        if (execution.info.finishedAt === void 0) throw new Error("Execution is still active");
+        const removal = (async () => {
+          await rm2(execution.directory, { recursive: true, force: true });
+          if (this.entries.delete(id2)) {
+            this.reserved -= this.reservations.get(id2) ?? 0;
+            this.reservations.delete(id2);
+          }
+        })().finally(() => this.removals.delete(id2));
+        this.removals.set(id2, removal);
+        return removal;
+      }
+      sweep() {
+        if (this.sweeping) return this.sweeping;
+        this.sweeping = (async () => {
+          const completed = this.list().filter((e) => e.info.background && e.info.finishedAt !== void 0).sort((a2, b) => a2.info.finishedAt - b.info.finishedAt);
+          for (let i2 = 0; i2 < completed.length; i2++) {
+            const e = completed[i2];
+            if (Date.now() - e.info.finishedAt > 864e5 || completed.length - i2 > 100 || this.reserved + this.outputLimit > this.totalLimit)
+              await this.remove(e.info.executionId).catch(() => {
+              });
+          }
+        })().finally(() => {
+          this.sweeping = void 0;
+        });
+        return this.sweeping;
+      }
+      cancelAll() {
+        this.closing = true;
+        for (const e of this.list()) e.cancel();
+      }
+      shutdown() {
+        return this.shutdownPromise ??= (async () => {
+          this.cancelAll();
+          if (this.sweepTimer) clearInterval(this.sweepTimer);
+          while (this.starting) await new Promise((resolve7) => setTimeout(resolve7, 10));
+          await Promise.all(this.list().map((e) => e.done));
+          await this.sweeping;
+          await Promise.allSettled(this.removals.values());
+          if (this.directory) await rm2(await this.directory, { recursive: true, force: true });
+          this.entries.clear();
+          this.reservations.clear();
+          this.reserved = 0;
+        })();
+      }
+    };
+  }
+});
+
+// src/runtime/foreground.ts
+import { readFile as readFile3 } from "node:fs/promises";
+import { join as join10 } from "node:path";
+async function runForeground(manager, options2, timeout2 = DEFAULT_WAIT_SECONDS, signal) {
+  if (!Number.isFinite(timeout2) || timeout2 < 0) throw new Error("timeout must be a finite non-negative number");
+  const execution = await manager.start(options2, signal);
+  let timer;
+  const warning = timeoutWarningScope.getStore();
+  let onWarning;
+  let onAbort;
+  try {
+    await execution.ready;
+    signal?.throwIfAborted();
+    const completed = timeout2 === 0 ? false : await Promise.race([
+      execution.done.then(() => true),
+      new Promise((resolve7) => {
+        onWarning = () => resolve7(false);
+        warning?.addEventListener("abort", onWarning, { once: true });
+        if (warning?.aborted) onWarning();
+      }),
+      new Promise((resolve7) => {
+        timer = setTimeout(() => resolve7(false), Math.min(timeout2, MAX_WAIT_SECONDS) * 1e3);
+      }),
+      new Promise((_, reject) => {
+        onAbort = () => reject(new Error("Command aborted"));
+        signal?.addEventListener("abort", onAbort, { once: true });
+        if (signal?.aborted) onAbort();
+      })
+    ]);
+    signal?.throwIfAborted();
+    if (!completed && (timeout2 === 0 || execution.info.finishedAt === void 0)) {
+      execution.detach();
+      return result("Execution moved to background.\n\nexecutionId: " + execution.info.executionId + "\n\nUse getExecution() to inspect its status and output paths, or waitExecution() to wait for completion.");
+    }
+    const info = execution.info;
+    if (info.error) return result(info.error, true);
+    if (info.stdoutSize + info.stderrSize > LEGACY_BUFFER_LIMIT || info.outputTruncated) return result("Command output exceeded 10 MiB buffer.", true);
+    const output2 = await readFile3(join10(execution.directory, "stdout"), "utf8") + await readFile3(join10(execution.directory, "stderr"), "utf8");
+    signal?.throwIfAborted();
+    if (info.exitCode !== 0) return result(output2 + (output2 ? "\n" : "") + "Command exited with code " + (info.exitCode ?? "unknown") + ".", true);
+    return result(output2);
+  } catch (error2) {
+    execution.cancel();
+    if (signal?.aborted) throw new Error("Command aborted");
+    throw error2;
+  } finally {
+    if (timer !== void 0) clearTimeout(timer);
+    if (onWarning) warning?.removeEventListener("abort", onWarning);
+    if (onAbort) signal?.removeEventListener("abort", onAbort);
+    if (!execution.info.background) {
+      void execution.done.then(() => manager.remove(execution.info.executionId)).catch(() => {
+      });
+    }
+  }
+}
+var DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS, LEGACY_BUFFER_LIMIT, result;
+var init_foreground = __esm({
+  "src/runtime/foreground.ts"() {
+    "use strict";
+    init_timeoutWarning();
+    DEFAULT_WAIT_SECONDS = 90;
+    MAX_WAIT_SECONDS = 90;
+    LEGACY_BUFFER_LIMIT = 10 * 1024 * 1024;
+    result = (text, isError = false) => ({ content: [{ type: "text", text }], ...isError ? { isError: true } : {} });
+  }
+});
+
+// src/tools/runtime.ts
+async function handleRuntimeManagement(name, args2, signal, manager = executionManager) {
+  signal?.throwIfAborted();
+  if (name === "listExecutions") {
+    const { status } = external_exports.object({ status: external_exports.enum(statuses).optional() }).parse(args2);
+    return result2(manager.list().filter((e2) => e2.info.background && (!status || e2.info.status === status)).map((e2) => e2.info));
+  }
+  const { executionId, timeout: timeout2 } = external_exports.object({ executionId: external_exports.string().uuid(), timeout: external_exports.number().finite().nonnegative().optional() }).parse(args2);
+  const e = manager.get(executionId);
+  if (!e?.info.background) throw new Error("Unknown background execution");
+  switch (name) {
+    case "getExecution":
+      return result2(metadata(e.info));
+    case "cancelExecution":
+      e.cancel();
+      return result2(e.info);
+    case "removeExecution":
+      await manager.remove(executionId);
+      return result2({ executionId, removed: true });
+    case "waitExecution": {
+      let timer;
+      let abort;
+      const warning = timeoutWarningScope.getStore();
+      let onWarning;
+      try {
+        if (timeout2 !== 0 && e.info.finishedAt === void 0) await Promise.race([
+          e.done,
+          new Promise((resolve7) => {
+            timer = setTimeout(resolve7, Math.min(timeout2 ?? DEFAULT_WAIT_SECONDS, MAX_WAIT_SECONDS) * 1e3);
+          }),
+          new Promise((resolve7) => {
+            onWarning = () => resolve7();
+            warning?.addEventListener("abort", onWarning, { once: true });
+            if (warning?.aborted) onWarning();
+          }),
+          new Promise((_, reject) => {
+            abort = () => reject(new Error("Tool call aborted"));
+            signal?.addEventListener("abort", abort, { once: true });
+            if (signal?.aborted) abort();
+          })
+        ]);
+        signal?.throwIfAborted();
+        return result2(metadata(e.info));
+      } finally {
+        if (timer !== void 0) clearTimeout(timer);
+        if (abort) signal?.removeEventListener("abort", abort);
+        if (onWarning) warning?.removeEventListener("abort", onWarning);
+      }
+    }
+    default:
+      throw new Error("Unknown runtime management tool");
+  }
+}
+var metadata, executionManager, runtimeManagementNames, id, statuses, runtimeManagementDefinitions, result2;
+var init_runtime = __esm({
+  "src/tools/runtime.ts"() {
+    "use strict";
+    init_zod();
+    init_manager();
+    init_foreground();
+    init_timeoutWarning();
+    init_virtual();
+    metadata = (info) => ({ ...info, paths: executionPaths(info.executionId) });
+    executionManager = new ExecutionManager();
+    runtimeManagementNames = ["listExecutions", "getExecution", "waitExecution", "cancelExecution", "removeExecution"];
+    id = { type: "string", description: "Execution ID returned by shell or python" };
+    statuses = ["starting", "running", "completed", "failed", "cancelling", "cancelled"];
+    runtimeManagementDefinitions = [
+      { name: "listExecutions", description: "List retained background executions, optionally filtered by status.", inputSchema: { type: "object", properties: { status: { type: "string", enum: statuses } } } },
+      ...runtimeManagementNames.slice(1).map((name) => ({
+        name,
+        description: { getExecution: "Inspect execution status and metadata.", waitExecution: "Wait for execution completion; timeout returns current status without cancelling.", cancelExecution: "Request termination of an execution process tree.", removeExecution: "Remove a finished execution and its output." }[name],
+        inputSchema: { type: "object", properties: { executionId: id, ...name === "waitExecution" ? { timeout: { type: "number", minimum: 0, description: `Wait seconds, default ${DEFAULT_WAIT_SECONDS}, maximum ${MAX_WAIT_SECONDS}` } } : {} }, required: ["executionId"] }
+      }))
+    ];
+    result2 = (value) => ({ content: [{ type: "text", text: JSON.stringify(value) }] });
+  }
+});
+
+// src/runtime/virtual.ts
+import { createReadStream as createReadStream2 } from "node:fs";
+import { createInterface } from "node:readline";
+import { join as join11, matchesGlob } from "node:path";
+import { setImmediate as yieldLoop } from "node:timers/promises";
+function executionPaths(id2) {
+  return Object.fromEntries(files.map((file) => [file, "execution://" + id2 + "/" + file]));
+}
+function resolveExecutionPath(path28, manager = executionManager) {
+  const match = /^execution:\/\/([0-9a-f-]{36})(?:\/(stdout|stderr|info\.json)?)?$/.exec(path28);
+  if (!match) throw new Error("Invalid execution path");
+  const execution = manager.get(match[1]);
+  if (!execution?.info.background) throw new Error("Unknown background execution");
+  return { execution, file: match[2] };
+}
+async function* executionLines(path28, manager = executionManager, signal) {
+  const { execution, file } = resolveExecutionPath(path28, manager);
+  if (!file) throw new Error("Expected execution file");
+  if (file === "info.json") {
+    yield* JSON.stringify({ ...execution.info, paths: executionPaths(execution.info.executionId) }, null, 2).split("\n");
+    return;
+  }
+  const size = file === "stdout" ? execution.info.stdoutSize : execution.info.stderrSize;
+  if (!size) {
+    yield "";
+    return;
+  }
+  const stream = createReadStream2(join11(execution.directory, file), { end: size - 1 });
+  const lines = createInterface({ input: stream, crlfDelay: Infinity });
+  const abort = () => {
+    lines.close();
+    stream.destroy();
+  };
+  signal?.addEventListener("abort", abort, { once: true });
+  if (signal?.aborted) abort();
+  let lastByte = 0;
+  stream.on("data", (chunk) => {
+    lastByte = typeof chunk === "string" ? chunk.charCodeAt(chunk.length - 1) : chunk[chunk.length - 1];
+  });
+  try {
+    if (signal?.aborted) return;
+    for await (const line of lines) {
+      if (signal?.aborted) break;
+      yield line;
+    }
+    if (!signal?.aborted && lastByte === 10) yield "";
+  } finally {
+    signal?.removeEventListener("abort", abort);
+    lines.close();
+    stream.destroy();
+  }
+}
+function listExecutionPaths(path28, manager = executionManager) {
+  if (path28 === "execution://") return manager.list().filter((e) => e.info.background).map((e) => e.info.executionId + "/").sort();
+  const { file } = resolveExecutionPath(path28, manager);
+  if (file) throw new Error("Expected execution directory");
+  return [...files].sort();
+}
+async function* searchExecutionPaths(path28, pattern, signal, directoryOnly = false) {
+  if (path28 !== "execution://" && directoryOnly) {
+    for (const name of listExecutionPaths(path28)) {
+      if (signal.aborted) return;
+      yield name;
+    }
+    return;
+  }
+  const roots = path28 === "execution://" ? executionManager.list().sort((a2, b) => a2.info.executionId.localeCompare(b.info.executionId)) : [resolveExecutionPath(path28).execution];
+  const selectedFile = path28 === "execution://" ? void 0 : resolveExecutionPath(path28).file;
+  let index = 0;
+  for (const execution of roots) {
+    if (++index % 32 === 0) await yieldLoop();
+    if (signal.aborted) return;
+    if (!execution.info.background) continue;
+    const id2 = execution.info.executionId;
+    if (directoryOnly) {
+      yield id2 + "/";
+      continue;
+    }
+    for (const name of selectedFile ? [selectedFile] : files) {
+      if (matchesGlob(name, pattern) || matchesGlob(id2 + "/" + name, pattern)) yield "execution://" + id2 + "/" + name;
+    }
+  }
+}
+var files, isExecutionPath;
+var init_virtual = __esm({
+  "src/runtime/virtual.ts"() {
+    "use strict";
+    init_runtime();
+    files = ["stdout", "stderr", "info.json"];
+    isExecutionPath = (path28) => path28.startsWith("execution://");
   }
 });
 
@@ -48313,20 +48300,158 @@ var init_resultStore = __esm({
   }
 });
 
+// src/tools/outputLimit.ts
+function limitTextBlock(text, context, policy) {
+  if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
+  const status = text.includes("[search-status timedOut=true incomplete=true;") ? "\n[search-status timedOut=true incomplete=true; search stopped before completion]" : "";
+  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}${status}`;
+  const path28 = storeResult(text);
+  return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.${status}` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.${status}`;
+}
+function limitCodemodeText(text) {
+  return limitTextBlock(text, "Codemode text() output", "suppress");
+}
+function limitResponseForTool(name, result4) {
+  return limitToolResponse(result4, Object.hasOwn(toolPolicies, name) ? toolPolicies[name] : "store");
+}
+function limitToolResponse(result4, policy) {
+  if (policy === "unlimited" || !result4.content) return result4;
+  return { ...result4, content: result4.content.map((item) => item.type === "text" && typeof item.text === "string" ? { ...item, text: limitTextBlock(item.text, "Tool output", policy) } : item) };
+}
+var MAX_TEXT_BLOCK_BYTES, toolPolicies, suppressed;
+var init_outputLimit = __esm({
+  "src/tools/outputLimit.ts"() {
+    "use strict";
+    init_resultStore();
+    MAX_TEXT_BLOCK_BYTES = 16 * 1024;
+    toolPolicies = {
+      read: "suppress",
+      searchSkills: "unlimited",
+      describeSkill: "unlimited"
+    };
+    suppressed = "This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.";
+  }
+});
+
+// src/tools/readRange.ts
+import { StringDecoder as StringDecoder3 } from "node:string_decoder";
+import { constants as constants4 } from "node:fs";
+import { open as open2 } from "node:fs/promises";
+import { resolve, join as join12 } from "node:path";
+import { setImmediate as yieldLoop2 } from "node:timers/promises";
+async function readRange(args2, parent) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  parent?.addEventListener("abort", abort, { once: true });
+  if (parent?.aborted) abort();
+  const timeout2 = args2.timeout ?? 30;
+  const timer = timeout2 ? setTimeout(abort, timeout2 * 1e3) : void 0;
+  const signal = controller.signal;
+  let size = null, totalLines = null;
+  let handle;
+  let memory;
+  let oversized = false;
+  const offset = args2.offset ?? 1;
+  try {
+    let path28 = args2.path;
+    if (isResultPath(path28)) memory = Buffer.from(readResult(path28));
+    else if (isExecutionPath(path28)) {
+      const { execution, file } = resolveExecutionPath(path28);
+      if (!file) throw new Error("Expected execution file");
+      if (file === "info.json") memory = Buffer.from(JSON.stringify({ ...execution.info, paths: executionPaths(execution.info.executionId) }, null, 2));
+      else {
+        size = file === "stdout" ? execution.info.stdoutSize : execution.info.stderrSize;
+        path28 = join12(execution.directory, file);
+        if (!size) memory = Buffer.alloc(0);
+      }
+    } else path28 = path28.startsWith("builtin://") ? await resolveBuiltinSkillPath(path28) : resolve(cwd, path28);
+    if (memory) size = memory.length;
+    else {
+      handle = await open2(path28, constants4.O_RDONLY | constants4.O_NONBLOCK);
+      const stat2 = await handle.stat();
+      if (!stat2.isFile()) throw new Error("Expected regular file");
+      size ??= stat2.size;
+    }
+    const length = size;
+    const chunk = Buffer.alloc(64 * 1024);
+    async function scan(consume) {
+      for (let pos = 0; pos < length && !signal.aborted; ) {
+        const n2 = Math.min(chunk.length, length - pos);
+        const data = memory ? memory.subarray(pos, pos + n2) : chunk.subarray(0, (await handle.read(chunk, 0, n2, pos)).bytesRead);
+        if (!data.length) throw new Error("File changed during read");
+        consume(data, pos);
+        pos += data.length;
+        await yieldLoop2();
+      }
+    }
+    let lines = 1;
+    let start = offset > 0 ? offset : 1;
+    let line = 1;
+    const pieces = [];
+    let bytes = 0;
+    const collect = (data) => {
+      let begin = 0;
+      for (let i2 = 0; i2 <= data.length; i2++) {
+        if (i2 < data.length && data[i2] !== 10) continue;
+        if (line >= start && (args2.limit === void 0 || line < start + args2.limit)) {
+          const end = i2 < data.length && (args2.limit === void 0 || line + 1 < start + args2.limit) ? i2 + 1 : i2;
+          const part = data.subarray(begin, end);
+          bytes += part.length;
+          if (bytes <= MAX_TEXT_BLOCK_BYTES) {
+            if (part.length) pieces.push(Buffer.from(part));
+          } else oversized = true;
+        }
+        if (i2 < data.length) line++;
+        begin = i2 + 1;
+      }
+    };
+    await scan((data) => {
+      for (const byte of data) if (byte === 10) lines++;
+      if (offset > 0) collect(data);
+    });
+    if (!signal.aborted) {
+      totalLines = lines;
+      if (offset < 0) {
+        start = Math.max(1, lines + offset + 1);
+        await scan(collect);
+      }
+      if (start > lines) throw new Error("Offset " + offset + " is beyond end of file");
+    }
+    const decoder2 = new StringDecoder3("utf8");
+    const selected = decoder2.write(Buffer.concat(pieces)) + (signal.aborted ? "" : decoder2.end());
+    if (parent?.aborted) throw new Error("Tool call aborted");
+    const metadata2 = { size, totalLines, ...signal.aborted ? { timedOut: true, incomplete: true } : {} };
+    return { content: [
+      { type: "text", text: oversized ? "Tool output exceeded the 16 KiB text block limit. Content suppressed; narrow offset/limit." : selected },
+      { type: "text", text: "[read-metadata] " + JSON.stringify(metadata2) }
+    ] };
+  } finally {
+    if (timer) clearTimeout(timer);
+    parent?.removeEventListener("abort", abort);
+    await handle?.close();
+  }
+}
+var cwd;
+var init_readRange = __esm({
+  "src/tools/readRange.ts"() {
+    "use strict";
+    init_skills();
+    init_virtual();
+    init_resultStore();
+    init_outputLimit();
+    cwd = process.cwd();
+  }
+});
+
 // src/tools/operators.ts
 import { mkdir as mkdir2, readFile as readFile4, writeFile as writeFile2 } from "node:fs/promises";
-import { dirname as dirname2, resolve } from "node:path";
+import { dirname as dirname2, resolve as resolve2 } from "node:path";
 async function handleOperatorTool(name, args2, shell = getDefaultShell(), signal) {
   if (signal?.aborted) throw new Error("Tool call aborted");
   switch (name) {
     case "read": {
       const parsed = readSchema.parse(args2);
-      if (isExecutionPath(parsed.path)) return result3(await readExecutionPage(parsed.path, parsed.offset, parsed.limit));
-      const target = isResultPath(parsed.path) ? "" : parsed.path.startsWith("builtin://") ? await resolveBuiltinSkillPath(parsed.path) : localPath(parsed.path);
-      const lines = (isResultPath(parsed.path) ? readResult(parsed.path) : await readFile4(target, "utf8")).split("\n");
-      const start = (parsed.offset ?? 1) - 1;
-      if (start >= lines.length) throw new Error(`Offset ${parsed.offset} is beyond end of file`);
-      return result3(lines.slice(start, parsed.limit === void 0 ? void 0 : start + parsed.limit).join("\n"));
+      return readRange(parsed, signal);
     }
     case "write": {
       const parsed = writeSchema.parse(args2);
@@ -48374,40 +48499,40 @@ var operatorCwd, readSchema, writeSchema, editSchema, shellSchema, pythonSchema,
 var init_operators = __esm({
   "src/tools/operators.ts"() {
     "use strict";
+    init_readRange();
     init_foreground();
     init_runtime();
     init_virtual();
     init_zod();
     init_platform();
-    init_skills();
     init_resultStore();
     operatorCwd = process.cwd();
-    readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().positive().optional(), limit: external_exports.number().int().positive().optional() });
+    readSchema = external_exports.object({ path: external_exports.string(), offset: external_exports.number().int().refine((n2) => n2 !== 0).optional(), limit: external_exports.number().int().positive().optional(), timeout: external_exports.number().min(0).max(90).optional() });
     writeSchema = external_exports.object({ path: external_exports.string(), content: external_exports.string() });
     editSchema = external_exports.object({ path: external_exports.string(), edits: external_exports.array(external_exports.object({ oldText: external_exports.string(), newText: external_exports.string() })).min(1) });
     shellSchema = external_exports.object({ command: external_exports.string(), timeout: external_exports.number().finite().nonnegative().optional() });
     pythonSchema = external_exports.object({ code: external_exports.string(), timeout: external_exports.number().finite().nonnegative().optional() });
     result3 = (value, isError = false) => ({ content: [{ type: "text", text: value }], ...isError ? { isError: true } : {} });
     operatorToolDefinitions = [
-      { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number. Large reads still require offset/limit.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", minimum: 1 }, limit: { type: "integer", minimum: 1 } }, required: ["path"] } },
+      { name: "read", description: "Read a text file or result:// or execution:// virtual file; prefer read over shell cat/head/tail for routine inspection. offset is a 1-indexed line number or negative from EOF (-1 is last line). Metadata reports size in bytes and totalLines. Content exceeding 16 KiB is suppressed; narrow offset/limit. Timeout returns incomplete results.", inputSchema: { type: "object", properties: { path: { type: "string" }, offset: { type: "integer", description: "Nonzero; negative counts from EOF" }, limit: { type: "integer", minimum: 1 }, timeout: { type: "number", minimum: 0, maximum: 90, description: "Seconds, default 30; 0 disables tool timeout" } }, required: ["path"] } },
       { name: "write", description: "Create or replace a complete text file directly, creating parent directories and overwriting existing content. Prefer write over shell redirection or heredocs for whole-file writes.", inputSchema: { type: "object", properties: { path: { type: "string" }, content: { type: "string" } }, required: ["path", "content"] } },
       { name: "edit", description: "Modify an existing text file with exact unique non-overlapping string replacements. Prefer edit over shell sed -i or scripted replacements. Replacement-only: not an append/prepend primitive.", inputSchema: { type: "object", properties: { path: { type: "string" }, edits: { type: "array", items: { type: "object", properties: { oldText: { type: "string" }, newText: { type: "string" } }, required: ["oldText", "newText"] } } }, required: ["path", "edits"] } },
       { name: "python", description: "Execute Python code directly in a fresh stateless python3 process, with source supplied through stdin (no shell heredoc). Uses the Terminal Toolkit startup working directory. Waits up to timeout seconds (default 90, maximum 90); 0 or expiry returns an executionId for background management. Use getExecution or waitExecution to inspect it. Prefer read/write/edit for routine file modifications.", inputSchema: { type: "object", properties: { code: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["code"] } },
       { name: "shell", description: "Execute commands, not routine file reads or edits: prefer read/write/edit instead of shell cat, redirection, heredocs, or sed -i. Run a one-shot non-interactive command in a fresh stateless subprocess using the configured Terminal Toolkit shell in the terminal-toolkit startup working directory. Returns stdout/stderr after completion; timeout is foreground wait (default 90 seconds, maximum 90). Zero or expiry returns an executionId; use getExecution or waitExecution to inspect background work. Use PTY for long-running compilation, builds, and tests to inspect live progress, as well as for persistent shell state, interaction, or TTY behavior.", inputSchema: { type: "object", properties: { command: { type: "string" }, timeout: { type: "number", minimum: 0, description: "Foreground wait in seconds (default 90, maximum 90; 0 starts in background)" } }, required: ["command"] } }
     ];
-    localPath = (path28) => resolve(operatorCwd, path28);
+    localPath = (path28) => resolve2(operatorCwd, path28);
   }
 });
 
 // src/tools/extra-operators.ts
 import { spawn as spawn5 } from "node:child_process";
 import { opendir } from "node:fs/promises";
-import { resolve as resolve2, relative, matchesGlob as matchesGlob2 } from "node:path";
-import { setImmediate as yieldLoop2 } from "node:timers/promises";
+import { resolve as resolve3, relative, matchesGlob as matchesGlob2 } from "node:path";
+import { setImmediate as yieldLoop3 } from "node:timers/promises";
 async function run(binary, args2, signal, consume, allowNoMatch = false) {
   if (signal.aborted) return;
   return new Promise((done, fail) => {
-    const child = spawn5(binary, args2, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn5(binary, args2, { cwd: cwd2, stdio: ["ignore", "pipe", "pipe"] });
     let pending = "", stderr = "", stopped = false, failure;
     const stop2 = () => {
       if (!stopped) {
@@ -48525,7 +48650,7 @@ async function search(name, args2, signal) {
       const limit2 = params.limit ?? 500;
       return output(capped(entries3.sort().slice(0, limit2).join("\n") + (entries3.length > limit2 ? "\n[" + limit2 + " entries limit reached]" : "")));
     }
-    const dir = resolve2(cwd, params.path || ".");
+    const dir = resolve3(cwd2, params.path || ".");
     const limit = params.limit ?? 500;
     const entries2 = [];
     const directory = await opendir(dir);
@@ -48551,7 +48676,7 @@ async function search(name, args2, signal) {
       }
       return output(count3 ? collected2.text() + (count3 >= limit ? "\n[entries limit reached]" : "") : "No files found matching pattern");
     }
-    const target = resolve2(cwd, params.path || ".");
+    const target = resolve3(cwd2, params.path || ".");
     const commandArgs = ["--glob", "--color=never", "--hidden", "--max-results", String(params.limit ?? 1e3)];
     let pattern = params.pattern;
     if (pattern.includes("/")) {
@@ -48587,7 +48712,7 @@ async function search(name, args2, signal) {
         };
         const source = isExecutionPath(path28) ? executionLines(path28, void 0, signal) : resultLines(readResult(path28));
         for await (const line of source) {
-          if (index > 0 && index % 128 === 0) await yieldLoop2();
+          if (index > 0 && index % 128 === 0) await yieldLoop3();
           if (signal.aborted) return output(collected2.text());
           index++;
           if (remaining > 0 && regex2.test(line)) {
@@ -48616,7 +48741,7 @@ async function search(name, args2, signal) {
     if (params.literal) commandArgs.push("--fixed-strings");
     if (params.context !== void 0) commandArgs.push("--context", String(params.context));
     if (params.glob) commandArgs.push("--glob", params.glob);
-    commandArgs.push("--", params.pattern, resolve2(cwd, params.path || "."));
+    commandArgs.push("--", params.pattern, resolve3(cwd2, params.path || "."));
     const limit = params.limit ?? 100;
     const collected = new GrepOutput();
     let matches = 0;
@@ -48629,7 +48754,7 @@ async function search(name, args2, signal) {
         matches++;
       }
       const file = event.data?.path?.text ?? "";
-      const relativePath = relative(resolve2(cwd, params.path || "."), file) || file;
+      const relativePath = relative(resolve3(cwd2, params.path || "."), file) || file;
       const lineNumber = event.data?.line_number ?? 0;
       const content = (event.data?.lines?.text ?? "").replace(/\r?\n$/, "");
       return collected.add(relativePath + (event.type === "match" ? ":" : "-") + lineNumber + ":" + content);
@@ -48639,14 +48764,14 @@ async function search(name, args2, signal) {
   }
   throw new Error("Unknown extra operator tool: " + name);
 }
-var cwd, output, hint, capped, GREP_LIMIT, escapeRegex2, GrepOutput, timeoutSchema, timeoutProperty, lsSchema, findSchema, grepSchema, extraOperatorToolDefinitions;
+var cwd2, output, hint, capped, GREP_LIMIT, escapeRegex2, GrepOutput, timeoutSchema, timeoutProperty, lsSchema, findSchema, grepSchema, extraOperatorToolDefinitions;
 var init_extra_operators = __esm({
   "src/tools/extra-operators.ts"() {
     "use strict";
     init_virtual();
     init_zod();
     init_resultStore();
-    cwd = process.cwd();
+    cwd2 = process.cwd();
     output = (value) => ({ content: [{ type: "text", text: value }] });
     hint = (name) => new Error((name === "fd" ? "fd/fdfind" : name) + " not found on PATH. Install manually: macOS: brew install " + (name === "rg" ? "ripgrep" : "fd") + "; Ubuntu/Debian: sudo apt install " + (name === "rg" ? "ripgrep" : "fd-find") + "; Termux: pkg install " + (name === "rg" ? "ripgrep" : "fd"));
     capped = (value) => Buffer.byteLength(value) > 51200 ? Buffer.from(value).subarray(0, 51200).toString("utf8") + "\n[50KB limit reached]" : value;
@@ -48904,7 +49029,7 @@ var require_dist5 = __commonJS({
         this.handleGreeting();
       }
       readBytes(len) {
-        return new Promise((resolve6) => {
+        return new Promise((resolve7) => {
           let buf = Buffer.allocUnsafe(len);
           let offset = 0;
           const dataListener = (chunk) => {
@@ -48914,7 +49039,7 @@ var require_dist5 = __commonJS({
             if (offset < len) return;
             this.socket.removeListener("data", dataListener);
             this.socket.push(chunk.subarray(readAmount));
-            resolve6(buf);
+            resolve7(buf);
             this.socket.pause();
           };
           this.socket.on("data", dataListener);
@@ -50953,7 +51078,7 @@ var retryifyAsync = (fn2, options2) => {
           throw error2;
         const delay2 = Math.round(interval * Math.random());
         if (delay2 > 0) {
-          const delayPromise = new Promise((resolve6) => setTimeout(resolve6, delay2));
+          const delayPromise = new Promise((resolve7) => setTimeout(resolve7, delay2));
           return delayPromise.then(() => attempt.apply(void 0, args2));
         } else {
           return attempt.apply(void 0, args2);
@@ -52048,18 +52173,18 @@ var proto = Object.defineProperties(() => {
     }
   }
 });
-var createStyler = (open2, close, parent) => {
+var createStyler = (open3, close, parent) => {
   let openAll;
   let closeAll;
   if (parent === void 0) {
-    openAll = open2;
+    openAll = open3;
     closeAll = close;
   } else {
-    openAll = parent.openAll + open2;
+    openAll = parent.openAll + open3;
     closeAll = close + parent.closeAll;
   }
   return {
-    open: open2,
+    open: open3,
     close,
     openAll,
     closeAll,
@@ -52519,14 +52644,14 @@ var TimeoutError = class extends Error {
 
 // node_modules/ky/distribution/utils/timeout.js
 async function timeout(request, init, abortController, options2) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const timeoutId = setTimeout(() => {
       if (abortController) {
         abortController.abort();
       }
       reject(new TimeoutError(request));
     }, options2.timeout);
-    void options2.fetch(request, init).then(resolve6).catch(reject).then(() => {
+    void options2.fetch(request, init).then(resolve7).catch(reject).then(() => {
       clearTimeout(timeoutId);
     });
   });
@@ -52534,7 +52659,7 @@ async function timeout(request, init, abortController, options2) {
 
 // node_modules/ky/distribution/utils/delay.js
 async function delay(ms, { signal }) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     if (signal) {
       signal.throwIfAborted();
       signal.addEventListener("abort", abortHandler, { once: true });
@@ -52545,7 +52670,7 @@ async function delay(ms, { signal }) {
     }
     const timeoutId = setTimeout(() => {
       signal?.removeEventListener("abort", abortHandler);
-      resolve6();
+      resolve7();
     }, ms);
   });
 }
@@ -54871,7 +54996,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve6) => setTimeout(resolve6, pollInterval));
+        await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
         options2?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -54888,7 +55013,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options2) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options2 ?? {};
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -54966,7 +55091,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve6(parseResult.data);
+            resolve7(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -55227,12 +55352,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve6, interval);
+      const timeoutId = setTimeout(resolve7, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -56113,12 +56238,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve6) => {
+    return new Promise((resolve7) => {
       const json = serializeMessage(message);
       if (this._stdout.write(json)) {
-        resolve6();
+        resolve7();
       } else {
-        this._stdout.once("drain", resolve6);
+        this._stdout.once("drain", resolve7);
       }
     });
   }
@@ -56763,10 +56888,10 @@ var Recorder = class {
     this.clearTimers();
     const finalStopReason = stopReason ?? this.stopReason;
     if (this.writeStream) {
-      await new Promise((resolve6, reject) => {
+      await new Promise((resolve7, reject) => {
         this.writeStream.end((err) => {
           if (err) reject(err);
-          else resolve6();
+          else resolve7();
         });
       });
     }
@@ -57625,8 +57750,8 @@ var Execution = class {
   /** Whether the execution has its outcome. */
   finished = false;
   constructor(options2) {
-    this.promise = new Promise((resolve6) => {
-      this.resolveResult = resolve6;
+    this.promise = new Promise((resolve7) => {
+      this.resolveResult = resolve7;
     });
     this.executors = options2.executors;
     this.control = options2.control;
@@ -57661,7 +57786,7 @@ var Execution = class {
       message: (message) => this.receive(message),
       failure: (error2) => this.finish(error2)
     };
-    new Promise((resolve6) => resolve6(options2.launch(data, events))).then((channel) => {
+    new Promise((resolve7) => resolve7(options2.launch(data, events))).then((channel) => {
       if (this.finished) {
         void channel.stop().catch(() => void 0);
         return;
@@ -58023,7 +58148,7 @@ function workerLauncher(options2) {
       worker.unref();
     };
     try {
-      options2.onWorkerStarted?.(new Promise((resolve6) => worker.once("exit", () => resolve6())));
+      options2.onWorkerStarted?.(new Promise((resolve7) => worker.once("exit", () => resolve7())));
     } catch (error2) {
       void stop2();
       throw error2;
@@ -58662,35 +58787,7 @@ another). The Primary Session cannot be destroyed.` },
 
 // src/tools/codemode.ts
 init_stats();
-
-// src/tools/outputLimit.ts
-init_resultStore();
-var MAX_TEXT_BLOCK_BYTES = 16 * 1024;
-var toolPolicies = {
-  read: "suppress",
-  searchSkills: "unlimited",
-  describeSkill: "unlimited"
-};
-var suppressed = "This block was suppressed to protect the context window. Please narrow the request, filter, or summarize the output. Do not repeat operations that may have side effects.";
-function limitTextBlock(text, context, policy) {
-  if (policy === "unlimited" || Buffer.byteLength(text, "utf8") <= MAX_TEXT_BLOCK_BYTES) return text;
-  const status = text.includes("[search-status timedOut=true incomplete=true;") ? "\n[search-status timedOut=true incomplete=true; search stopped before completion]" : "";
-  if (policy === "suppress") return `${context} exceeded the 16 KiB text block limit. ${suppressed}${status}`;
-  const path28 = storeResult(text);
-  return path28 ? `${context} exceeded 16 KiB (${Buffer.byteLength(text, "utf8")} bytes). Full text saved at ${path28}. Use read({path, offset, limit}) or grep({path, pattern}) to inspect it.${status}` : `${context} exceeded the in-memory result store capacity. Narrow the request; output was not retained.${status}`;
-}
-function limitCodemodeText(text) {
-  return limitTextBlock(text, "Codemode text() output", "suppress");
-}
-function limitResponseForTool(name, result4) {
-  return limitToolResponse(result4, Object.hasOwn(toolPolicies, name) ? toolPolicies[name] : "store");
-}
-function limitToolResponse(result4, policy) {
-  if (policy === "unlimited" || !result4.content) return result4;
-  return { ...result4, content: result4.content.map((item) => item.type === "text" && typeof item.text === "string" ? { ...item, text: limitTextBlock(item.text, "Tool output", policy) } : item) };
-}
-
-// src/tools/codemode.ts
+init_outputLimit();
 init_resultStore();
 init_skills();
 var codemodeDefinition = {
@@ -58738,6 +58835,11 @@ async function runCodemodeWithDispatch(args2, definitions, dispatch, signal, ski
       if (result4.isError) throw new Error(result4.content?.filter((c3) => c3.type === "text").map((c3) => c3.text).join("\n") || `Tool ${definition.name} failed`);
       if (result4.structuredContent !== void 0) return result4.structuredContent;
       const content = result4.content ?? [];
+      if (definition.name === "read" && content.every((c3) => c3.type === "text")) {
+        const combined = content.map((c3) => c3.text).join("\n");
+        if (Buffer.byteLength(combined) <= MAX_TEXT_BLOCK_BYTES) return combined;
+        return ["Tool output exceeded the 16 KiB text block limit. Content suppressed; narrow offset/limit.", ...content.slice(1).map((c3) => c3.text)].join("\n");
+      }
       if (content.length === 1 && content[0].type === "text") return content[0].text;
       return content;
     }
@@ -58889,6 +58991,7 @@ async function handleSkillDiscovery(name, args2) {
 }
 
 // src/tools/index.ts
+init_outputLimit();
 function registerTools(server, manager, piExtraOperators = true, codemode = false, skills2 = false) {
   const withWarning = installTimeoutWarning(server);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -59823,6 +59926,7 @@ init_mcpEventsExperiment();
 init_skills();
 init_types();
 init_definitions();
+init_outputLimit();
 init_resultStore();
 init_operators();
 init_runtime();
@@ -59953,8 +60057,8 @@ async function startMcpClientMode(socketPath, options2 = {}) {
         });
         const server2 = createToolProxyServer(socketPath, manager, void 0, options2.piExtraOperators);
         try {
-          if (!server2.listening) await new Promise((resolve6, reject) => {
-            server2.once("listening", resolve6);
+          if (!server2.listening) await new Promise((resolve7, reject) => {
+            server2.once("listening", resolve7);
             server2.once("error", reject);
           });
           ownedManager = manager;
@@ -59994,7 +60098,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       } catch (error2) {
         if (attempt === 0) console.error("[terminal-toolkit] Socket disconnected; reconnecting", error2);
         const delay2 = Math.min(3e4, attempt === 0 ? 1e3 : 1e3 * 2 ** Math.min(attempt, 5));
-        await new Promise((resolve6) => setTimeout(resolve6, delay2));
+        await new Promise((resolve7) => setTimeout(resolve7, delay2));
         attempt++;
       }
     }
@@ -60029,7 +60133,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
     const activeSocket = socket;
     const id2 = ++requestId;
     const request = { id: id2, method, params, requestContext: requestContextStorage.getStore() };
-    return new Promise((resolve6, reject) => {
+    return new Promise((resolve7, reject) => {
       if (signal?.aborted) {
         reject(new Error("Tool call aborted"));
         return;
@@ -60051,7 +60155,7 @@ async function startMcpClientMode(socketPath, options2 = {}) {
       signal?.addEventListener("abort", abort, { once: true });
       pendingRequests.set(id2, { resolve: (value) => {
         cleanup();
-        resolve6(value);
+        resolve7(value);
       }, reject: (error2) => {
         cleanup();
         reject(error2);
@@ -60134,9 +60238,9 @@ async function startMcpClientMode(socketPath, options2 = {}) {
   });
 }
 function connectToSocket(socketPath) {
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     const socket = net.createConnection(socketPath);
-    socket.once("connect", () => resolve6(socket));
+    socket.once("connect", () => resolve7(socket));
     socket.once("error", reject);
   });
 }
@@ -60738,12 +60842,12 @@ function createSocksProxyServer(options2) {
       return void 0;
     },
     listen(port, hostname2) {
-      return new Promise((resolve6, reject) => {
+      return new Promise((resolve7, reject) => {
         const listeningCallback = () => {
           const actualPort = this.getPort();
           if (actualPort) {
             logForDebugging(`SOCKS proxy listening on ${hostname2}:${actualPort}`);
-            resolve6(actualPort);
+            resolve7(actualPort);
           } else {
             reject(new Error("Failed to get SOCKS proxy server port"));
           }
@@ -60752,7 +60856,7 @@ function createSocksProxyServer(options2) {
       });
     },
     async close() {
-      return new Promise((resolve6, reject) => {
+      return new Promise((resolve7, reject) => {
         socksServer.close((error2) => {
           if (error2) {
             const errorMessage2 = error2.message?.toLowerCase() || "";
@@ -60762,7 +60866,7 @@ function createSocksProxyServer(options2) {
               return;
             }
           }
-          resolve6();
+          resolve7();
         });
       });
     },
@@ -62000,13 +62104,13 @@ import { randomBytes as randomBytes5 } from "node:crypto";
 import * as fs22 from "fs";
 import { spawn as spawn6, spawnSync as spawnSync2 } from "node:child_process";
 import { tmpdir as tmpdir4 } from "node:os";
-import path24, { join as join15 } from "node:path";
+import path24, { join as join16 } from "node:path";
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/utils/ripgrep.js
 import { execFile as execFile3 } from "child_process";
 async function ripGrep(args2, target, abortSignal, config3 = { command: "rg" }) {
   const { command, args: commandArgs = [] } = config3;
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     execFile3(command, [...commandArgs, ...args2, target], {
       maxBuffer: 2e7,
       // 20MB
@@ -62015,11 +62119,11 @@ async function ripGrep(args2, target, abortSignal, config3 = { command: "rg" }) 
       // 10 second timeout
     }, (error2, stdout, stderr) => {
       if (!error2) {
-        resolve6(stdout.trim().split("\n").filter(Boolean));
+        resolve7(stdout.trim().split("\n").filter(Boolean));
         return;
       }
       if (error2.code === 1) {
-        resolve6([]);
+        resolve7([]);
         return;
       }
       reject(new Error(`ripgrep failed with exit code ${error2.code}: ${stderr || error2.message}`));
@@ -62106,16 +62210,16 @@ function isSymlinkOutsideBoundary(originalPath, resolvedPath) {
   return false;
 }
 function normalizePathForSandbox(pathPattern) {
-  const cwd2 = process.cwd();
+  const cwd3 = process.cwd();
   let normalizedPath = pathPattern;
   if (pathPattern === "~") {
     normalizedPath = homedir7();
   } else if (pathPattern.startsWith("~/")) {
     normalizedPath = homedir7() + pathPattern.slice(1);
   } else if (pathPattern.startsWith("./") || pathPattern.startsWith("../")) {
-    normalizedPath = path23.resolve(cwd2, pathPattern);
+    normalizedPath = path23.resolve(cwd3, pathPattern);
   } else if (!path23.isAbsolute(pathPattern)) {
-    normalizedPath = path23.resolve(cwd2, pathPattern);
+    normalizedPath = path23.resolve(cwd3, pathPattern);
   }
   if (containsGlobChars(normalizedPath)) {
     const staticPrefix = normalizedPath.split(/[*?[\]]/)[0];
@@ -62217,7 +62321,7 @@ function decodeSandboxedCommand(encodedCommand) {
 }
 
 // node_modules/@anthropic-ai/sandbox-runtime/dist/sandbox/generate-seccomp-filter.js
-import { join as join14, dirname as dirname4 } from "node:path";
+import { join as join15, dirname as dirname4 } from "node:path";
 import { fileURLToPath as fileURLToPath10 } from "node:url";
 import * as fs21 from "node:fs";
 import { execSync } from "node:child_process";
@@ -62233,20 +62337,20 @@ function getGlobalNpmPaths() {
       stdio: ["pipe", "pipe", "ignore"]
     }).trim();
     if (npmRoot) {
-      paths.push(join14(npmRoot, "@anthropic-ai", "sandbox-runtime"));
+      paths.push(join15(npmRoot, "@anthropic-ai", "sandbox-runtime"));
     }
   } catch {
   }
   const home = homedir8();
   paths.push(
     // npm global (Linux/macOS)
-    join14("/usr", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
-    join14("/usr", "local", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
+    join15("/usr", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
+    join15("/usr", "local", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
     // npm global with prefix (common on macOS with homebrew)
-    join14("/opt", "homebrew", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
+    join15("/opt", "homebrew", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
     // User-local npm global
-    join14(home, ".npm", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
-    join14(home, ".npm-global", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime")
+    join15(home, ".npm", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime"),
+    join15(home, ".npm-global", "lib", "node_modules", "@anthropic-ai", "sandbox-runtime")
   );
   return paths;
 }
@@ -62273,13 +62377,13 @@ function getLocalSeccompPaths(filename) {
   if (!arch)
     return [];
   const baseDir = dirname4(fileURLToPath10(import.meta.url));
-  const relativePath = join14("vendor", "seccomp", arch, filename);
+  const relativePath = join15("vendor", "seccomp", arch, filename);
   return [
-    join14(baseDir, relativePath),
+    join15(baseDir, relativePath),
     // bundled: same directory as bundle (e.g., when bundled into claude-cli)
-    join14(baseDir, "..", "..", relativePath),
+    join15(baseDir, "..", "..", relativePath),
     // package root: vendor/seccomp/...
-    join14(baseDir, "..", relativePath)
+    join15(baseDir, "..", relativePath)
     // dist: dist/vendor/seccomp/...
   ];
 }
@@ -62313,7 +62417,7 @@ function findBpfPath(seccompBinaryPath) {
     }
   }
   for (const globalBase of getGlobalNpmPaths()) {
-    const bpfPath = join14(globalBase, "vendor", "seccomp", arch, "unix-block.bpf");
+    const bpfPath = join15(globalBase, "vendor", "seccomp", arch, "unix-block.bpf");
     if (fs21.existsSync(bpfPath)) {
       logForDebugging(`[SeccompFilter] Found pre-generated BPF filter in global install: ${bpfPath} (${arch})`);
       return bpfPath;
@@ -62352,7 +62456,7 @@ function findApplySeccompPath(seccompBinaryPath) {
     }
   }
   for (const globalBase of getGlobalNpmPaths()) {
-    const binaryPath = join14(globalBase, "vendor", "seccomp", arch, "apply-seccomp");
+    const binaryPath = join15(globalBase, "vendor", "seccomp", arch, "apply-seccomp");
     if (fs21.existsSync(binaryPath)) {
       logForDebugging(`[SeccompFilter] Found apply-seccomp binary in global install: ${binaryPath} (${arch})`);
       return binaryPath;
@@ -62412,20 +62516,20 @@ function findFirstNonExistentComponent(targetPath) {
   return targetPath;
 }
 async function linuxGetMandatoryDenyPaths(ripgrepConfig = { command: "rg" }, maxDepth = DEFAULT_MANDATORY_DENY_SEARCH_DEPTH, allowGitConfig = false, abortSignal) {
-  const cwd2 = process.cwd();
+  const cwd3 = process.cwd();
   const fallbackController = new AbortController();
   const signal = abortSignal ?? fallbackController.signal;
   const dangerousDirectories = getDangerousDirectories();
   const denyPaths = [
     // Dangerous files in CWD
-    ...DANGEROUS_FILES.map((f) => path24.resolve(cwd2, f)),
+    ...DANGEROUS_FILES.map((f) => path24.resolve(cwd3, f)),
     // Dangerous directories in CWD
-    ...dangerousDirectories.map((d) => path24.resolve(cwd2, d)),
+    ...dangerousDirectories.map((d) => path24.resolve(cwd3, d)),
     // Git hooks always blocked for security
-    path24.resolve(cwd2, ".git/hooks")
+    path24.resolve(cwd3, ".git/hooks")
   ];
   if (!allowGitConfig) {
-    denyPaths.push(path24.resolve(cwd2, ".git/config"));
+    denyPaths.push(path24.resolve(cwd3, ".git/config"));
   }
   const iglobArgs = [];
   for (const fileName of DANGEROUS_FILES) {
@@ -62448,12 +62552,12 @@ async function linuxGetMandatoryDenyPaths(ripgrepConfig = { command: "rg" }, max
       ...iglobArgs,
       "-g",
       "!**/node_modules/**"
-    ], cwd2, signal, ripgrepConfig);
+    ], cwd3, signal, ripgrepConfig);
   } catch (error2) {
     logForDebugging(`[Sandbox] ripgrep scan failed: ${error2}`);
   }
   for (const match of matches) {
-    const absolutePath = path24.resolve(cwd2, match);
+    const absolutePath = path24.resolve(cwd3, match);
     let foundDir = false;
     for (const dirName of [...dangerousDirectories, ".git"]) {
       const normalizedDirName = normalizeCaseForComparison(dirName);
@@ -62520,8 +62624,8 @@ function checkLinuxDependencies(seccompConfig) {
 }
 async function initializeLinuxNetworkBridge(httpProxyPort, socksProxyPort) {
   const socketId = randomBytes5(8).toString("hex");
-  const httpSocketPath = join15(tmpdir4(), `claude-http-${socketId}.sock`);
-  const socksSocketPath = join15(tmpdir4(), `claude-socks-${socketId}.sock`);
+  const httpSocketPath = join16(tmpdir4(), `claude-http-${socketId}.sock`);
+  const socksSocketPath = join16(tmpdir4(), `claude-socks-${socketId}.sock`);
   const httpSocatArgs = [
     `UNIX-LISTEN:${httpSocketPath},fork,reuseaddr`,
     `TCP:localhost:${httpProxyPort},keepalive,keepidle=10,keepintvl=5,keepcnt=3`
@@ -62592,7 +62696,7 @@ async function initializeLinuxNetworkBridge(httpProxyPort, socksProxyPort) {
       }
       throw new Error(`Failed to create bridge sockets after ${maxAttempts} attempts`);
     }
-    await new Promise((resolve6) => setTimeout(resolve6, i2 * 100));
+    await new Promise((resolve7) => setTimeout(resolve7, i2 * 100));
   }
   return {
     httpSocketPath,
@@ -62829,20 +62933,20 @@ var import_shell_quote2 = __toESM(require_shell_quote(), 1);
 import { spawn as spawn7, spawnSync as spawnSync3 } from "child_process";
 import * as path25 from "path";
 function macGetMandatoryDenyPatterns(allowGitConfig = false) {
-  const cwd2 = process.cwd();
+  const cwd3 = process.cwd();
   const denyPaths = [];
   for (const fileName of DANGEROUS_FILES) {
-    denyPaths.push(path25.resolve(cwd2, fileName));
+    denyPaths.push(path25.resolve(cwd3, fileName));
     denyPaths.push(`**/${fileName}`);
   }
   for (const dirName of getDangerousDirectories()) {
-    denyPaths.push(path25.resolve(cwd2, dirName));
+    denyPaths.push(path25.resolve(cwd3, dirName));
     denyPaths.push(`**/${dirName}/**`);
   }
-  denyPaths.push(path25.resolve(cwd2, ".git/hooks"));
+  denyPaths.push(path25.resolve(cwd3, ".git/hooks"));
   denyPaths.push("**/.git/hooks/**");
   if (!allowGitConfig) {
-    denyPaths.push(path25.resolve(cwd2, ".git/config"));
+    denyPaths.push(path25.resolve(cwd3, ".git/config"));
     denyPaths.push("**/.git/config");
   }
   return [...new Set(denyPaths)];
@@ -63409,7 +63513,7 @@ async function startHttpProxyServer(sandboxAskCallback) {
     filter: (port, host) => filterNetworkRequest(port, host, sandboxAskCallback),
     getMitmSocketPath
   });
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     if (!httpProxyServer) {
       reject(new Error("HTTP proxy server undefined before listen"));
       return;
@@ -63421,7 +63525,7 @@ async function startHttpProxyServer(sandboxAskCallback) {
       if (address && typeof address === "object") {
         server.unref();
         logForDebugging(`HTTP proxy listening on localhost:${address.port}`);
-        resolve6(address.port);
+        resolve7(address.port);
       } else {
         reject(new Error("Failed to get proxy server address"));
       }
@@ -63433,14 +63537,14 @@ async function startSocksProxyServer(sandboxAskCallback) {
   socksProxyServer = createSocksProxyServer({
     filter: (port, host) => filterNetworkRequest(port, host, sandboxAskCallback)
   });
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     if (!socksProxyServer) {
       reject(new Error("SOCKS proxy server undefined before listen"));
       return;
     }
     socksProxyServer.listen(0, "127.0.0.1").then((port) => {
       socksProxyServer?.unref();
-      resolve6(port);
+      resolve7(port);
     }).catch(reject);
   });
 }
@@ -63713,10 +63817,10 @@ async function reset2() {
       try {
         process.kill(httpBridgeProcess.pid, "SIGTERM");
         logForDebugging("Sent SIGTERM to HTTP bridge process");
-        exitPromises.push(new Promise((resolve6) => {
+        exitPromises.push(new Promise((resolve7) => {
           httpBridgeProcess.once("exit", () => {
             logForDebugging("HTTP bridge process exited");
-            resolve6();
+            resolve7();
           });
           setTimeout(() => {
             if (!httpBridgeProcess.killed) {
@@ -63730,7 +63834,7 @@ async function reset2() {
               } catch {
               }
             }
-            resolve6();
+            resolve7();
           }, 5e3);
         }));
       } catch (err) {
@@ -63745,10 +63849,10 @@ async function reset2() {
       try {
         process.kill(socksBridgeProcess.pid, "SIGTERM");
         logForDebugging("Sent SIGTERM to SOCKS bridge process");
-        exitPromises.push(new Promise((resolve6) => {
+        exitPromises.push(new Promise((resolve7) => {
           socksBridgeProcess.once("exit", () => {
             logForDebugging("SOCKS bridge process exited");
-            resolve6();
+            resolve7();
           });
           setTimeout(() => {
             if (!socksBridgeProcess.killed) {
@@ -63762,7 +63866,7 @@ async function reset2() {
               } catch {
               }
             }
-            resolve6();
+            resolve7();
           }, 5e3);
         }));
       } catch (err) {
@@ -63798,14 +63902,14 @@ async function reset2() {
   const closePromises = [];
   if (httpProxyServer) {
     const server = httpProxyServer;
-    const httpClose = new Promise((resolve6) => {
+    const httpClose = new Promise((resolve7) => {
       server.close((error2) => {
         if (error2 && error2.message !== "Server is not running.") {
           logForDebugging(`Error closing HTTP proxy server: ${error2.message}`, {
             level: "error"
           });
         }
-        resolve6();
+        resolve7();
       });
     });
     closePromises.push(httpClose);
@@ -64178,7 +64282,7 @@ async function promptForPermissions() {
   let inputBuffer = "";
   let inputAccessLevel = "blocked";
   const getSelectableIndices = () => items.map((item, i2) => isSelectable(item) ? i2 : -1).filter((i2) => i2 >= 0);
-  return new Promise((resolve6, reject) => {
+  return new Promise((resolve7, reject) => {
     process.stdin.setRawMode(true);
     process.stdin.resume();
     process.stdin.setEncoding("utf8");
@@ -64412,7 +64516,7 @@ async function promptForPermissions() {
           const permissions = getDefaultFromItems(items);
           console.log(`${GREEN}Sandbox configured.${RESET2}
 `);
-          resolve6(permissions);
+          resolve7(permissions);
           return;
         }
       } else if (key === "q" || key === "") {
@@ -65007,7 +65111,7 @@ async function startInteractiveMode(socketPath) {
   });
   let releaseClaim = trySocketClaim(socketPath);
   for (let attempt = 0; !releaseClaim && attempt < 100; attempt++) {
-    await new Promise((resolve6) => setTimeout(resolve6, 100));
+    await new Promise((resolve7) => setTimeout(resolve7, 100));
     releaseClaim = trySocketClaim(socketPath);
   }
   if (!releaseClaim) {
@@ -65019,9 +65123,9 @@ async function startInteractiveMode(socketPath) {
     if (title) manager.setTitle(title);
   }, options.piExtraOperators);
   try {
-    await new Promise((resolve6, reject) => {
-      if (socketServer.listening) return resolve6();
-      socketServer.once("listening", resolve6);
+    await new Promise((resolve7, reject) => {
+      if (socketServer.listening) return resolve7();
+      socketServer.once("listening", resolve7);
       socketServer.once("error", reject);
     });
   } catch (error2) {
@@ -65081,8 +65185,8 @@ main().catch((error2) => {
 async function tryAttachInteractive(socketPath) {
   const socket = net2.createConnection(socketPath);
   try {
-    await new Promise((resolve6, reject) => {
-      socket.once("connect", resolve6);
+    await new Promise((resolve7, reject) => {
+      socket.once("connect", resolve7);
       socket.once("error", reject);
     });
   } catch (error2) {
