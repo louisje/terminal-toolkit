@@ -33,6 +33,16 @@ test("working memory across direct/socket MCP and Codemode", {skip:process.platf
           assert.ok(result.content[0].text.startsWith(id),result.content[0].text);
         }
         assert.match((await call("read",{path})).content[0].text,/identity/);
+        const stat=async(id,scope)=>JSON.parse((await call("getToolStat",{scope},id)).content[0].text);
+        for(const id of [a,b]){
+          const local=await stat(id,"conversation");
+          assert.equal(local.scope,"conversation");
+          assert.equal(local.tools.find(t=>t.name==="read").calls,2);
+          assert.equal(local.tools.find(t=>t.name==="write").calls,1);
+        }
+        const global=await stat(a,"global");
+        assert.equal(global.tools.find(t=>t.name==="read").calls,5);
+        assert.match((await call("getToolStat",{scope:"conversation"})).content[0].text,/identity/);
       } finally {await client.close();}
     }
   } finally {if(server)await new Promise(r=>server.close(r));await rm(dir,{recursive:true,force:true});}

@@ -4,7 +4,7 @@
 
 ## In Progress
 
-- Conversation working memory：已實作 memory://scratchpad.md、六支核心檔案工具及內建 scratchpad Skill；完整回歸 207 項（205 通過、2 略過、0 失敗），四種 MCP SDK 整合模式通過；內建 Skills 優先排序及相關測試通過。待提交及部署驗收。詳見 [設計](docs/working-memory.md)。
+- Conversation working memory：已實作 memory://scratchpad.md、六支核心檔案工具及內建 scratchpad Skill；完整回歸 207 項（205 通過、2 略過、0 失敗），四種 MCP SDK 整合模式通過；內建 Skills 優先排序及相關測試通過。已提交 `5be9fb3`，待部署驗收。新增 getToolStat() conversation scope，四種整合模式及探索隔離測試通過，完整回歸 207 項（205 通過、2 略過、0 失敗），待提交。詳見 [設計](docs/working-memory.md)。
 
 - read() 擴充：負數 offset、timeout/AbortSignal、獨立大小與行數 metadata，維持 16 KiB suppress；已實作並通過完整回歸（205 項，203 通過、2 略過、0 失敗），待提交及正式環境重啟驗收。詳見 [輸出策略](docs/output-policy.md)。
 

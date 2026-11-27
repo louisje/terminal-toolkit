@@ -40020,44 +40020,90 @@ var init_systemInfo = __esm({
 });
 
 // src/tools/stats.ts
+function createStats() {
+  return {
+    startedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    touched: Date.now(),
+    active: 0,
+    counters: /* @__PURE__ */ new Map(),
+    searches: /* @__PURE__ */ new Map(),
+    descriptions: /* @__PURE__ */ new Map(),
+    otherQueries: 0
+  };
+}
+function conversationStats() {
+  const context = requestContextStorage.getStore();
+  if (!context?.conversationId) return;
+  const now = Date.now();
+  for (const [key2, value2] of conversations)
+    if (!value2.active && now - value2.touched >= TTL_MS) conversations.delete(key2);
+  const key = JSON.stringify([context.provider, context.organizationId, context.subjectId, context.conversationId]);
+  let value = conversations.get(key);
+  if (!value) {
+    if (conversations.size >= MAX_CONVERSATIONS) return;
+    value = createStats();
+    conversations.set(key, value);
+  }
+  value.touched = now;
+  return value;
+}
+function scopes() {
+  const local = conversationStats();
+  return local ? [globalStats, local] : [globalStats];
+}
 function increment2(map, key) {
   map.set(key, (map.get(key) ?? 0) + 1);
 }
 function recordSearch(query, results) {
-  const key = query.slice(0, MAX_QUERY_LENGTH);
-  if (!searches.has(key) && searches.size >= MAX_QUERIES) {
-    otherQueries++;
-    return;
+  for (const scope2 of scopes()) {
+    const { searches } = scope2;
+    const key = query.slice(0, MAX_QUERY_LENGTH);
+    if (!searches.has(key) && searches.size >= MAX_QUERIES) {
+      scope2.otherQueries++;
+      continue;
+    }
+    const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
+    stat2.calls++;
+    stat2.totalResults += results;
+    if (!results) stat2.zeroResults++;
+    searches.set(key, stat2);
   }
-  const stat2 = searches.get(key) ?? { calls: 0, zeroResults: 0, totalResults: 0 };
-  stat2.calls++;
-  stat2.totalResults += results;
-  if (!results) stat2.zeroResults++;
-  searches.set(key, stat2);
 }
 function recordDescribe(name) {
-  increment2(descriptions, name);
+  for (const scope2 of scopes()) increment2(scope2.descriptions, name);
 }
 async function trackCall(name, fn2, signal, isFailure) {
-  const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
-  counters.set(name, stat2);
-  stat2.calls++;
+  const owners = scopes();
+  const stats = owners.map((owner) => {
+    owner.active++;
+    const { counters } = owner;
+    const stat2 = counters.get(name) ?? { calls: 0, success: 0, errors: 0, cancelled: 0, totalDurationMs: 0, maxDurationMs: 0 };
+    counters.set(name, stat2);
+    stat2.calls++;
+    return stat2;
+  });
   const start = performance.now();
   try {
     const result4 = await fn2();
     if (isFailure?.(result4)) {
-      if (signal?.aborted) stat2.cancelled++;
-      else stat2.errors++;
-    } else stat2.success++;
+      if (signal?.aborted) stats.forEach((stat2) => stat2.cancelled++);
+      else stats.forEach((stat2) => stat2.errors++);
+    } else stats.forEach((stat2) => stat2.success++);
     return result4;
   } catch (error2) {
-    if (signal?.aborted) stat2.cancelled++;
-    else stat2.errors++;
+    if (signal?.aborted) stats.forEach((stat2) => stat2.cancelled++);
+    else stats.forEach((stat2) => stat2.errors++);
     throw error2;
   } finally {
     const elapsed = performance.now() - start;
-    stat2.totalDurationMs += elapsed;
-    stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
+    for (const stat2 of stats) {
+      stat2.totalDurationMs += elapsed;
+      stat2.maxDurationMs = Math.max(stat2.maxDurationMs, elapsed);
+    }
+    for (const owner of owners) {
+      owner.active--;
+      owner.touched = Date.now();
+    }
   }
 }
 function getToolStat(options2 = {}, namespaces = {}) {
@@ -40065,12 +40111,18 @@ function getToolStat(options2 = {}, namespaces = {}) {
   if (options2.namespace !== void 0 && typeof options2.namespace !== "string") throw new Error("namespace must be a string");
   if (options2.sortBy !== void 0 && !["calls", "name", "totalDurationMs"].includes(options2.sortBy)) throw new Error("Invalid sortBy");
   if (options2.limit !== void 0 && (!Number.isInteger(options2.limit) || options2.limit <= 0)) throw new Error("limit must be a positive integer");
+  if (options2.scope !== void 0 && !["global", "conversation"].includes(options2.scope)) throw new Error("Invalid scope");
+  const scope2 = options2.scope ?? "global";
+  const selected = scope2 === "global" ? globalStats : conversationStats();
+  if (!selected) throw new Error("Conversation statistics require a conversation identity and available capacity");
+  const { counters, searches, descriptions, otherQueries, startedAt } = selected;
   const entries3 = [...counters.entries()].filter(([name]) => {
     const discovery = ["search", "describe"].includes(name);
     return (!options2.category || options2.category === "discovery" === discovery) && (!options2.namespace || namespaces[name] === options2.namespace);
   }).map(([name, stat2]) => ({ name, ...namespaces[name] ? { namespace: namespaces[name] } : {}, ...stat2, avgDurationMs: stat2.calls ? stat2.totalDurationMs / stat2.calls : 0 }));
   entries3.sort((a2, b) => options2.sortBy === "name" ? a2.name.localeCompare(b.name) : options2.sortBy === "totalDurationMs" ? b.totalDurationMs - a2.totalDurationMs : b.calls - a2.calls);
   return {
+    scope: scope2,
     since: startedAt,
     totalCalls: entries3.reduce((sum, e) => sum + e.calls, 0),
     tools: entries3.slice(0, options2.limit),
@@ -40082,15 +40134,15 @@ function getToolStat(options2 = {}, namespaces = {}) {
     } : {}
   };
 }
-var startedAt, counters, searches, descriptions, otherQueries, MAX_QUERIES, MAX_QUERY_LENGTH;
+var globalStats, conversations, MAX_CONVERSATIONS, TTL_MS, MAX_QUERIES, MAX_QUERY_LENGTH;
 var init_stats = __esm({
   "src/tools/stats.ts"() {
     "use strict";
-    startedAt = (/* @__PURE__ */ new Date()).toISOString();
-    counters = /* @__PURE__ */ new Map();
-    searches = /* @__PURE__ */ new Map();
-    descriptions = /* @__PURE__ */ new Map();
-    otherQueries = 0;
+    init_requestContext();
+    globalStats = createStats();
+    conversations = /* @__PURE__ */ new Map();
+    MAX_CONVERSATIONS = 256;
+    TTL_MS = 24 * 60 * 60 * 1e3;
     MAX_QUERIES = 1e3;
     MAX_QUERY_LENGTH = 256;
   }
@@ -40110,10 +40162,11 @@ var init_getToolStat = __esm({
     init_stats();
     getToolStatTool = {
       name: "getToolStat",
-      description: "Get process-wide tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Counters reset on server restart.",
+      description: "Get process-wide (default) or current-conversation tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Use scope: conversation for isolated statistics; requires conversation identity. Counters reset on MCP endpoint restart; conversation counters expire after 24 hours idle.",
       inputSchema: {
         type: "object",
         properties: {
+          scope: { type: "string", enum: ["global", "conversation"] },
           category: { type: "string", enum: ["discovery", "tool"] },
           namespace: { type: "string" },
           sortBy: { type: "string", enum: ["calls", "name", "totalDurationMs"] },
@@ -48311,7 +48364,7 @@ function storeResult(text) {
     remove(oldest);
   }
   const id2 = randomUUID4();
-  entries.set(id2, { text, bytes, expiresAt: Date.now() + TTL_MS });
+  entries.set(id2, { text, bytes, expiresAt: Date.now() + TTL_MS2 });
   totalBytes += bytes;
   return `result://${id2}`;
 }
@@ -48328,12 +48381,12 @@ function readResult(path28) {
   entries.set(id2, entry);
   return entry.text;
 }
-var MAX_BYTES, TTL_MS, entries, totalBytes;
+var MAX_BYTES, TTL_MS2, entries, totalBytes;
 var init_resultStore = __esm({
   "src/tools/resultStore.ts"() {
     "use strict";
     MAX_BYTES = 64 * 1024 * 1024;
-    TTL_MS = 60 * 60 * 1e3;
+    TTL_MS2 = 60 * 60 * 1e3;
     entries = /* @__PURE__ */ new Map();
     totalBytes = 0;
   }
@@ -48347,7 +48400,7 @@ function scope() {
   const context = requestContextStorage.getStore();
   if (!context?.conversationId) throw new Error("memory:// requires a conversation identity");
   const now = Date.now();
-  for (const [key, entry] of entries2) if (now - entry.touched >= TTL_MS2) entries2.delete(key);
+  for (const [key, entry] of entries2) if (now - entry.touched >= TTL_MS3) entries2.delete(key);
   return JSON.stringify([context.provider, context.organizationId, context.subjectId, context.conversationId]);
 }
 function validate4(path28) {
@@ -48374,14 +48427,14 @@ function listMemory(path28) {
   entry.touched = Date.now();
   return ["scratchpad.md"];
 }
-var MAX_BYTES2, MAX_SESSIONS, TTL_MS2, PATH, entries2;
+var MAX_BYTES2, MAX_SESSIONS, TTL_MS3, PATH, entries2;
 var init_memoryStore = __esm({
   "src/tools/memoryStore.ts"() {
     "use strict";
     init_requestContext();
     MAX_BYTES2 = 16 * 1024;
     MAX_SESSIONS = 256;
-    TTL_MS2 = 24 * 60 * 60 * 1e3;
+    TTL_MS3 = 24 * 60 * 60 * 1e3;
     PATH = "memory://scratchpad.md";
     entries2 = /* @__PURE__ */ new Map();
   }
@@ -49045,7 +49098,7 @@ var init_definitions = __esm({
       setClipboard: "Write text to the system clipboard.",
       notify: "Send an operating-system notification.",
       systemInfo: "Summarize host environment and Primary Session state.",
-      getToolStat: "Inspect process-wide tool usage statistics.",
+      getToolStat: "Inspect global or current-conversation tool usage statistics.",
       read: "Read a text file.",
       write: "Write a text file.",
       edit: "Edit a file by exact string replacement.",
@@ -58871,7 +58924,7 @@ var codemodeDefinition = {
 - Discover tools with await search({query?, namespace?, name?, limit?}); namespace and name support * and ? wildcards. Use await describe({namespace, name?}) for details. With --skills enabled, these functions also discover Skills (metadata and paths only); read SKILL.md progressively using tools.read({path, offset?, limit?}). Built-in Skills use read-only builtin://skills/<skill>/SKILL.md paths. Before PTY operations, describe({namespace:"tools/pty"}).
 - Emit meaningful results with text(value), image(value), or top-level return; nested tool calls are not automatically emitted.
 - Use Promise.allSettled for independent calls and filter verbose results before emitting.
-- Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); counters reset on server restart.
+- Inspect process-wide tool usage through tools/misc getToolStat: await tools.getToolStat({}); use await tools.getToolStat({scope:"conversation"}) for current-conversation statistics; counters reset on endpoint restart.
 - Each text() block is limited to 16 KiB (UTF-8); oversized blocks are suppressed; filter or split output before emitting. In-memory result:// paths are not supported in Codemode. Top-level return is unrestricted.
 - No Node.js globals, direct filesystem/network access, or timers. Tool calls use the host's existing permissions.`,
   inputSchema: { type: "object", properties: { code: { type: "string", description: "JavaScript body; use await tools.name(args) and text(result)." }, timeoutMs: { type: "integer", minimum: 1, maximum: 1e5, description: "Execution deadline in milliseconds (default 100000)." } }, required: ["code"] }
@@ -59517,12 +59570,12 @@ var Stats = class {
     };
   }
 };
-var globalStats = null;
+var globalStats2 = null;
 function getStats() {
-  if (!globalStats) {
-    globalStats = new Stats();
+  if (!globalStats2) {
+    globalStats2 = new Stats();
   }
-  return globalStats;
+  return globalStats2;
 }
 
 // src/transport/socket-protocol.ts

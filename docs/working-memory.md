@@ -17,3 +17,18 @@ Do not store secrets: tool arguments and responses may appear in MCP trace logs.
 ## Verification
 
 Unit coverage checks concurrent scopes, core operations, path rejection, missing identity and byte limits. MCP SDK integration tests pass for standalone and socket modes, both direct and Codemode, including two distinct identities and anonymous rejection. Live ChatGPT isolation after deployment remains to be verified.
+
+## Conversation tool statistics
+
+`getToolStat({scope: "conversation"})` reports the current request identity's
+tool and discovery counters. The default `scope: "global"` retains existing
+process-wide behavior. Both scopes are updated together at the MCP endpoint,
+including Codemode calls. Socket MCP clients own their statistics; they do not
+aggregate across endpoint processes. Anonymous calls contribute only globally.
+
+Conversation counters are process-local, expire lazily after 24 hours idle
+(excluding active calls), and support up to 256 identities. At capacity, new
+identities contribute only globally and scoped queries fail explicitly.
+The `since` timestamp describes the retained statistics window, not the
+creation time of the ChatGPT conversation. Discovery query text is retained
+under the existing per-scope query limits.

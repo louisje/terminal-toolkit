@@ -119,7 +119,7 @@ const TOOL_SUMMARIES: Record<string, string> = {
   setClipboard: "Write text to the system clipboard.",
   notify: "Send an operating-system notification.",
   systemInfo: "Summarize host environment and Primary Session state.",
-  getToolStat: "Inspect process-wide tool usage statistics.",
+  getToolStat: "Inspect global or current-conversation tool usage statistics.",
   read: "Read a text file.",
   write: "Write a text file.",
   edit: "Edit a file by exact string replacement.",

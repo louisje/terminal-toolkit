@@ -6,8 +6,8 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 test('getToolStat aggregates discovery and tool usage across codemode calls', { timeout: 20000 }, async () => {
   const client = new Client({ name: 'stats-test', version: '1' });
   await client.connect(new StdioClientTransport({ command: process.execPath, args: ['dist/index.js', '--headless', '--codemode'], stderr: 'pipe' }));
-  const evaluate = async code => {
-    const result = await client.callTool({ name: 'codemode', arguments: { code } });
+  const evaluate = async (code,id) => {
+    const result = await client.callTool({ name: 'codemode', arguments: { code }, ...(id?{_meta:{'openai/session':id}}:{}) });
     assert.equal(result.isError, false, JSON.stringify(result));
     return JSON.parse(result.content[0].text);
   };
@@ -28,5 +28,11 @@ test('getToolStat aggregates discovery and tool usage across codemode calls', { 
     assert.ok(later.tools.find(t => t.name === 'getToolStat').calls >= 2);
     assert.ok(later.tools.every(t => t.namespace === 'tools/misc'));
     assert.ok(stats.tools.some(t => t.name === 'codemode'));
+    await evaluate('text(await search({query:"alpha"}))',"a");
+    await evaluate('text(await search({query:"beta"}))',"b");
+    await evaluate('text(await describe({namespace:"tools/core"}))',"a");
+    const local=await evaluate('text(JSON.parse(await tools.getToolStat({scope:"conversation"})))',"a");
+    assert.deepEqual(local.discovery.search.queries.map(q=>q.query),["alpha"]);
+    assert.equal(local.discovery.describe["tools/core"],1);
   } finally { await client.close(); }
 });

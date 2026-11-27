@@ -15,3 +15,5 @@ Use `memory://scratchpad.md` with read, write and edit as a lightweight external
 - The format is flexible Markdown. Do not duplicate durable project documentation; transfer durable decisions to the appropriate project files.
 - If the scratchpad is missing, create it when useful. If conversation identity is unavailable, continue without it; never use a shared file as an automatic fallback.
 - Memory is temporary and may expire or disappear on restart. Do not store credentials or rely on it for durable handoff.
+
+- When useful, inspect current-conversation tool usage with `getToolStat({scope: "conversation"})` to identify repeated calls or inefficient exploration. Do not poll it routinely.

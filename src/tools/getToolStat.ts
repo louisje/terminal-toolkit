@@ -2,10 +2,11 @@ import { getToolStat } from "./stats.js";
 
 export const getToolStatTool = {
   name: "getToolStat",
-  description: "Get process-wide tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Counters reset on server restart.",
+  description: "Get process-wide (default) or current-conversation tool call statistics for Codemode and ordinary MCP calls. Includes call counts, successes, errors, cancellations and durations. Use scope: conversation for isolated statistics; requires conversation identity. Counters reset on MCP endpoint restart; conversation counters expire after 24 hours idle.",
   inputSchema: {
     type: "object" as const,
     properties: {
+      scope: { type: "string", enum: ["global", "conversation"] },
       category: { type: "string", enum: ["discovery", "tool"] },
       namespace: { type: "string" },
       sortBy: { type: "string", enum: ["calls", "name", "totalDurationMs"] },
